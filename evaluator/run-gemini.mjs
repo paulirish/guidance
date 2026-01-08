@@ -16,11 +16,15 @@ import { getTrajectoriesForPath, DEFAULT_TMP_DIR } from '../chronicle-eval/harve
 
 const BUNDLE_PATH = path.resolve(import.meta.dirname, '../gemini-cli/bundle/gemini.js');
 
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function poll(predicate, timeout, interval) {
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
     if (predicate()) return true;
-    await new Promise((resolve) => setTimeout(resolve, interval));
+    await sleep(interval);
   }
   return false;
 }
@@ -55,7 +59,7 @@ class InteractiveRun {
           const stripped = stripAnsi(this.output).toLowerCase();
           return texts.some(t => stripped.includes(t.toLowerCase()));
       }, timeout, 500);
-      
+
       if (!found) {
           throw new Error(`Timed out waiting for any of: ${texts.join(', ')}`);
       }
@@ -70,7 +74,7 @@ class InteractiveRun {
           // Check last 5 lines for the prompt
           return lines.slice(-5).some(line => line.includes('Type your message'));
       }, timeout, 500);
-      
+
       if (!found) {
           throw new Error(`Timed out waiting for interactive prompt`);
       }
@@ -80,7 +84,18 @@ class InteractiveRun {
     const delay = 5;
     for (const char of text) {
       this.ptyProcess.write(char);
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await sleep(delay);
+    }
+  }
+
+  async type(text) {
+    for (const char of text) {
+      if (char === '\r' || char === '\n') {
+        await sleep(50);
+      }
+      this.ptyProcess.write(char);
+      // We don't wait for echo here to keep it simple, but follow the delay pattern
+      await sleep(10);
     }
   }
 
@@ -91,20 +106,25 @@ class InteractiveRun {
 
 class TestRig {
   constructor(targetDir, scenarioName) {
-    this.targetDir = path.resolve(targetDir);
+    this.testDir = path.resolve(targetDir);
+    this.homeDir = path.join(this.testDir, 'fake-home');
     this.scenarioName = scenarioName;
+    this._interactiveRuns = [];
   }
 
   setup() {
-    const geminiDir = path.join(this.targetDir, GEMINI_DIR);
+    if (!fs.existsSync(this.testDir)) fs.mkdirSync(this.testDir, { recursive: true });
+    if (!fs.existsSync(this.homeDir)) fs.mkdirSync(this.homeDir, { recursive: true });
+
+    const geminiDir = path.join(this.testDir, GEMINI_DIR);
     if (!fs.existsSync(geminiDir)) {
       fs.mkdirSync(geminiDir, { recursive: true });
     }
 
     // Add .geminiignore to keep it fast
-    fs.writeFileSync(path.join(this.targetDir, '.geminiignore'), "results/\nnode_modules/\n.git/\n");
+    fs.writeFileSync(path.join(this.testDir, '.geminiignore'), "results/\nnode_modules/\n.git/\n");
 
-    const telemetryPath = path.join(this.targetDir, 'telemetry.log');
+    const telemetryPath = path.join(this.homeDir, 'telemetry.log');
     const settings = {
       general: {
         disableAutoUpdate: true,
@@ -115,7 +135,7 @@ class TestRig {
         target: 'local',
         outfile: telemetryPath,
       },
-      security: { 
+      security: {
         auth: { selectedType: 'gemini-api-key' },
       },
       ui: { useAlternateBuffer: true },
@@ -134,24 +154,29 @@ class TestRig {
       name: 'xterm-color',
       cols: 80,
       rows: 80,
-      cwd: this.targetDir,
-      env: { ...env, GEMINI_SANDBOX: 'false' },
+      cwd: this.testDir,
+      env: {
+          ...env,
+          GEMINI_SANDBOX: 'false',
+          GEMINI_CLI_HOME: this.homeDir
+      },
     };
 
     const ptyProcess = pty.spawn(process.execPath, [BUNDLE_PATH, '--yolo'], ptyOptions);
     const run = new InteractiveRun(ptyProcess);
-    
+    this._interactiveRuns.push(run);
+
     await run.expectText('Type your message', 60000);
     return run;
   }
 
   readToolLogs() {
-    const logFilePath = path.join(this.targetDir, 'telemetry.log');
+    const logFilePath = path.join(this.homeDir, 'telemetry.log');
     if (!fs.existsSync(logFilePath)) return [];
 
     const content = fs.readFileSync(logFilePath, 'utf-8');
     const logs = [];
-    
+
     // Telemetry logs are JSON objects separated by }\n{
     const jsonObjects = content.split(/}\n{/).map((obj, i, arr) => {
         if (i > 0) obj = '{' + obj;
@@ -178,12 +203,24 @@ class TestRig {
   }
 
   async waitForTelemetryReady() {
-    const logFilePath = path.join(this.targetDir, 'telemetry.log');
+    const logFilePath = path.join(this.homeDir, 'telemetry.log');
     await poll(() => {
         if (!fs.existsSync(logFilePath)) return false;
         const content = fs.readFileSync(logFilePath, 'utf-8');
-        return content.includes('"event.name"');
+        return content.includes('"scopeMetrics"');
     }, 5000, 200);
+  }
+
+  async cleanup() {
+    for (const run of this._interactiveRuns) {
+        try { await run.kill(); } catch (e) {}
+    }
+    this._interactiveRuns = [];
+  }
+
+  sync() {
+    if (os.platform() === 'win32') return;
+    try { execSync('sync', { cwd: this.testDir }); } catch (e) {}
   }
 }
 
@@ -202,42 +239,48 @@ class GeminiRunner {
     console.log(`[GeminiRunner] Starting CLI in ${this.targetDir}`);
     const run = await this.rig.runInteractive();
     this.currentRun = run;
-    
+
     try {
-        await run.sendKeys(prompt + '\n');
+        await run.type(prompt);
+        await run.type('\r');
         console.log("[GeminiRunner] Waiting for agent to start working...");
-        
+
         // Wait for first sign of activity (Thought or Tool call)
-        await run.waitForAnyText(['Tool call:', 'Thought:'], 60000);
-        
+        await run.waitForAnyText(['Tool call:', 'Thought:'], 60 * 1000);
+
         console.log("[GeminiRunner] Agent is working. Waiting for completion...");
-        
+
         // Wait for the final prompt to reappear
-        await run.waitForPrompt(10 * 60 * 1000);
-        
+        await run.waitForPrompt(15 * 60 * 1000);
+
         await this.rig.waitForTelemetryReady();
         console.log("[GeminiRunner] Agent finished turn.");
     } finally {
-        // We'll kill it after saving results to ensure we have the rawOutput
+        // We'll kill it after saving results
     }
   }
 
   async saveResults() {
     if (this.currentRun) {
         fs.writeFileSync(path.join(this.targetDir, 'raw_pty_output.txt'), this.currentRun.rawOutput);
-        await this.currentRun.kill();
+        await this.rig.cleanup();
     }
 
     console.log("[GeminiRunner] Saving trajectory logs via harvester...");
     try {
-        const trajectories = await getTrajectoriesForPath(this.targetDir, DEFAULT_TMP_DIR);
+        // Now trajectory logs should be in this.rig.homeDir/.gemini/tmp/...
+        // But harvester defaults to ~/.gemini/tmp.
+        // Let's check where they actually go.
+        const actualTmpDir = path.join(this.rig.homeDir, '.gemini/tmp');
+
+        const trajectories = await getTrajectoriesForPath(this.targetDir, actualTmpDir);
         if (trajectories.length > 0) {
             trajectories.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
             const latest = trajectories[0];
             if (latest.filePath) {
                 const logContent = fs.readFileSync(latest.filePath, 'utf8');
                 fs.writeFileSync(path.join(this.targetDir, 'chat_log.json'), logContent);
-                
+
                 const session = JSON.parse(logContent);
                 let humanLog = "";
                 for (const msg of session.messages || []) {
@@ -248,7 +291,7 @@ class GeminiRunner {
                 console.log(`[GeminiRunner] Saved chat logs.`);
             }
         } else {
-            console.warn("[GeminiRunner] No trajectories found.");
+            console.warn(`[GeminiRunner] No trajectories found in ${actualTmpDir}`);
         }
     } catch (e) {
         console.error("[GeminiRunner] Failed to harvest results:", e);
@@ -265,7 +308,7 @@ async function main() {
 
   const [targetDir, prompt] = args;
   const runner = new GeminiRunner(targetDir, path.basename(targetDir));
-  
+
   try {
     await runner.setup();
     await runner.run(prompt);
