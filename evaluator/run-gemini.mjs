@@ -2,18 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { env } from 'node:process';
 import { fileURLToPath } from 'node:url';
+import os from 'node:os';
 
 // Import from gemini-cli integration tests
-// We assume gemini-cli is at ../gemini-cli relative to spike-runner
-const GEMINI_CLI_DIR = path.resolve(import.meta.dirname, '../gemini-cli');
-const TEST_HELPER_PATH = path.join(GEMINI_CLI_DIR, 'integration-tests/test-helper.ts');
-
-// We need to use tsx to run this if we want to import .ts files directly,
-// or we can just mimic the logic if it's too complex to import.
-// Given the requirements, I'll implement a runner that leverages the same patterns.
-
 import { TestRig } from '../gemini-cli/integration-tests/test-helper.ts';
-import { getTrajectoriesForPath } from 'harvester/chronicle.ts';
+import { getTrajectoriesForPath, DEFAULT_TMP_DIR } from 'harvester/chronicle.ts';
 
 /**
  * GeminiRunner handles driving the Gemini CLI for a single scenario.
@@ -27,11 +20,6 @@ class GeminiRunner {
 
   async setup() {
     // TestRig usually creates a random temp dir. 
-    // We want it to use our targetDir but still provide the isolation (settings.json, telemetry.log etc)
-    // ALTERNATIVE: One could just run gemini cli directly in targetDir if isolation isn't strictly needed.
-    
-    // Hack to make TestRig use our directory instead of creating a new one in /tmp
-    // We'll initialize it with a dummy name, then override testDir.
     this.rig.setup(this.scenarioName, {
         settings: {
             // Ensure we use the right model and disable things that might interfere
@@ -73,12 +61,10 @@ class GeminiRunner {
         await run.sendKeys(prompt + '\n');
         
         // Wait for completion. 
-        // In the CLI, we wait for the prompt "Type your message..." to reappear 
-        // AND for telemetry to indicate the turn is over.
         console.log("[GeminiRunner] Waiting for agent to finish...");
         
-        // Use a long timeout for complex tasks (5 minutes)
-        const timeout = 5 * 60 * 1000;
+        // Use a long timeout for complex tasks (10 minutes)
+        const timeout = 10 * 60 * 1000;
         await run.expectText('Type your message', timeout);
         
         // Wait for telemetry to flush
@@ -94,7 +80,14 @@ class GeminiRunner {
   async saveResults() {
     console.log("[GeminiRunner] Saving trajectory logs via harvester...");
     try {
-        const trajectories = await getTrajectoriesForPath(this.targetDir);
+        // TestRig uses os.tmpdir() for telemetry unless overridden.
+        // But the CLI writes to .gemini/tmp in the HOME dir by default for trajectories.
+        // Wait, TestRig settings.json overrides telemetry.outfile.
+        
+        // harvester/chronicle.ts:getTrajectoriesForPath looks in DEFAULT_TMP_DIR (~/.gemini/tmp)
+        // We might need to point it to where the CLI actually wrote the logs.
+        const trajectories = await getTrajectoriesForPath(this.targetDir, DEFAULT_TMP_DIR);
+        
         if (trajectories.length > 0) {
             // Find the most recent trajectory
             trajectories.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
@@ -116,7 +109,7 @@ class GeminiRunner {
                 fs.writeFileSync(path.join(this.targetDir, 'chat_log.txt'), humanLog);
             }
         } else {
-            console.warn("[GeminiRunner] No trajectories found for this path.");
+            console.warn("[GeminiRunner] No trajectories found for this path in " + DEFAULT_TMP_DIR);
         }
     } catch (e) {
         console.error("[GeminiRunner] Failed to harvest results:", e);
@@ -146,7 +139,7 @@ class GeminiRunner {
 async function main() {
   const args = process.argv.slice(2);
   if (args.length < 2) {
-    console.error("Usage: tsx run-gemini.mjs <directory> <prompt>");
+    console.error("Usage: node --experimental-strip-types run-gemini.mjs <directory> <prompt>");
     process.exit(1);
   }
 
@@ -167,7 +160,12 @@ async function main() {
 }
 
 // Only run if executed directly
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('run-gemini.mjs')) {
+const isMain = process.argv[1] && (
+    process.argv[1] === fileURLToPath(import.meta.url) || 
+    process.argv[1].endsWith('run-gemini.mjs')
+);
+
+if (isMain) {
     main().catch(err => {
         console.error(err);
         process.exit(1);
