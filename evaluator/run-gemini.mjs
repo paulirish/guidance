@@ -3,152 +3,49 @@ import path from 'node:path';
 import { env } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
-import { spawn, execSync } from 'node:child_process';
+import { execSync } from 'node:child_process';
 import * as pty from '@lydell/node-pty';
 import stripAnsi from 'strip-ansi';
 
 /**
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ * ! WARNING: SECURITY RISK                                                    !
+ * !                                                                           !
+ * ! This script runs the Gemini CLI in YOLO mode (--yolo) WITHOUT A SANDBOX.  !
+ * ! This means the AI agent has FULL READ/WRITE ACCESS to your local system   !
+ * ! and can execute arbitrary shell commands. 😱😨😰😩🔪🔪😱😱😱😱               !
+ * !                                                                           !
+ * ! The sooner this runs in a sandbox the better...                           !
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ *
  * Gemini CLI Benchmarking Runner
- * 
+ *
  * This runner is designed to programmatically drive the interactive Gemini CLI for benchmarking.
- * 
- * Porting/Inspiration Note:
+ * Usage:
+ *
+ * 1. Run with visible output (recommended for debugging):
+ *    VERBOSE=true node --experimental-strip-types run-gemini.mjs results/gemini_test "build a vanilla web tictactoe game"
+ *
+ * 2. Run silently (benchmark style):
+ *    node --experimental-strip-types run-gemini.mjs results/gemini_test "build a vanilla web tictactoe game"
+ */
+
+
+// --- Runner Logic ---
+/**
+ * Runner Porting/Inspiration Note:
  * This runner is heavily inspired by and ports key components from the Gemini CLI integration test rig.
  * Specifically, the TestRig and InteractiveRun classes were adapted to run outside of the Vitest
  * environment and handle benchmarking-specific needs like trajectory harvesting.
- * 
+ *
  * Original Test Rig source:
  * https://github.com/google-gemini/gemini-cli/blob/main/integration-tests/test-helper.ts
  */
 
-// Constants from gemini-cli
+const model = 'gemini-3-flash-preview';
 const GEMINI_DIR = '.gemini';
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-pro';
-const DEFAULT_TMP_DIR = path.join(os.homedir(), '.gemini/tmp');
+const GEMINI_TMP_DIR = path.join(os.homedir(), '.gemini/tmp');
 
-const BUNDLE_PATH = path.resolve(import.meta.dirname, '../gemini-cli/bundle/gemini.js');
-
-// --- Standalone Trajectory Logic (from get_trajectories_standalone.ts) ---
-
-/**
- * Resolves paths with ~ to the user's home directory.
- */
-function resolvePath(p) {
-  if (p.startsWith('~')) {
-    return path.join(os.homedir(), p.slice(1));
-  }
-  return path.resolve(p);
-}
-
-/**
- * Processes a session log to extract basic statistics and inferred project path.
- */
-function processTrajectory(session) {
-  const messages = session.messages || [];
-  let turnCount = 0;
-  let errorCount = 0;
-  let projectPath = null;
-
-  for (const msg of messages) {
-    if (msg.type === 'user') turnCount++;
-    if (msg.type === 'gemini' && msg.toolCalls) {
-      for (const tc of msg.toolCalls) {
-        if (tc.status === 'error') errorCount++;
-        if (!projectPath && tc.args) {
-          const filePath = tc.args.file_path || tc.args.absolute_path || tc.args.path || tc.args.dir_path;
-          if (filePath && typeof filePath === 'string' && filePath.startsWith('/')) {
-            const parts = filePath.split('/');
-            const codeIdx = parts.indexOf('code');
-            if (codeIdx !== -1 && parts[codeIdx + 1]) {
-              projectPath = parts.slice(0, codeIdx + 2).join('/');
-            }
-          }
-        }
-      }
-    }
-  }
-
-  const duration = new Date(session.lastUpdated).getTime() - new Date(session.startTime).getTime();
-
-  return {
-    sessionId: session.sessionId,
-    projectHash: session.projectHash,
-    projectPath,
-    turnCount,
-    errorCount,
-    duration: isNaN(duration) ? 0 : duration,
-    startTime: session.startTime,
-    challengeScore: turnCount + (errorCount * 2)
-  };
-}
-
-/**
- * Finds all trajectories associated with a specific project path.
- */
-async function getTrajectoriesForPath(targetPath, options = {}) {
-  const tmpDir = options.tmpDir || DEFAULT_TMP_DIR;
-  const projectMap = options.projectMap || {};
-  const absoluteTargetPath = path.resolve(targetPath);
-
-  const allSessions = [];
-  const unidentifiedHashes = new Map();
-
-  try {
-    const projectDirs = await fs.promises.readdir(tmpDir);
-    for (const hash of projectDirs) {
-      if (hash.startsWith('.')) continue;
-      const chatsDir = path.join(tmpDir, hash, 'chats');
-      try {
-        const files = await fs.promises.readdir(chatsDir);
-        for (const file of files) {
-          if (!file.endsWith('.json')) continue;
-          try {
-            const filePath = path.join(chatsDir, file);
-            const content = await fs.promises.readFile(filePath, 'utf8');
-            const session = JSON.parse(content);
-            const stats = processTrajectory(session);
-            stats.filePath = filePath;
-            allSessions.push(stats);
-
-            if (!stats.projectPath && !projectMap[stats.projectHash]) {
-              const prev = unidentifiedHashes.get(stats.projectHash);
-              if (!prev || new Date(stats.startTime) > new Date(prev.lastActive)) {
-                unidentifiedHashes.set(stats.projectHash, {
-                  lastActive: stats.startTime,
-                  count: (prev?.count || 0) + 1
-                });
-              }
-            }
-          } catch { /* ignore corrupted logs */ }
-        }
-      } catch { /* ignore missing chats dirs */ }
-    }
-  } catch (e) {
-    console.error(`Error reading Gemini logs from ${tmpDir}:`, e);
-    return [];
-  }
-
-  const matches = allSessions.filter(s => {
-    const candidatePaths = new Set();
-    if (s.projectPath) candidatePaths.add(resolvePath(s.projectPath));
-    if (projectMap[s.projectHash]) candidatePaths.add(resolvePath(projectMap[s.projectHash]));
-    
-    for (const p of candidatePaths) {
-      if (p === absoluteTargetPath) return true;
-    }
-    return false;
-  });
-
-  if (matches.length === 0 && unidentifiedHashes.size > 0) {
-      console.log(`
-[getTrajectoriesForPath] No trajectories matched for: ${targetPath}`);
-      // (Instruction logging removed for brevity in benchmark output, but logic is here)
-  }
-
-  return matches;
-}
-
-// --- Runner Logic ---
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -193,7 +90,7 @@ class InteractiveRun {
           const stripped = stripAnsi(this.output).toLowerCase();
           return texts.some(t => stripped.includes(t.toLowerCase()));
       }, timeout, 500);
-      
+
       if (!found) {
           throw new Error(`Timed out waiting for any of: ${texts.join(', ')}`);
       }
@@ -208,7 +105,7 @@ class InteractiveRun {
           // Check last 5 lines for the prompt
           return lines.slice(-5).some(line => line.includes('Type your message'));
       }, timeout, 500);
-      
+
       if (!found) {
           throw new Error(`Timed out waiting for interactive prompt`);
       }
@@ -268,11 +165,11 @@ class TestRig {
         target: 'local',
         outfile: telemetryPath,
       },
-      security: { 
+      security: {
         auth: { selectedType: 'gemini-api-key' },
       },
       ui: { useAlternateBuffer: true },
-      model: DEFAULT_GEMINI_MODEL,
+      model: model,
       ide: { enabled: false, hasSeenNudge: true },
     };
 
@@ -288,17 +185,17 @@ class TestRig {
       cols: 80,
       rows: 80,
       cwd: this.testDir,
-      env: { 
-          ...env, 
+      env: {
+          ...env,
           GEMINI_SANDBOX: 'false',
-          GEMINI_CLI_HOME: this.homeDir 
+          GEMINI_CLI_HOME: this.homeDir
       },
     };
 
-    const ptyProcess = pty.spawn(process.execPath, [BUNDLE_PATH, '--yolo'], ptyOptions);
+    const ptyProcess = pty.spawn('gemini', ['--yolo'], ptyOptions);
     const run = new InteractiveRun(ptyProcess);
     this._interactiveRuns.push(run);
-    
+
     await run.expectText('Type your message', 60000);
     return run;
   }
@@ -309,7 +206,7 @@ class TestRig {
 
     const content = fs.readFileSync(logFilePath, 'utf-8');
     const logs = [];
-    
+
     const jsonObjects = content.split(/}\n{/).map((obj, i, arr) => {
         if (i > 0) obj = '{' + obj;
         if (i < arr.length - 1) obj = obj + '}';
@@ -371,17 +268,17 @@ class GeminiRunner {
     console.log(`[GeminiRunner] Starting CLI in ${this.targetDir}`);
     const run = await this.rig.runInteractive();
     this.currentRun = run;
-    
+
     try {
         await run.type(prompt + '\r');
         console.log("[GeminiRunner] Waiting for agent to start working...");
-        
+
         await run.waitForAnyText(['Tool call:', 'Thought:'], 60 * 1000);
-        
+
         console.log("[GeminiRunner] Agent is working. Waiting for completion...");
-        
+
         await run.waitForPrompt(15 * 60 * 1000);
-        
+
         await this.rig.waitForTelemetryReady();
         console.log("[GeminiRunner] Agent finished turn.");
     } finally {
@@ -398,7 +295,7 @@ class GeminiRunner {
     console.log("[GeminiRunner] Saving trajectory logs...");
     try {
         const actualTmpDir = path.join(this.rig.homeDir, '.gemini/tmp');
-        
+
         const trajectories = await getTrajectoriesForPath(this.targetDir, { tmpDir: actualTmpDir });
         if (trajectories.length > 0) {
             trajectories.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
@@ -406,7 +303,7 @@ class GeminiRunner {
             if (latest.filePath) {
                 const logContent = fs.readFileSync(latest.filePath, 'utf8');
                 fs.writeFileSync(path.join(this.targetDir, 'chat_log.json'), logContent);
-                
+
                 const session = JSON.parse(logContent);
                 let humanLog = "";
                 for (const msg of session.messages || []) {
@@ -425,6 +322,128 @@ class GeminiRunner {
   }
 }
 
+
+
+/**
+ * Resolves paths with ~ to the user's home directory.
+ */
+function resolvePath(p) {
+  if (p.startsWith('~')) {
+    return path.join(os.homedir(), p.slice(1));
+  }
+  return path.resolve(p);
+}
+
+/**
+ * Processes a session log to extract basic statistics and inferred project path.
+ */
+function processTrajectory(session) {
+  const messages = session.messages || [];
+  let turnCount = 0;
+  let errorCount = 0;
+  let projectPath = null;
+
+  for (const msg of messages) {
+    if (msg.type === 'user') turnCount++;
+    if (msg.type === 'gemini' && msg.toolCalls) {
+      for (const tc of msg.toolCalls) {
+        if (tc.status === 'error') errorCount++;
+        if (!projectPath && tc.args) {
+          const filePath = tc.args.file_path || tc.args.absolute_path || tc.args.path || tc.args.dir_path;
+          if (filePath && typeof filePath === 'string' && filePath.startsWith('/')) {
+            const parts = filePath.split('/');
+            const codeIdx = parts.indexOf('code');
+            if (codeIdx !== -1 && parts[codeIdx + 1]) {
+              projectPath = parts.slice(0, codeIdx + 2).join('/');
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const duration = new Date(session.lastUpdated).getTime() - new Date(session.startTime).getTime();
+
+  return {
+    sessionId: session.sessionId,
+    projectHash: session.projectHash,
+    projectPath,
+    turnCount,
+    errorCount,
+    duration: isNaN(duration) ? 0 : duration,
+    startTime: session.startTime,
+    challengeScore: turnCount + (errorCount * 2)
+  };
+}
+
+/**
+ * Finds all trajectories associated with a specific project path.
+ */
+async function getTrajectoriesForPath(targetPath, options = {}) {
+  const tmpDir = options.tmpDir || GEMINI_TMP_DIR;
+  const projectMap = options.projectMap || {};
+  const absoluteTargetPath = path.resolve(targetPath);
+
+  const allSessions = [];
+  const unidentifiedHashes = new Map();
+
+  try {
+    const projectDirs = await fs.promises.readdir(tmpDir);
+    for (const hash of projectDirs) {
+      if (hash.startsWith('.')) continue;
+      const chatsDir = path.join(tmpDir, hash, 'chats');
+      try {
+        const files = await fs.promises.readdir(chatsDir);
+        for (const file of files) {
+          if (!file.endsWith('.json')) continue;
+          try {
+            const filePath = path.join(chatsDir, file);
+            const content = await fs.promises.readFile(filePath, 'utf8');
+            const session = JSON.parse(content);
+            const stats = processTrajectory(session);
+            stats.filePath = filePath;
+            allSessions.push(stats);
+
+            if (!stats.projectPath && !projectMap[stats.projectHash]) {
+              const prev = unidentifiedHashes.get(stats.projectHash);
+              if (!prev || new Date(stats.startTime) > new Date(prev.lastActive)) {
+                unidentifiedHashes.set(stats.projectHash, {
+                  lastActive: stats.startTime,
+                  count: (prev?.count || 0) + 1
+                });
+              }
+            }
+          } catch { /* ignore corrupted logs */ }
+        }
+      } catch { /* ignore missing chats dirs */ }
+    }
+  } catch (e) {
+    console.error(`Error reading Gemini logs from ${tmpDir}:`, e);
+    return [];
+  }
+
+  const matches = allSessions.filter(s => {
+    const candidatePaths = new Set();
+    if (s.projectPath) candidatePaths.add(resolvePath(s.projectPath));
+    if (projectMap[s.projectHash]) candidatePaths.add(resolvePath(projectMap[s.projectHash]));
+
+    for (const p of candidatePaths) {
+      if (p === absoluteTargetPath) return true;
+    }
+    return false;
+  });
+
+  if (matches.length === 0 && unidentifiedHashes.size > 0) {
+      console.log(`
+[getTrajectoriesForPath] No trajectories matched for: ${targetPath}`);
+      // (Instruction logging removed for brevity in benchmark output, but logic is here)
+  }
+
+  return matches;
+}
+
+
+// cli
 async function main() {
   const args = process.argv.slice(2);
   if (args.length < 2) {
@@ -434,7 +453,7 @@ async function main() {
 
   const [targetDir, prompt] = args;
   const runner = new GeminiRunner(targetDir, path.basename(targetDir));
-  
+
   try {
     await runner.setup();
     await runner.run(prompt);

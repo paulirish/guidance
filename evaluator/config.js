@@ -19,9 +19,6 @@ const config = {
 
   // MCP Server Configuration
   mcpServerPath: process.env.MCP_SERVER_PATH || path.join(os.homedir(), 'git/modern-web-mcp/build/index.js'),
-  
-  // Gemini CLI Configuration
-  geminiCliRepoDir: path.resolve(__dirname, '../gemini-cli'),
 };
 
 // Validate critical paths exist during configuration

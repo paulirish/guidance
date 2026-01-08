@@ -15,7 +15,6 @@
     "colors": "^1.4.0",
     "dotenv": "^16.4.7",
     "glob": "^10.4.5",
-    "harvester": "link:../../Library/pnpm/global/5/node_modules/harvester",
     "puppeteer-core": "^24.34.0"
   }
 }
