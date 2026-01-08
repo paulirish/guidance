@@ -239,7 +239,7 @@ async function main() {
             console.log(`Target Dir: ${targetDir}`);
 
             try {
-              await runCommand('node', ['autorun.js', targetDir, JSON.stringify(promptContent)]);
+              await runCommand('node', ['run-jetski.js', targetDir, JSON.stringify(promptContent)]);
               console.log(`✅ Completed: ${scenario}/${promptType}/${agentType} (Run ${runNumber})`);
             } catch (error) {
               console.error(`❌ Failed: ${scenario}/${promptType}/${agentType} (Run ${runNumber})`, error);

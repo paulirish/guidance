@@ -8,7 +8,7 @@ const config = require('./config');
 // Parse arguments
 const args = process.argv.slice(2);
 if (args.length < 2) {
-  console.error("Usage: node autorun.js <directory> <prompt>");
+  console.error("Usage: node run-jetski.js <directory> <prompt>");
   process.exit(1);
 }
 const [targetDirectory, userPrompt] = args;
