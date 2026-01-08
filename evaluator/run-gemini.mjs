@@ -3,103 +3,241 @@ import path from 'node:path';
 import { env } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
+import { spawn, execSync } from 'node:child_process';
+import * as pty from '@lydell/node-pty';
+import stripAnsi from 'strip-ansi';
 
-// Import from gemini-cli integration tests
-import { TestRig } from '../gemini-cli/integration-tests/test-helper.ts';
-import { getTrajectoriesForPath, DEFAULT_TMP_DIR } from 'harvester/chronicle.ts';
+// Constants from gemini-cli
+const GEMINI_DIR = '.gemini';
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-pro';
 
-/**
- * GeminiRunner handles driving the Gemini CLI for a single scenario.
- */
+// Import from harvester
+import { getTrajectoriesForPath, DEFAULT_TMP_DIR } from '../chronicle-eval/harvester/chronicle.ts';
+
+const BUNDLE_PATH = path.resolve(import.meta.dirname, '../gemini-cli/bundle/gemini.js');
+
+async function poll(predicate, timeout, interval) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeout) {
+    if (predicate()) return true;
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  return false;
+}
+
+class InteractiveRun {
+  constructor(ptyProcess) {
+    this.ptyProcess = ptyProcess;
+    this.output = '';
+    this.rawOutput = '';
+    ptyProcess.onData((data) => {
+      this.output += data;
+      this.rawOutput += data;
+      if (env['VERBOSE'] === 'true') {
+        process.stdout.write(data);
+      }
+    });
+  }
+
+  async expectText(text, timeout = 30000) {
+    const found = await poll(
+      () => stripAnsi(this.output).toLowerCase().includes(text.toLowerCase()),
+      timeout,
+      200,
+    );
+    if (!found) {
+        throw new Error(`Timed out waiting for text: "${text}"`);
+    }
+  }
+
+  async waitForAnyText(texts, timeout = 30000) {
+      const found = await poll(() => {
+          const stripped = stripAnsi(this.output).toLowerCase();
+          return texts.some(t => stripped.includes(t.toLowerCase()));
+      }, timeout, 500);
+      
+      if (!found) {
+          throw new Error(`Timed out waiting for any of: ${texts.join(', ')}`);
+      }
+  }
+
+  // More specific check that ignores the bottom status bar or initial prompt
+  async waitForPrompt(timeout = 30000) {
+      const found = await poll(() => {
+          const stripped = stripAnsi(this.output);
+          // Look for the prompt pattern at the end of the output, but not the one we just typed
+          const lines = stripped.split('\n');
+          // Check last 5 lines for the prompt
+          return lines.slice(-5).some(line => line.includes('Type your message'));
+      }, timeout, 500);
+      
+      if (!found) {
+          throw new Error(`Timed out waiting for interactive prompt`);
+      }
+  }
+
+  async sendKeys(text) {
+    const delay = 5;
+    for (const char of text) {
+      this.ptyProcess.write(char);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  async kill() {
+    this.ptyProcess.kill();
+  }
+}
+
+class TestRig {
+  constructor(targetDir, scenarioName) {
+    this.targetDir = path.resolve(targetDir);
+    this.scenarioName = scenarioName;
+  }
+
+  setup() {
+    const geminiDir = path.join(this.targetDir, GEMINI_DIR);
+    if (!fs.existsSync(geminiDir)) {
+      fs.mkdirSync(geminiDir, { recursive: true });
+    }
+
+    // Add .geminiignore to keep it fast
+    fs.writeFileSync(path.join(this.targetDir, '.geminiignore'), "results/\nnode_modules/\n.git/\n");
+
+    const telemetryPath = path.join(this.targetDir, 'telemetry.log');
+    const settings = {
+      general: {
+        disableAutoUpdate: true,
+        previewFeatures: false,
+      },
+      telemetry: {
+        enabled: true,
+        target: 'local',
+        outfile: telemetryPath,
+      },
+      security: { 
+        auth: { selectedType: 'gemini-api-key' },
+      },
+      ui: { useAlternateBuffer: true },
+      model: DEFAULT_GEMINI_MODEL,
+      ide: { enabled: false, hasSeenNudge: true },
+    };
+
+    fs.writeFileSync(
+      path.join(geminiDir, 'settings.json'),
+      JSON.stringify(settings, null, 2),
+    );
+  }
+
+  async runInteractive() {
+    const ptyOptions = {
+      name: 'xterm-color',
+      cols: 80,
+      rows: 80,
+      cwd: this.targetDir,
+      env: { ...env, GEMINI_SANDBOX: 'false' },
+    };
+
+    const ptyProcess = pty.spawn(process.execPath, [BUNDLE_PATH, '--yolo'], ptyOptions);
+    const run = new InteractiveRun(ptyProcess);
+    
+    await run.expectText('Type your message', 60000);
+    return run;
+  }
+
+  readToolLogs() {
+    const logFilePath = path.join(this.targetDir, 'telemetry.log');
+    if (!fs.existsSync(logFilePath)) return [];
+
+    const content = fs.readFileSync(logFilePath, 'utf-8');
+    const logs = [];
+    
+    // Telemetry logs are JSON objects separated by }\n{
+    const jsonObjects = content.split(/}\n{/).map((obj, i, arr) => {
+        if (i > 0) obj = '{' + obj;
+        if (i < arr.length - 1) obj = obj + '}';
+        return obj.trim();
+    }).filter(Boolean);
+
+    for (const jsonStr of jsonObjects) {
+      try {
+        const logData = JSON.parse(jsonStr);
+        if (logData.attributes && logData.attributes['event.name'] === 'gemini_cli.tool_call') {
+          logs.push({
+            toolRequest: {
+              name: logData.attributes.function_name,
+              args: logData.attributes.function_args ?? '{}',
+              success: logData.attributes.success ?? false,
+              duration_ms: logData.attributes.duration_ms ?? 0,
+            },
+          });
+        }
+      } catch (e) {}
+    }
+    return logs;
+  }
+
+  async waitForTelemetryReady() {
+    const logFilePath = path.join(this.targetDir, 'telemetry.log');
+    await poll(() => {
+        if (!fs.existsSync(logFilePath)) return false;
+        const content = fs.readFileSync(logFilePath, 'utf-8');
+        return content.includes('"event.name"');
+    }, 5000, 200);
+  }
+}
+
 class GeminiRunner {
   constructor(targetDir, scenarioName) {
     this.targetDir = path.resolve(targetDir);
     this.scenarioName = scenarioName;
-    this.rig = new TestRig();
+    this.rig = new TestRig(this.targetDir, this.scenarioName);
   }
 
   async setup() {
-    // TestRig usually creates a random temp dir. 
-    this.rig.setup(this.scenarioName, {
-        settings: {
-            // Ensure we use the right model and disable things that might interfere
-            general: { disableAutoUpdate: true },
-            ide: { enabled: false }
-        }
-    });
-    
-    // Redirect rig to our actual target directory
-    const oldTestDir = this.rig.testDir;
-    
-    // Copy the .gemini dir created by rig to our targetDir
-    const rigGeminiDir = path.join(oldTestDir, '.gemini');
-    const targetGeminiDir = path.join(this.targetDir, '.gemini');
-    
-    if (fs.existsSync(rigGeminiDir)) {
-        if (!fs.existsSync(targetGeminiDir)) {
-            fs.mkdirSync(targetGeminiDir, { recursive: true });
-        }
-        // Copy settings.json and other rig artifacts
-        const files = fs.readdirSync(rigGeminiDir);
-        for (const file of files) {
-            fs.copyFileSync(path.join(rigGeminiDir, file), path.join(targetGeminiDir, file));
-        }
-    }
-    
-    // Update rig's internal state to point to our benchmark directory
-    this.rig.testDir = this.targetDir;
+    this.rig.setup();
   }
 
   async run(prompt) {
     console.log(`[GeminiRunner] Starting CLI in ${this.targetDir}`);
-    console.log(`[GeminiRunner] Prompt: ${prompt.slice(0, 50)}...`);
-
     const run = await this.rig.runInteractive();
+    this.currentRun = run;
     
     try {
-        // Type the prompt
         await run.sendKeys(prompt + '\n');
+        console.log("[GeminiRunner] Waiting for agent to start working...");
         
-        // Wait for completion. 
-        console.log("[GeminiRunner] Waiting for agent to finish...");
+        // Wait for first sign of activity (Thought or Tool call)
+        await run.waitForAnyText(['Tool call:', 'Thought:'], 60000);
         
-        // Use a long timeout for complex tasks (10 minutes)
-        const timeout = 10 * 60 * 1000;
-        await run.expectText('Type your message', timeout);
+        console.log("[GeminiRunner] Agent is working. Waiting for completion...");
         
-        // Wait for telemetry to flush
+        // Wait for the final prompt to reappear
+        await run.waitForPrompt(10 * 60 * 1000);
+        
         await this.rig.waitForTelemetryReady();
-        
         console.log("[GeminiRunner] Agent finished turn.");
     } finally {
-        // Cleanup
-        await run.kill();
+        // We'll kill it after saving results to ensure we have the rawOutput
     }
   }
 
   async saveResults() {
+    if (this.currentRun) {
+        fs.writeFileSync(path.join(this.targetDir, 'raw_pty_output.txt'), this.currentRun.rawOutput);
+        await this.currentRun.kill();
+    }
+
     console.log("[GeminiRunner] Saving trajectory logs via harvester...");
     try {
-        // TestRig uses os.tmpdir() for telemetry unless overridden.
-        // But the CLI writes to .gemini/tmp in the HOME dir by default for trajectories.
-        // Wait, TestRig settings.json overrides telemetry.outfile.
-        
-        // harvester/chronicle.ts:getTrajectoriesForPath looks in DEFAULT_TMP_DIR (~/.gemini/tmp)
-        // We might need to point it to where the CLI actually wrote the logs.
         const trajectories = await getTrajectoriesForPath(this.targetDir, DEFAULT_TMP_DIR);
-        
         if (trajectories.length > 0) {
-            // Find the most recent trajectory
             trajectories.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
             const latest = trajectories[0];
-            
             if (latest.filePath) {
                 const logContent = fs.readFileSync(latest.filePath, 'utf8');
-                const chatLogPath = path.join(this.targetDir, 'chat_log.json');
-                fs.writeFileSync(chatLogPath, logContent);
-                console.log(`[GeminiRunner] Saved chat log to ${chatLogPath}`);
+                fs.writeFileSync(path.join(this.targetDir, 'chat_log.json'), logContent);
                 
-                // Also save a human readable version for the dashboard
                 const session = JSON.parse(logContent);
                 let humanLog = "";
                 for (const msg of session.messages || []) {
@@ -107,35 +245,17 @@ class GeminiRunner {
                     humanLog += (typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)) + "\n";
                 }
                 fs.writeFileSync(path.join(this.targetDir, 'chat_log.txt'), humanLog);
+                console.log(`[GeminiRunner] Saved chat logs.`);
             }
         } else {
-            console.warn("[GeminiRunner] No trajectories found for this path in " + DEFAULT_TMP_DIR);
+            console.warn("[GeminiRunner] No trajectories found.");
         }
     } catch (e) {
         console.error("[GeminiRunner] Failed to harvest results:", e);
     }
   }
-
-  // Verification helpers
-  async expectFileCreated(relPath) {
-    const fullPath = path.join(this.targetDir, relPath);
-    if (!fs.existsSync(fullPath)) {
-        throw new Error(`Verification failed: Expected file ${relPath} was not created.`);
-    }
-    return true;
-  }
-
-  async expectToolCalled(toolName) {
-    const logs = this.rig.readToolLogs();
-    const called = logs.some(l => l.toolRequest.name === toolName);
-    if (!called) {
-        throw new Error(`Verification failed: Expected tool ${toolName} was never called.`);
-    }
-    return true;
-  }
 }
 
-// CLI Entry point
 async function main() {
   const args = process.argv.slice(2);
   if (args.length < 2) {
@@ -144,9 +264,7 @@ async function main() {
   }
 
   const [targetDir, prompt] = args;
-  const scenarioName = path.basename(targetDir);
-  
-  const runner = new GeminiRunner(targetDir, scenarioName);
+  const runner = new GeminiRunner(targetDir, path.basename(targetDir));
   
   try {
     await runner.setup();
@@ -159,13 +277,7 @@ async function main() {
   }
 }
 
-// Only run if executed directly
-const isMain = process.argv[1] && (
-    process.argv[1] === fileURLToPath(import.meta.url) || 
-    process.argv[1].endsWith('run-gemini.mjs')
-);
-
-if (isMain) {
+if (process.argv[1] && (process.argv[1] === fileURLToPath(import.meta.url) || process.argv[1].endsWith('run-gemini.mjs'))) {
     main().catch(err => {
         console.error(err);
         process.exit(1);
