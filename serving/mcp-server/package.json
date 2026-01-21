@@ -3,22 +3,20 @@
   "version": "1.0.0",
   "description": "An MCP server for modern web development",
   "type": "module",
-  "main": "build/index.js",
+  "main": "build/cli-tools/search.js",
   "exports": {
-    ".": "./build/index.js",
-    "./lib": "./build/lib.js"
+    "./search": "./build/cli-tools/search.js",
+    "./retrieve": "./build/cli-tools/retrieve.js"
   },
   "files": [
-    "build",
+    "build/cli-tools",
+    "build/guides",
     ".mcp-data",
-    "AGENTS.md",
     "README.md"
   ],
   "scripts": {
-    "prepublishOnly": "npm run build",
-    "build": "tsx scripts/build-guides.ts && tsc && cp AGENTS.md build/",
-    "start": "node build/index.js",
-    "dev": "tsx scripts/build-guides.ts && tsx src/index.ts",
+    "build": "tsx scripts/build-guides.ts && npm run build:cli",
+    "build:cli": "tsx scripts/build-cli.ts",
     "test": "tsx scripts/build-guides.ts && vitest run"
   },
   "keywords": [],
@@ -27,14 +25,12 @@
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
     "@lancedb/lancedb": "^0.23.0",
-    "@modelcontextprotocol/sdk": "^1.0.1",
     "apache-arrow": "18.1.0",
-    "marked": "^17.0.1",
-    "web-features": "^3.12.0",
-    "zod": "^3.23.8"
+    "marked": "^17.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "esbuild": "^0.27.2",
     "gray-matter": "^4.0.3",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3",

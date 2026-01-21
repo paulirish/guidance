@@ -8,8 +8,8 @@ const __dirname = path.dirname(__filename);
 
 
 
-import { USE_CASES, UseCase } from "./use-cases.gen.js";
-export { UseCase };
+import { USE_CASES, type UseCase } from "./use-cases.gen.js";
+export type { UseCase };
 
 // Re-export USE_CASES so other files can use it
 export { USE_CASES };
