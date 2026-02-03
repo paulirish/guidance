@@ -1,5 +1,8 @@
 import { $, $$ } from './utils.js';
 
+/** @import { EvalData, Manifest, CachedTestData, Run, Check } from './types.js' */
+
+/** @type {Record<string, CachedTestData>} */
 let allTestData = {}; // Cache all test data by testID
 let currentTab = 'overview';
 let currentScenarioFilter = 'all';
@@ -79,11 +82,15 @@ function setupTabs() {
     const tabs = $$('.tab-button');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
-            activateTab(tab.dataset.tab);
+            activateTab(tab.dataset.tab || "");
         });
     });
 }
 
+/**
+ * @param {string} tabName 
+ * @param {boolean} [updateUrl] 
+ */
 function activateTab(tabName, updateUrl = true) {
     if (updateUrl && currentTab === tabName) return;
 
@@ -110,7 +117,7 @@ function activateTab(tabName, updateUrl = true) {
     currentTab = tabName;
 
     if (updateUrl) {
-        const url = new URL(window.location);
+        const url = new URL(window.location.href);
         url.searchParams.set('view', tabName);
         window.history.replaceState({}, '', url);
     }
@@ -124,7 +131,7 @@ function setupFilters() {
             filters.forEach(f => f.classList.remove('active'));
             filter.classList.add('active');
 
-            currentScenarioFilter = filter.dataset.filterValue;
+            currentScenarioFilter = filter.dataset.filterValue || "all";
 
             // Re-render Explorer content
             renderExplorer();
@@ -139,14 +146,15 @@ function setupTestFilters() {
     const deselectAllBtn = $("#deselect-all-btn");
 
     // Toggle Menu
-    filterBtn.addEventListener('click', (e) => {
+    filterBtn.addEventListener('click', (/** @type {MouseEvent} */ e) => {
         e.stopPropagation();
         filterMenu.classList.toggle('hidden');
     });
 
     // Close menu when clicking outside
     document.addEventListener('click', (e) => {
-        if (!filterMenu.contains(e.target) && !filterBtn.contains(e.target)) {
+        const target = /** @type {Node} */ (e.target);
+        if (!filterMenu.contains(target) && !filterBtn.contains(target)) {
             filterMenu.classList.add('hidden');
         }
     });
@@ -173,11 +181,11 @@ function renderFilterMenuItems() {
     list.innerHTML = '';
 
     // Get all tests sorted by date
-    const allIds = Object.keys(allTestData).sort((a, b) => {
-        return new Date(allTestData[b].timestamp) - new Date(allTestData[a].timestamp);
+    const sortedIds = Object.keys(allTestData).sort((a, b) => {
+        return new Date(allTestData[b].timestamp).getTime() - new Date(allTestData[a].timestamp).getTime();
     });
 
-    allIds.forEach(testID => {
+    sortedIds.forEach(testID => {
         const item = document.createElement('label');
         item.className = 'filter-item';
 
@@ -186,8 +194,10 @@ function renderFilterMenuItems() {
         checkbox.checked = selectedTestIds.has(testID);
         checkbox.value = testID;
 
-        checkbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
+        item.addEventListener('change', (e) => {
+            const target = /** @type {HTMLInputElement} */ (e.target);
+            if (target.checked) {
+
                 selectedTestIds.add(testID);
             } else {
                 selectedTestIds.delete(testID);
@@ -216,7 +226,7 @@ function renderFilterMenuItems() {
 }
 
 function updateUrlParams() {
-    const url = new URL(window.location);
+    const url = new URL(window.location.href);
     const allIds = Object.keys(allTestData);
 
     // If all are selected, remove param
@@ -275,10 +285,11 @@ async function loadAllTests() {
 // ==========================================
 
 function renderOverview() {
-    const testIds = getSortedTestIds();
-    if (testIds.length === 0) return;
+    const sortedIds = Object.keys(allTestData).sort((a, b) => {
+        return new Date(allTestData[b].timestamp).getTime() - new Date(allTestData[a].timestamp).getTime();
+    });
 
-    const latestTestId = testIds[0];
+    const latestTestId = /** @type {string} */ (sortedIds[0]);
     const latestData = allTestData[latestTestId].data;
 
     // 1. Render Metrics
@@ -299,6 +310,7 @@ function renderOverview() {
 
     // 2. Render Recent Tests List
     const container = $("#overview-recent-tests");
+    const testIds = getSortedTestIds();
     const recentTests = testIds.slice(0, 5);
 
     container.innerHTML = recentTests.map(testID => {
@@ -398,8 +410,10 @@ function renderExplorer() {
 }
 
 
+/** @param {string} testName */
 function renderGridRow(testName) {
     const testIds = getSortedTestIds();
+    /** @type {string[]} */
     const cellsHtml = [];
     let hasData = false;
 
@@ -442,9 +456,13 @@ function renderGridRow(testName) {
     return hasData ? cellsHtml.join('') : null;
 }
 
-
+/**
+ * @param {string} scenario 
+ * @param {string} prompt 
+ */
 function renderComparisonHistory(scenario, prompt) {
     const testIds = getSortedTestIds();
+    /** @type {Map<string, string>} */
     const checkDescriptions = new Map();
     const agents = ['unguided', 'guided'];
 
@@ -459,7 +477,7 @@ function renderComparisonHistory(scenario, prompt) {
                     if (run.results) {
                         run.results.forEach(check => {
                             if (!checkDescriptions.has(check.id)) {
-                                checkDescriptions.set(check.id, check.message);
+                                checkDescriptions.set(check.id, check.message || check.id);
                             }
                         });
                     }
@@ -578,6 +596,7 @@ function renderTrends() {
     if (!guidedTimeline || !unguidedTimeline) return;
 
     // Helper to render bars
+    /** @param {string} groupType */
     const renderBars = (groupType) => {
         return testIds.map(testID => {
             const data = allTestData[testID].data;
@@ -602,6 +621,10 @@ function renderTrends() {
 // HELPERS
 // ==========================================
 
+/**
+ * @param {Record<string, Run[]>} results 
+ * @param {string} groupType 
+ */
 function calculateGroupTotalStats(results, groupType) {
     let passed = 0;
     let total = 0;
@@ -620,6 +643,7 @@ function calculateGroupTotalStats(results, groupType) {
     return { passed, total };
 }
 
+/** @param {Check[]} checks */
 function getRunStats(checks) {
     if (!checks || !checks.length) return { rate: 0, passed: 0, total: 0 };
     const passed = checks.filter(c => c.passed).length;
@@ -633,20 +657,23 @@ function getSortedTestIds() {
     return Array.from(selectedTestIds).sort((a, b) => {
         // Safety check if id not in allTestData (shouldn't happen but good practice)
         if (!allTestData[a] || !allTestData[b]) return 0;
-        return new Date(allTestData[b].timestamp) - new Date(allTestData[a].timestamp);
+        return new Date(allTestData[b].timestamp).getTime() - new Date(allTestData[a].timestamp).getTime();
     });
 }
 
+/** @param {string} s */
 function capitalize(s) {
     return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+/** @param {number} percentage */
 function getColor(percentage) {
     if (percentage >= 90) return 'var(--accent-success)';
     if (percentage >= 50) return '#dbab09';
     return 'var(--accent-failure)';
 }
 
+/** @param {string} text */
 function escapeHtml(text) {
     if (!text) return text;
     return text

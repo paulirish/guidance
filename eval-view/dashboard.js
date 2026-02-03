@@ -1,5 +1,7 @@
 import { $, $$ } from './utils.js';
 
+/** @import { EvalData, Run, Check, TestEntry, Manifest } from './types.js' */
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Get testID from query string
@@ -33,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const manifestRes = await fetch(`results/tests.json?t=${Date.now()}`);
             if (manifestRes.ok) {
                 const manifest = await manifestRes.json();
-                const testEntry = manifest.tests.find(t => t.id === testID);
+                const testEntry = manifest.tests.find((/** @type {TestEntry} */ t) => t.id === testID);
                 if (testEntry && testEntry.timestamp) {
                     timestamp = testEntry.timestamp;
                 }
@@ -54,9 +56,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const results = data.results;
             const stats = data.stats;
             const runData = results[testName];
-            const testStats = stats[testName];
 
-            if (runData && testStats) {
+            if (runData && stats && stats[testName]) {
+                const testStats = stats[testName];
                 // Auto-open modal
                 await showDetails(testName, runData, testStats, testID);
 
@@ -79,7 +81,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (error) {
         console.error('Error:', error);
-        document.body.innerHTML = `<div style="text-align:center; padding: 50px; color: red;">Error loading dashboard data: ${error.message}</div>`;
+        const errorMessage = (/** @type {any} */ (error)).message;
+        document.body.innerHTML = `<div style="text-align:center; padding: 50px; color: red;">Error loading dashboard data: ${errorMessage}</div>`;
     }
 
     // Modal close handlers
@@ -120,7 +123,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const text = await res.text();
                         body.innerHTML = `<div class="log-content">${escapeHtml(text)}</div>`;
                     } catch (e) {
-                        body.innerHTML = `<div style="color: var(--accent-failure); padding: 20px;">Error loading log: ${e.message}</div>`;
+                        const message = (/** @type {any} */ (e)).message;
+                        body.innerHTML = `<div style="color: var(--accent-failure); padding: 20px;">Error loading log: ${message}</div>`;
                     }
                 };
             }
@@ -131,6 +135,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+/**
+ * @param {string} testID 
+ * @param {string | null} jetskiVersion 
+ * @param {string | null} timestamp 
+ */
 function renderTestHeader(testID, jetskiVersion, timestamp) {
     const container = $("#test-header");
     if (container) {
@@ -151,6 +160,10 @@ function renderTestHeader(testID, jetskiVersion, timestamp) {
     }
 }
 
+/**
+ * @param {EvalData} data 
+ * @param {string} _testID 
+ */
 function renderSummary(data, _testID) {
     const container = $("#summary-stats");
     const results = data.results;
@@ -183,6 +196,10 @@ function renderSummary(data, _testID) {
     `;
 }
 
+/**
+ * @param {Record<string, Run[]>} results 
+ * @param {string} groupType 
+ */
 function calculateGroupTotalStats(results, groupType) {
     let passed = 0;
     let total = 0;
@@ -201,10 +218,14 @@ function calculateGroupTotalStats(results, groupType) {
     return { passed, total };
 }
 
+/**
+ * @param {EvalData} data 
+ * @param {string} testID 
+ */
 function renderGrid(data, testID) {
     const grid = $("#dashboard-grid");
     const results = data.results;
-    const stats = data.stats;
+    const stats = data.stats || {};
 
     // Define the order explicitly to ensure Unguided (Left) vs Guided (Right) alignment
     const scenarios = ['greenfield', 'brownfield', 'redfield'];
@@ -252,6 +273,12 @@ function renderGrid(data, testID) {
     });
 }
 
+/**
+ * @param {string} testName 
+ * @param {Run[]} runs 
+ * @param {any} stats 
+ * @param {string} testID 
+ */
 async function showDetails(testName, runs, stats, testID) {
     const modal = $("#modal");
     const title = $("#modal-title");
@@ -283,6 +310,7 @@ async function showDetails(testName, runs, stats, testID) {
         const s = getRunStats(run.results);
         const basePath = `results/${testID}/${run.runNumber}/${scenario}/${prompt}/${agent}`;
         const resultPath = await findBestEntryPoint(basePath);
+        if (!resultPath) return null;
 
         // Calculate relative path (e.g., "src/App.jsx" or "index.html")
         const relativePath = resultPath.replace(basePath + '/', '');
@@ -302,28 +330,33 @@ async function showDetails(testName, runs, stats, testID) {
                 ${run.results.map(check => `
                     <li class="check-item">
                         <span class="check-status">${check.passed ? '✅' : '❌'}</span>
-                        <span class="check-message">${escapeHtml(check.message)}</span>
+                        <span class="check-message">${escapeHtml(check.message || "")}</span>
                     </li>
                 `).join('')}
             </ul>
         `;
 
         const diffButton = document.createElement('button');
-        diffButton.className = 'secondary-btn small-btn';
-        diffButton.textContent = 'View Diff';
+        diffButton.className = 'secondary-btn mini-btn';
+        diffButton.textContent = `View Diff vs ${relativePath}`;
         diffButton.style.cssText = 'margin-left: 10px; font-size: 0.8em; padding: 2px 8px;';
-        diffButton.onclick = () => viewDiff(setupPath, resultPath);
+        diffButton.onclick = () => { viewDiff(setupPath, resultPath); };
 
         $('.run-actions', runDetail).appendChild(diffButton);
         return runDetail;
     });
 
-    const runDetails = await Promise.all(runDetailsPromises);
+    const runDetailsResults = await Promise.all(runDetailsPromises);
+    const runDetails = /** @type {HTMLElement[]} */ (runDetailsResults.filter(r => r !== null));
     body.innerHTML = promptHtml;
     runDetails.forEach(detail => body.appendChild(detail));
     modal.classList.add('show');
 }
 
+/**
+ * @param {string} setupPath 
+ * @param {string} resultPath 
+ */
 async function viewDiff(setupPath, resultPath) {
     const title = $("#modal-title");
     const body = $("#modal-body");
@@ -353,11 +386,10 @@ async function viewDiff(setupPath, resultPath) {
         if (!resultRes.ok) throw new Error(`Failed to load result file: ${resultPath}`);
         const resultText = await resultRes.text();
 
-        const diff = Diff.diffLines(setupText, resultText);
-
+        const diffResult = globalThis.Diff.diffLines(setupText, resultText);
+        
         let diffHtml = '<div class="diff-container">';
-
-        diff.forEach((part, index) => {
+        diffResult.forEach((part, index) => {
             const colorClass = part.added ? 'diff-added' :
                 part.removed ? 'diff-removed' : 'diff-unchanged';
 
@@ -379,7 +411,7 @@ async function viewDiff(setupPath, resultPath) {
             // Only collapse if we save significant space (e.g. > context*2 lines)
             if (lines.length > CONTEXT * 2) {
                 const isFirst = index === 0;
-                const isLast = index === diff.length - 1;
+                const isLast = index === diffResult.length - 1;
 
                 let head = '';
                 let tail = '';
@@ -417,57 +449,48 @@ async function viewDiff(setupPath, resultPath) {
         body.innerHTML = diffHtml;
 
     } catch (e) {
-        body.innerHTML = `<div style="color: var(--accent-failure); padding: 20px;">Error loading diff: ${e.message}</div>`;
+        const message = (/** @type {any} */ (e)).message;
+        body.innerHTML = `<div style="color: var(--accent-failure); padding: 20px;">Error loading diff: ${message}</div>`;
         contentDiv.classList.remove('diff-modal');
     }
 }
 
+/** @param {Check[]} checks */
 function getRunStats(checks) {
     if (!checks || !checks.length) return { rate: 0, passed: 0, total: 0 };
     const passed = checks.filter(c => c.passed).length;
     const total = checks.length;
     const rate = Math.round((passed / total) * 100);
-    return { rate, passed, total };
+    return { passed, total, rate };
 }
 
+/** @param {number} percentage */
 function getColor(percentage) {
-    if (percentage >= 90) return 'var(--accent-success)'; // Green
-    if (percentage >= 50) return '#dbab09'; // Yellow/Orange
-    return 'var(--accent-failure)'; // Red
+    if (percentage >= 80) return 'var(--accent-success)';
+    if (percentage >= 50) return 'var(--accent-warning)';
+    return 'var(--accent-failure)';
 }
 
+/** @param {string} name */
 function formatTestName(name) {
     return name.split(' - ').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' / ');
 }
 
+/** @param {string} text */
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
+/** @param {string} basePath */
 async function findBestEntryPoint(basePath) {
-    const candidates = [
-        'dist/index.html',
-        'src/App.jsx',
-        'src/App.js',
-        'src/main.jsx',
-        'src/main.js',
-        'src/index.jsx',
-        'src/index.js',
-        'index.html'
-    ];
-
-    const checks = candidates.map(candidate =>
-        fetch(`${basePath}/${candidate}`, { method: 'HEAD' })
-            .then(res => res.ok ? candidate : null)
-            .catch(() => null)
-    );
-
-    const results = await Promise.all(checks);
-    const best = results.find(result => result !== null);
-
-    if (best) return `${basePath}/${best}`;
-    // Fallback
-    return `${basePath}/index.html`;
+    const commonPaths = ['index.html', 'dashboard.html'];
+    for (const p of commonPaths) {
+        try {
+            const res = await fetch(`${basePath}/${p}`, { method: 'HEAD' });
+            if (res.ok) return `${basePath}/${p}`;
+        } catch (e) { }
+    }
+    return null;
 }

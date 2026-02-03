@@ -4,6 +4,7 @@ import path from 'path';
 import { exec } from 'child_process';
 
 const PORT = process.env.PORT || 8081;
+/** @type {Record<string, string>} */
 const MIME_TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -19,23 +20,24 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+  const url = req.url || "";
   // Ultra-strict raw URL check
-  if (req.url.includes('..') || req.url.toLowerCase().includes('%2e')) {
-    console.log(`403 Forbidden: Traversal/Encoded attempt - ${req.method} ${req.url}`);
+  if (url.includes('..') || url.toLowerCase().includes('%2e')) {
+    console.log(`403 Forbidden: Traversal/Encoded attempt - ${req.method} ${url}`);
     res.writeHead(403);
     res.end('403 Forbidden: Directory traversal is not allowed');
     return;
   }
 
   // Normalize the URL and decode components for security checks
-  const urlPath = req.url.split('?')[0];
+  const urlPath = url.split('?')[0];
   const decodedPath = decodeURIComponent(urlPath);
   // Debug logging. Do not keep enabled.
-  // console.log(`Incoming request: ${req.method} ${req.url} (path: ${urlPath}, decoded: ${decodedPath})`);
+  // console.log(`Incoming request: ${req.method} ${url} (path: ${urlPath}, decoded: ${decodedPath})`);
 
   // Block directory traversal attempts
   if (decodedPath.includes('..')) {
-    console.log(`403 Forbidden: Traversal attempt - ${req.method} ${req.url}`);
+    console.log(`403 Forbidden: Traversal attempt - ${req.method} ${url}`);
     res.writeHead(403);
     res.end('403 Forbidden: Directory traversal is not allowed');
     return;
@@ -43,7 +45,7 @@ const server = http.createServer((req, res) => {
 
   // Explicitly block hidden files (starting with dot)
   if (decodedPath.split('/').some(part => part.startsWith('.'))) {
-    console.log(`403 Forbidden: Hidden file access - ${req.method} ${req.url}`);
+    console.log(`403 Forbidden: Hidden file access - ${req.method} ${url}`);
     res.writeHead(403);
     res.end('403 Forbidden: Access to hidden files is not allowed');
     return;
@@ -75,13 +77,13 @@ const server = http.createServer((req, res) => {
   const isInsideHarness = absolutePath === harnessRoot || absolutePath.startsWith(harnessRoot + path.sep);
 
   if (!isInsideEvalView && !isInsideHarness) {
-    console.log(`403 Forbidden: Access outside allowed directories - ${req.method} ${req.url} -> ${absolutePath}`);
+    console.log(`403 Forbidden: Access outside allowed directories - ${req.method} ${url} -> ${absolutePath}`);
     res.writeHead(403);
     res.end('403 Forbidden: Access outside allowed directories is not allowed');
     return;
   }
 
-  console.log(`${req.method} ${req.url} -> ${filePath}`);
+  console.log(`${req.method} ${url} -> ${filePath}`);
 
   const extname = path.extname(filePath);
   let contentType = MIME_TYPES[extname] || 'application/octet-stream';
