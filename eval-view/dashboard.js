@@ -1,3 +1,5 @@
+import { $, $$ } from './utils.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Get testID from query string
@@ -62,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (checkId) {
                     // Give the modal a moment to render
                     setTimeout(() => {
-                        const checkItems = document.querySelectorAll('.check-item');
+                        const checkItems = $$('.check-item');
                         for (const item of checkItems) {
                             if (item.textContent.includes(checkId)) {
                                 item.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -81,15 +83,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Modal close handlers
-    const modal = document.getElementById('modal');
-    const closeBtn = document.querySelector('.close-modal');
+    const modal = $("#modal");
+    const closeBtn = $('.close-modal');
     closeBtn.onclick = () => modal.classList.remove('show');
     window.onclick = (event) => {
         if (event.target == modal) modal.classList.remove('show');
     }
 
     // View Log Handler
-    const viewLogBtn = document.getElementById('view-log-btn');
+    const viewLogBtn = $("#view-log-btn");
     if (viewLogBtn) {
         const params = new URLSearchParams(window.location.search);
         const testID = params.get('testID');
@@ -104,9 +106,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 // Show button and set up click handler
                 viewLogBtn.onclick = async () => {
-                    const modal = document.getElementById('modal');
-                    const title = document.getElementById('modal-title');
-                    const body = document.getElementById('modal-body');
+                    const modal = $("#modal");
+                    const title = $("#modal-title");
+                    const body = $("#modal-body");
 
                     title.textContent = 'Test Suite Run Log';
                     body.innerHTML = '<div style="text-align:center; padding: 20px;">Loading log...</div>';
@@ -130,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function renderTestHeader(testID, jetskiVersion, timestamp) {
-    const container = document.getElementById('test-header');
+    const container = $("#test-header");
     if (container) {
         let html = `Test ID: <strong>${testID}</strong>`;
 
@@ -150,7 +152,7 @@ function renderTestHeader(testID, jetskiVersion, timestamp) {
 }
 
 function renderSummary(data, _testID) {
-    const container = document.getElementById('summary-stats');
+    const container = $("#summary-stats");
     const results = data.results;
 
     const unguidedStats = calculateGroupTotalStats(results, 'unguided');
@@ -200,7 +202,7 @@ function calculateGroupTotalStats(results, groupType) {
 }
 
 function renderGrid(data, testID) {
-    const grid = document.getElementById('dashboard-grid');
+    const grid = $("#dashboard-grid");
     const results = data.results;
     const stats = data.stats;
 
@@ -251,9 +253,9 @@ function renderGrid(data, testID) {
 }
 
 async function showDetails(testName, runs, stats, testID) {
-    const modal = document.getElementById('modal');
-    const title = document.getElementById('modal-title');
-    const body = document.getElementById('modal-body');
+    const modal = $("#modal");
+    const title = $("#modal-title");
+    const body = $("#modal-body");
     const [scenario, prompt, agent] = testName.split(' - ');
 
     title.textContent = formatTestName(testName);
@@ -312,7 +314,7 @@ async function showDetails(testName, runs, stats, testID) {
         diffButton.style.cssText = 'margin-left: 10px; font-size: 0.8em; padding: 2px 8px;';
         diffButton.onclick = () => viewDiff(setupPath, resultPath);
 
-        runDetail.querySelector('.run-actions').appendChild(diffButton);
+        $('.run-actions', runDetail).appendChild(diffButton);
         return runDetail;
     });
 
@@ -323,9 +325,9 @@ async function showDetails(testName, runs, stats, testID) {
 }
 
 async function viewDiff(setupPath, resultPath) {
-    const title = document.getElementById('modal-title');
-    const body = document.getElementById('modal-body');
-    const contentDiv = document.querySelector('.modal-content');
+    const title = $("#modal-title");
+    const body = $("#modal-body");
+    const contentDiv = $('.modal-content');
 
     title.textContent = 'Diff View';
     body.innerHTML = '<div style="text-align:center; padding: 20px;">Computing diff...</div>';

@@ -1,3 +1,5 @@
+import { $, $$ } from './utils.js';
+
 let allTestData = {}; // Cache all test data by testID
 let currentTab = 'overview';
 let currentScenarioFilter = 'all';
@@ -46,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     } catch (error) {
         console.error('Error:', error);
-        document.getElementById('empty-state').style.display = 'block';
+        $("#empty-state").style.display = 'block';
     }
 });
 
@@ -74,7 +76,7 @@ window.addEventListener('popstate', () => {
 });
 
 function setupTabs() {
-    const tabs = document.querySelectorAll('.tab-button');
+    const tabs = $$('.tab-button');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             activateTab(tab.dataset.tab);
@@ -85,7 +87,7 @@ function setupTabs() {
 function activateTab(tabName, updateUrl = true) {
     if (updateUrl && currentTab === tabName) return;
 
-    const tabs = document.querySelectorAll('.tab-button');
+    const tabs = $$('.tab-button');
 
     // Update active tab state
     tabs.forEach(t => {
@@ -97,11 +99,10 @@ function activateTab(tabName, updateUrl = true) {
     });
 
     // Hide all content
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    $$('.tab-content').forEach(c => c.classList.remove('active'));
 
     // Show selected content
-    const targetId = `${tabName}-tab`;
-    const targetContent = document.getElementById(targetId);
+    const targetContent = $(`#${tabName}-tab`);
     if (targetContent) {
         targetContent.classList.add('active');
     }
@@ -116,7 +117,7 @@ function activateTab(tabName, updateUrl = true) {
 }
 
 function setupFilters() {
-    const filters = document.querySelectorAll('.filter-option[data-filter-type="scenario"]');
+    const filters = $$('.filter-option[data-filter-type="scenario"]');
     filters.forEach(filter => {
         filter.addEventListener('click', () => {
             // Update active filter state
@@ -132,10 +133,10 @@ function setupFilters() {
 }
 
 function setupTestFilters() {
-    const filterBtn = document.getElementById('filter-btn');
-    const filterMenu = document.getElementById('filter-menu');
-    const selectAllBtn = document.getElementById('select-all-btn');
-    const deselectAllBtn = document.getElementById('deselect-all-btn');
+    const filterBtn = $("#filter-btn");
+    const filterMenu = $("#filter-menu");
+    const selectAllBtn = $("#select-all-btn");
+    const deselectAllBtn = $("#deselect-all-btn");
 
     // Toggle Menu
     filterBtn.addEventListener('click', (e) => {
@@ -168,7 +169,7 @@ function setupTestFilters() {
 }
 
 function renderFilterMenuItems() {
-    const list = document.getElementById('filter-list');
+    const list = $("#filter-list");
     list.innerHTML = '';
 
     // Get all tests sorted by date
@@ -242,11 +243,11 @@ async function loadAllTests() {
         const manifest = await response.json();
 
         if (!manifest.tests || manifest.tests.length === 0) {
-            document.getElementById('empty-state').style.display = 'block';
+            $("#empty-state").style.display = 'block';
             return;
         }
 
-        document.getElementById('empty-state').style.display = 'none';
+        $("#empty-state").style.display = 'none';
 
         // Load all test data
         for (const testEntry of manifest.tests) {
@@ -264,7 +265,7 @@ async function loadAllTests() {
         }
     } catch (error) {
         console.warn('No manifest found:', error);
-        document.getElementById('empty-state').style.display = 'block';
+        $("#empty-state").style.display = 'block';
         throw error;
     }
 }
@@ -281,8 +282,8 @@ function renderOverview() {
     const latestData = allTestData[latestTestId].data;
 
     // 1. Render Metrics
-    const guidedMetric = document.getElementById('latest-guided-metric');
-    const unguidedMetric = document.getElementById('latest-unguided-metric');
+    const guidedMetric = $("#latest-guided-metric");
+    const unguidedMetric = $("#latest-unguided-metric");
 
     const guidedStats = calculateGroupTotalStats(latestData.results, 'guided');
     const unguidedStats = calculateGroupTotalStats(latestData.results, 'unguided');
@@ -297,7 +298,7 @@ function renderOverview() {
     unguidedMetric.style.color = getColor(unguidedRate);
 
     // 2. Render Recent Tests List
-    const container = document.getElementById('overview-recent-tests');
+    const container = $("#overview-recent-tests");
     const recentTests = testIds.slice(0, 5);
 
     container.innerHTML = recentTests.map(testID => {
@@ -334,8 +335,8 @@ function renderOverview() {
 
 
 function renderExplorer() {
-    const containerGrids = document.getElementById('explorer-grids');
-    const containerTimelines = document.getElementById('explorer-timelines');
+    const containerGrids = $("#explorer-grids");
+    const containerTimelines = $("#explorer-timelines");
 
     containerGrids.innerHTML = '';
     containerTimelines.innerHTML = '';
@@ -571,8 +572,8 @@ function renderComparisonHistory(scenario, prompt) {
 
 function renderTrends() {
     const testIds = getSortedTestIds();
-    const guidedTimeline = document.getElementById('guided-timeline');
-    const unguidedTimeline = document.getElementById('unguided-timeline');
+    const guidedTimeline = $("#guided-timeline");
+    const unguidedTimeline = $("#unguided-timeline");
 
     if (!guidedTimeline || !unguidedTimeline) return;
 
