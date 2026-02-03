@@ -18,6 +18,9 @@ const config = {
   jetskiBin: process.env.JETSKI_BIN || '/Applications/Jetski.app/Contents/Resources/app/bin/jetski',
   jetskiDebugPort: parseInt(process.env.JETSKI_DEBUG_PORT) || 9226,
 
+  // Skills Configuration
+  skillsDir: process.env.SKILLS_DIR || path.join(os.homedir(), '.agent/skills'),
+
   // MCP Server Configuration
   mcpServerPath: path.join(__dirname, '../../serving/mcp-server/index.ts'),
 };
