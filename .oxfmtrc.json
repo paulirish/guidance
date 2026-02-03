@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": ["harness/results/", "diff.min.js"],
+  "printWidth": 120,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "bracketSpacing": false,
+  "arrowParens": "avoid"
+}
