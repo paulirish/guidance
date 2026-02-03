@@ -6,7 +6,8 @@
     "test": "node --test lib/*.test.js",
     "evaluate": "node evaluate.js",
     "run-suite": "node run_suite.js",
-    "autorun": "npm run run-suite && npm run evaluate"
+    "autorun": "npm run run-suite && npm run evaluate",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "cheerio": "^1.0.0",
@@ -14,5 +15,11 @@
     "dotenv": "^16.4.7",
     "glob": "^10.4.5",
     "puppeteer-core": "^24.34.0"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^1.0.0",
+    "@types/glob": "^9.0.0",
+    "@types/node": "^25.2.0",
+    "typescript": "^5.9.3"
   }
 }

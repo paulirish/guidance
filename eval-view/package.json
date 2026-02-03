@@ -4,10 +4,13 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "playwright test"
+    "test": "playwright test",
+    "typecheck": "tsc"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "playwright": "^1.57.0"
+    "@types/node": "^22.19.7",
+    "playwright": "^1.57.0",
+    "typescript": "^5.9.3"
   }
 }
