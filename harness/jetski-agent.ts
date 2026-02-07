@@ -190,7 +190,7 @@ async function extractJetskiVersionInfo(page: Page, outputPath: string): Promise
     // 9. Close the dialog to leave the IDE in a clean state
     // We try Escape first, then look for an OK button as a backup
     await page.keyboard.press('Escape');
-    await sleep(500);
+    await sleep(100);
 
     // If it's still there (e.g. Escape didn't work), try clicking the OK button
     const okButton = 'button.monaco-text-button';
@@ -199,7 +199,7 @@ async function extractJetskiVersionInfo(page: Page, outputPath: string): Promise
       const text = await page.$eval(okButton, (el: any) => el.innerText);
       if (text === 'OK') {
         await page.click(okButton);
-        await sleep(500);
+        await sleep(100);
       }
     }
 
@@ -241,7 +241,7 @@ async function startJetski(directory: string): Promise<void> {
 
   // Wait for the debug port to be ready
   console.log("Waiting for Jetski to be ready...");
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 150; i++) {
     try {
       const browser = await puppeteer.connect({
         browserURL: `http://127.0.0.1:${config.jetskiDebugPort}`,
@@ -251,8 +251,8 @@ async function startJetski(directory: string): Promise<void> {
       console.log("Jetski is ready.");
       return;
     } catch (e: any) {
-      console.log(`Connection attempt ${i + 1} failed: ${e.message}`);
-      await sleep(1000);
+      // console.log(`Connection attempt ${i + 1} failed: ${e.message}`);
+      await sleep(200);
     }
   }
   throw new Error("Timeout waiting for Jetski to start");
@@ -275,12 +275,11 @@ async function run(): Promise<void> {
 
     // Find the main IDE window (workbench)
     let page: Page | undefined;
-    for (let i = 0; i < 20; i++) {
-      console.log(`Searching for workbench window (Attempt ${i + 1}/20)...`);
+    for (let i = 0; i < 100; i++) {
       const pages = await browser.pages();
       page = pages.find(p => p.url().includes('workbench.html'));
       if (page) break;
-      await sleep(500);
+      await sleep(100);
     }
 
     if (!page) {
@@ -319,7 +318,7 @@ async function run(): Promise<void> {
 
     console.log(`Waiting for Agent Panel iframe...`);
     let targetFrame: any = null;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 60; i++) {
       const iframeElement = await page.$(iframeSelector);
       if (iframeElement) {
         targetFrame = await iframeElement.contentFrame();
@@ -327,13 +326,12 @@ async function run(): Promise<void> {
           break;
         }
       }
-      console.log(`... Agent Panel iframe not found or loading, checking again in 3s (Attempt ${i + 1}/20)`);
       targetFrame = null;
-      await sleep(3000);
+      await sleep(500);
     }
 
     if (!targetFrame) {
-      throw new Error("Could not find Agent Panel iframe after 60 seconds.");
+      throw new Error("Could not find Agent Panel iframe after 30 seconds.");
     }
 
     // Focus and type
@@ -390,7 +388,7 @@ async function run(): Promise<void> {
       console.log("Sent quit command to Jetski.");
     }
 
-    await sleep(1000);
+    await sleep(100);
     await browser.disconnect();
     console.log("Disconnected.");
 
