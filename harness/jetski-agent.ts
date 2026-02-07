@@ -214,10 +214,11 @@ async function extractJetskiVersionInfo(page: Page, outputPath: string): Promise
 
 function killProcessOnPort(port: number | string): void {
   try {
-    const pid = execSync(`lsof -t -i :${port}`).toString().trim();
-    if (pid) {
-      console.log(`Killing process ${pid} on port ${port}...`);
-      execSync(`kill -9 ${pid}`);
+    const pidOutput = execSync(`lsof -t -i :${port}`).toString().trim();
+    if (pidOutput) {
+      const pids = pidOutput.split(/\s+/).join(' ');
+      console.log(`Killing processes ${pids} on port ${port}...`);
+      execSync(`kill -9 ${pids}`);
     }
   } catch {
     // Ignore error if no process found (grep/lsof returns exit code 1 if empty)
@@ -313,26 +314,19 @@ async function run(): Promise<void> {
     const cancelButtonSelector = '[data-tooltip-id="input-send-button-cancel-tooltip"]';
     const allowOnceButtonSelector = 'button[aria-label="Allow once"]';
 
-    // The double slashes are deliberate. These IDs include the dot.
     const iframeSelector = '#antigravity\\.agentPanel, #antigravity\\.cascadePanel';
 
     console.log(`Waiting for Agent Panel iframe...`);
-    let targetFrame: any = null;
-    for (let i = 0; i < 60; i++) {
-      const iframeElement = await page.$(iframeSelector);
-      if (iframeElement) {
-        targetFrame = await iframeElement.contentFrame();
-        if (targetFrame && await targetFrame.$(inputSelector)) {
-          break;
-        }
-      }
-      targetFrame = null;
-      await sleep(500);
-    }
+    
+    const iframeElement = await page.waitForSelector(iframeSelector, { timeout: 30000 });
+    const targetFrame = await iframeElement?.contentFrame();
 
     if (!targetFrame) {
-      throw new Error("Could not find Agent Panel iframe after 30 seconds.");
+      throw new Error("Could not find Agent Panel iframe content.");
     }
+
+    // Wait for the chat input to be ready inside the frame
+    await targetFrame.waitForSelector(inputSelector, { timeout: 30000 });
 
     // Focus and type
     console.log(`Typing prompt: "${userPrompt}"`);
