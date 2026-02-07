@@ -216,9 +216,15 @@ function killProcessOnPort(port: number | string): void {
   try {
     const pidOutput = execSync(`lsof -t -i :${port}`).toString().trim();
     if (pidOutput) {
-      const pids = pidOutput.split(/\s+/).join(' ');
-      console.log(`Killing processes ${pids} on port ${port}...`);
-      execSync(`kill -9 ${pids}`);
+      const myPid = process.pid.toString();
+      const pids = pidOutput.split(/\s+/)
+        .filter(pid => pid !== myPid)
+        .join(' ');
+      
+      if (pids) {
+        console.log(`Killing processes ${pids} on port ${port}...`);
+        execSync(`kill -9 ${pids}`);
+      }
     }
   } catch {
     // Ignore error if no process found (grep/lsof returns exit code 1 if empty)
@@ -318,15 +324,31 @@ async function run(): Promise<void> {
 
     console.log(`Waiting for Agent Panel iframe...`);
     
-    const iframeElement = await page.waitForSelector(iframeSelector, { timeout: 30000 });
+    // Wait for the iframe to exist and have the input ready
+    // We use page.waitForFunction for maximum flexibility and performance
+    await page.waitForFunction((iframeSel, inputSel) => {
+      const iframe = document.querySelector(iframeSel) as HTMLIFrameElement;
+      if (!iframe) return false;
+      // Try to access contentDocument; handle potential cross-origin issues
+      try {
+        const frameDoc = iframe.contentDocument || (iframe.contentWindow ? iframe.contentWindow.document : null);
+        return !!(frameDoc && frameDoc.querySelector(inputSel));
+      } catch (e) {
+        // If we can't access the document, we might be cross-origin. 
+        // In that case, we can only wait for the iframe itself and hope the frame waiter handles the rest.
+        return true; 
+      }
+    }, { timeout: 30000, polling: 'raf' }, iframeSelector, inputSelector);
+
+    const iframeElement = await page.$(iframeSelector);
     const targetFrame = await iframeElement?.contentFrame();
 
     if (!targetFrame) {
       throw new Error("Could not find Agent Panel iframe content.");
     }
 
-    // Wait for the chat input to be ready inside the frame
-    await targetFrame.waitForSelector(inputSelector, { timeout: 30000 });
+    // Secondary wait inside the frame just in case it was cross-origin above
+    await targetFrame.waitForSelector(inputSelector, { timeout: 10000 });
 
     // Focus and type
     console.log(`Typing prompt: "${userPrompt}"`);
@@ -335,7 +357,6 @@ async function run(): Promise<void> {
     await targetFrame.click(sendButtonSelector);
 
     // Wait for completion (cancel button to disappear)
-    // First, wait for the cancel button to APPEAR (meaning it started)
     try {
       await targetFrame.waitForSelector(cancelButtonSelector, { timeout: 10000 });
       console.log("Agent started working...");
@@ -343,21 +364,21 @@ async function run(): Promise<void> {
       console.log("Warning: Cancel button didn't appear quickly. Agent might have finished very fast or failed to start.");
     }
 
-    // Now wait for it to disappear
+    // Use waitForFunction to wait for the agent to finish (cancel button to disappear)
+    // This is much faster than the 1s sleep loop
     console.log("Waiting for agent to finish...");
-    while (true) {
-      const cancelButton = await targetFrame.$(cancelButtonSelector);
-      if (!cancelButton) {
-        console.log("Agent finished.");
-        break;
-      }
-      const allowOnceButton = await targetFrame.$(allowOnceButtonSelector);
+    await targetFrame.waitForFunction((sel, allowSel) => {
+      const cancelButton = document.querySelector(sel);
+      if (!cancelButton) return true;
+      
+      const allowOnceButton = document.querySelector(allowSel) as HTMLButtonElement;
       if (allowOnceButton) {
-        console.log("Found 'Allow once' button, clicking it...");
-        await allowOnceButton.click();
+        allowOnceButton.click();
       }
-      await sleep(1000);
-    }
+      return false;
+    }, { timeout: 600000, polling: 500 }, cancelButtonSelector, allowOnceButtonSelector);
+
+    console.log("Agent finished.");
 
     // Attempt to preserve chat log before closing Jetski
     try {
@@ -385,23 +406,35 @@ async function run(): Promise<void> {
     await sleep(100);
     await browser.disconnect();
     console.log("Disconnected.");
+    return; // Success
 
-  } catch (err) {
-    console.error("Error during execution:", err);
+  } catch (err: any) {
+    console.error(`Error during execution: ${err.message}`);
+    if (err.stack) console.error(err.stack);
     process.exit(1);
   } finally {
+    console.log("Starting cleanup...");
     killProcessOnPort(config.jetskiDebugPort);
+    
     if (testHomeDir && fs.existsSync(testHomeDir)) {
-      console.log(`
-=== Cleaning up isolated HOME ===`);
+      console.log(`Cleaning up isolated HOME: ${testHomeDir}`);
       try {
+        // Use a slight delay to ensure file handles are released by OS
+        await sleep(100);
         fs.rmSync(testHomeDir, { recursive: true, force: true });
         console.log('✅ Cleanup successful');
-      } catch (cleanupErr) {
-        console.error('Failed to cleanup isolated HOME:', cleanupErr);
+      } catch (cleanupErr: any) {
+        console.error('Failed to cleanup isolated HOME:', cleanupErr.message);
       }
     }
+    console.log("Cleanup complete.");
   }
 }
 
-run();
+run().then(() => {
+  console.log("Harness finished successfully.");
+  process.exit(0);
+}).catch(err => {
+  console.error("Critical error in harness execution:", err);
+  process.exit(1);
+});
