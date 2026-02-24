@@ -406,35 +406,24 @@ async function run(): Promise<void> {
     await sleep(100);
     await browser.disconnect();
     console.log("Disconnected.");
-    return; // Success
 
   } catch (err: any) {
     console.error(`Error during execution: ${err.message}`);
-    if (err.stack) console.error(err.stack);
     process.exit(1);
   } finally {
-    console.log("Starting cleanup...");
     killProcessOnPort(config.jetskiDebugPort);
     
     if (testHomeDir && fs.existsSync(testHomeDir)) {
-      console.log(`Cleaning up isolated HOME: ${testHomeDir}`);
       try {
         // Use a slight delay to ensure file handles are released by OS
         await sleep(100);
         fs.rmSync(testHomeDir, { recursive: true, force: true });
-        console.log('✅ Cleanup successful');
+        console.log('Isolated HOME cleaned up.');
       } catch (cleanupErr: any) {
         console.error('Failed to cleanup isolated HOME:', cleanupErr.message);
       }
     }
-    console.log("Cleanup complete.");
   }
 }
 
-run().then(() => {
-  console.log("Harness finished successfully.");
-  process.exit(0);
-}).catch(err => {
-  console.error("Critical error in harness execution:", err);
-  process.exit(1);
-});
+run();
