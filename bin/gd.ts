@@ -15,7 +15,7 @@ const rootDir = path.resolve(__dirname, '..');
 // Load environment variables (Node 20.12+)
 try {
   process.loadEnvFile(path.join(rootDir, '.env'));
-} catch (e) {
+} catch {
   // Ignore if file doesn't exist
 }
 
@@ -254,7 +254,6 @@ ${cBold('Options:')}
       } else if (['test', 'test-grader'].includes(command)) {
         console.error(`${cRed(`'gd test' has moved.`)}  Run: ${cCyan(`gd dev <guide_dir> --test-grader`)}\n`);
       } else if (['gen', 'gen-grader', 'gen-negative', 'gen:grader', 'gen:negative'].includes(command)) {
-        const rest = positionals.slice(1).join(' ');
         console.error(`${cRed(`'gd ${command}' has moved.`)}  Run: ${cCyan(`gd dev <guide_dir> --gen-grader`)} or ${cCyan(`--gen-negative`)}\n`);
       } else {
         console.error(`${cRed(`Unknown command: ${command}.`)} Run ${cCyan('gd --help')} for usage.`);
