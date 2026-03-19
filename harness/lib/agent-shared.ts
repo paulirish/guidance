@@ -2,10 +2,23 @@ import fs from 'fs';
 import path from 'path';
 import { execSync, spawn, type SpawnOptions } from 'child_process';
 import { fileURLToPath } from 'url';
-import { Agents } from '../config.ts';
+import { Agents, mergeSuiteConfig } from '../config.ts';
 import { classifyGuide, scanAllGuides } from './utils.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Initializes the suite configuration from environment variables.
+ */
+export function initSuiteConfig(): void {
+  if (process.env.GD_SUITE_CONFIG) {
+    try {
+      mergeSuiteConfig(JSON.parse(process.env.GD_SUITE_CONFIG));
+    } catch (e) {
+      console.warn('Failed to parse GD_SUITE_CONFIG environment variable:', e);
+    }
+  }
+}
 
 /**
  * Promisified version of child_process.spawn.

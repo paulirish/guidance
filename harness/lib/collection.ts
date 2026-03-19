@@ -4,12 +4,11 @@ import fs from 'fs';
 import { collectGuidesUsed } from './guide_validation.ts';
 import { fileURLToPath } from 'url';
 import matter from 'gray-matter';
-import { config } from '../config.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export async function collectResults(resultsDir: string) {
+export async function collectResults(resultsDir: string, suiteConfig: any) {
   const runDirs = fs.readdirSync(resultsDir)
     .filter(name => {
       const fullPath = path.join(resultsDir, name);
@@ -36,7 +35,7 @@ export async function collectResults(resultsDir: string) {
 
       const [taskName, runType] = parts;
       const targetFile = path.join(dir, 'index.html');
-      const isNegative = config.suite.negative === true;
+      const isNegative = suiteConfig.negative === true;
       const taskPath = path.resolve(__dirname, `../tasks/${isNegative ? 'negative/' : ''}${taskName}.md`);
 
       if (!fs.existsSync(taskPath)) continue;
@@ -135,11 +134,11 @@ run();
 
       let guidesUsedResult: string[] = [];
       if (runType === 'guided') {
-        guidesUsedResult = await collectGuidesUsed(dir, config.suite.enableSkills);
+        guidesUsedResult = await collectGuidesUsed(dir, suiteConfig.enableSkills);
       }
 
       const targetFile = path.join(dir, 'index.html');
-      const isNegative = config.suite.negative === true;
+      const isNegative = suiteConfig.negative === true;
       const taskPath = path.resolve(__dirname, `../tasks/${isNegative ? 'negative/' : ''}${taskName}.md`);
 
       if (!fs.existsSync(taskPath)) {

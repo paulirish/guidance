@@ -29,3 +29,6 @@ skills/modern-web/
 
 # team context repo
 project-gleam/
+
+# Local agent stuff
+.gemini/

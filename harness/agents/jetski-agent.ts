@@ -5,8 +5,9 @@ import puppeteer from 'puppeteer-core';
 import type { Page } from 'puppeteer-core';
 import { spawn, execSync } from 'child_process';
 import { config, Agents } from '../config.ts';
+import { initSuiteConfig, createIsolatedHome, cleanupIsolatedHome, updateMcpConfig, createTrustedFolders, sleep, killProcessOnPort, parseAgentArgs, copyResultsToTarget, createWorkDir, copySkills, exportTrajectories, watchLogFile } from '../lib/agent-shared.ts';
 
-import { createIsolatedHome, cleanupIsolatedHome, updateMcpConfig, createTrustedFolders, sleep, killProcessOnPort, parseAgentArgs, copyResultsToTarget, createWorkDir, copySkills, exportTrajectories, watchLogFile } from '../lib/agent-shared.ts';
+initSuiteConfig();
 import { MCP_LOG_FILE } from '../../constants.ts';
 
 // Usage: node jetski-agent.ts <prompt> <runType> <targetDir> <templateDir>

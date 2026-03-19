@@ -5,7 +5,8 @@ const __dirname = dirname(__filename);
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
-import { config, Agents } from './config.ts';
+import { config, Agents, mergeSuiteConfig } from './config.ts';
+import type { SuiteConfig } from './config.ts';
 import matter from 'gray-matter';
 import { evaluateSuite } from './evaluate.ts';
 
@@ -74,9 +75,14 @@ export interface RunSuiteOptions {
   numRuns?: number;
   skipEval?: boolean;
   guidedOnly?: boolean;
+  overrides?: Partial<SuiteConfig>;
 }
 
 export async function runSuite(options: RunSuiteOptions = {}) {
+  if (options.overrides) {
+    mergeSuiteConfig(options.overrides);
+  }
+
   // Create results directory if it doesn't exist
   if (!fs.existsSync(resultsDir)) {
     fs.mkdirSync(resultsDir, { recursive: true });
@@ -92,6 +98,9 @@ export async function runSuite(options: RunSuiteOptions = {}) {
   if (!fs.existsSync(testDir)) {
     fs.mkdirSync(testDir, { recursive: true });
   }
+
+  // Save a snapshot of the merged configuration
+  fs.writeFileSync(path.join(testDir, 'suite_config.json'), JSON.stringify(config.suite, null, 2));
 
   // Setup logging to file
   const logFilePath = path.join(testDir, 'test_suite.log');
@@ -190,7 +199,7 @@ const args = [
     templateDir
   ])}
 ];
-const result = spawnSync('node', args, { stdio: 'inherit', cwd: ${JSON.stringify(process.cwd())} });
+const result = spawnSync('node', args, { stdio: 'inherit', cwd: ${JSON.stringify(process.cwd())}, env: { ...process.env, GD_SUITE_CONFIG: ${JSON.stringify(JSON.stringify(config.suite))} } });
 process.exit(result.status ?? 0);
           `.trim();
           
@@ -310,15 +319,16 @@ function restoreLogging(originals: any) {
   }
 }
 
-async function runCommand(command: string, args: string[] = [], cwd?: string) {
+async function runCommand(command: string, args: string[] = [], cwd?: string, envOverrides?: Record<string, string>) {
   return new Promise((resolve, reject) => {
-    const process = spawn(command, args, {
+    const childProcess = spawn(command, args, {
       stdio: 'inherit',
       shell: true,
-      cwd
+      cwd,
+      env: envOverrides ? { ...process.env, ...envOverrides } : process.env
     });
 
-    process.on('close', (code) => {
+    childProcess.on('close', (code) => {
       if (code === 0) {
         resolve(true);
       } else {
@@ -326,7 +336,7 @@ async function runCommand(command: string, args: string[] = [], cwd?: string) {
       }
     });
 
-    process.on('error', (err) => {
+    childProcess.on('error', (err) => {
       reject(err);
     });
   });

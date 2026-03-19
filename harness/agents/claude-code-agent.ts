@@ -1,8 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
-import { createIsolatedHome, cleanupIsolatedHome, parseAgentArgs, copyFileIfExists, updateMcpConfig, copyResultsToTarget, createWorkDir, copySkills, watchLogFile } from '../lib/agent-shared.ts';
+import { initSuiteConfig, createIsolatedHome, cleanupIsolatedHome, parseAgentArgs, copyFileIfExists, updateMcpConfig, copyResultsToTarget, createWorkDir, copySkills, watchLogFile } from '../lib/agent-shared.ts';
 import config, { Agents } from '../config.ts';
+
+initSuiteConfig();
 import { MCP_LOG_FILE } from '../../constants.ts';
 import { generateClaudeTrajectoryHtml } from '../lib/claude-trajectory-viewer.ts';
 
