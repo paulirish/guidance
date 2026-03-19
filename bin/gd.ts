@@ -19,6 +19,64 @@ try {
   // Ignore if file doesn't exist
 }
 
+// --- Configuration ---
+
+const ALL_OPTIONS = {
+  help: { type: 'boolean', short: 'h', desc: 'Show this help' },
+  version: { type: 'boolean', short: 'v', desc: 'Show version' },
+  grade: { type: 'boolean', desc: 'Run/calibrate grader' },
+  'test-grader': { type: 'boolean', desc: 'Check grader calibration (demo + negative-demo)' },
+  'gen-grader': { type: 'boolean', desc: 'Generate a new grader script' },
+  'gen-negative': { type: 'boolean', desc: 'Generate negative examples' },
+  guided: { type: 'boolean', desc: 'Skip calibration, run guided agent test only' },
+  'no-test': { type: 'boolean', desc: 'Skip agent tests after calibration' },
+  verbose: { type: 'boolean', desc: 'Show additional output' },
+  usecases: { type: 'boolean', desc: '(Audit) Group by categories/usecases (default is features)' },
+  agent: { type: 'string', desc: '(Eval) Set agent (e.g. claude_code, jetski, gemini_cli)' },
+  numRuns: { type: 'string', desc: '(Eval) Number of runs per task' },
+  negative: { type: 'boolean', desc: '(Eval) Run negative suite tasks' },
+  enableSkills: { type: 'boolean', desc: '(Eval) Enable agent skills' },
+  mcpServers: { type: 'string', desc: '(Eval) Comma-separated list of MCP servers' },
+} as const;
+
+type OptionName = keyof typeof ALL_OPTIONS;
+
+/**
+ * COMMAND_METADATA defines the structure of each command, its description, and its flags.
+ * This acts as the single source of truth for completion, help, and (soon) argument validation.
+ */
+const COMMAND_METADATA = {
+  dev: {
+    desc: 'Auto-generate and calibrate guide artifacts',
+    flags: ['grade', 'test-grader', 'gen-grader', 'gen-negative', 'guided', 'no-test', 'verbose'],
+  },
+  'dev-all': {
+    desc: 'Run dev-guide pipeline for all guides',
+    flags: ['verbose'],
+  },
+  eval: {
+    desc: 'Run the full evaluation suite, or specific tasks',
+    flags: ['agent', 'numRuns', 'negative', 'enableSkills', 'mcpServers', 'verbose'],
+  },
+  audit: {
+    desc: 'Show status of all guides',
+    flags: ['usecases'],
+  },
+  run: {
+    desc: 'Run an ad-hoc agent test against a template',
+    flags: ['verbose'],
+  },
+  dashboard: { desc: 'Start the evaluation dashboard', flags: [] },
+  deploy: { desc: 'Deploy the dashboard to GitHub Pages', flags: [] },
+  upload: { desc: 'Upload generated evaluation suite to GCS', flags: [] },
+  baselinestatus: { desc: 'Check browser support and Baseline status', flags: [] },
+  'setup-completion': { desc: 'Install shell auto-completion', flags: [] },
+  'gen-negative-suite': { desc: 'Generate resources for negative suite', flags: [] },
+} satisfies Record<string, { desc: string; flags: OptionName[] }>;
+
+const COMMANDS = Object.keys(COMMAND_METADATA);
+type CommandName = keyof typeof COMMAND_METADATA;
+
 // --- Shell Auto-Completion ---
 
 function listGuideDirs(): string[] {
@@ -38,57 +96,71 @@ function listGuideDirs(): string[] {
   return dirs;
 }
 
-const completion = omelette('gd <command> <arg1> <arg2>');
+const completion = omelette('gd <command> <arg1> <arg2> <arg3> <arg4> <arg5>');
 
 completion.on('command', ({ reply }) => {
-  reply(['dev', 'dev-all', 'grade', 'test', 'gen', 'audit', 'eval', 'run', 'dashboard', 'deploy', 'upload', 'baselinestatus', 'setup-completion', 'gen-negative-suite']);
+  reply(COMMANDS);
 });
 
-completion.on('arg1', ({ before, reply }) => {
+function getFlagsForLine(line: string): string[] {
+  const parts = line.split(/\s+/).filter(Boolean);
+  const cmd = parts[1] as CommandName; // gd <cmd>
+  const meta = COMMAND_METADATA[cmd];
+  return meta ? meta.flags.map(f => '--' + f) : [];
+}
+
+completion.on('arg1', ({ before, line, reply }) => {
+  const flags = getFlagsForLine(line);
   if (before === 'eval') {
     const tasksDir = path.join(rootDir, 'harness', 'tasks');
     const tasks = fs.existsSync(tasksDir) ? fs.readdirSync(tasksDir).filter(f => f.endsWith('.md')).map(f => f.replace('.md', '')) : [];
-    reply(['suite', ...tasks]);
+    reply(['suite', ...tasks, ...flags]);
   } else if (before === 'gen') {
     reply(['grader', 'negative']);
+  } else if (before === 'audit') {
+    reply(flags);
   } else if (['dev', 'test', 'grade'].includes(before)) {
-    reply(listGuideDirs());
+    reply([...listGuideDirs(), ...flags]);
+  } else {
+    reply(flags);
   }
 });
 
 completion.on('arg2', ({ before, line, reply }) => {
-  if (before === 'run') {
+  const flags = getFlagsForLine(line);
+  if (line.includes('gd eval')) {
+    reply(flags);
+  } else if (line.includes('gd dev') && before.startsWith('guides/')) {
+    reply(flags);
+  } else if (before === 'run') {
     const baseAppsDir = path.join(rootDir, 'harness', 'base_apps');
     if (fs.existsSync(baseAppsDir)) {
       reply(fs.readdirSync(baseAppsDir).filter(d => fs.statSync(path.join(baseAppsDir, d)).isDirectory()));
     }
   } else if (['grader', 'negative'].includes(before) && line.includes('gen')) {
     reply(listGuideDirs());
+  } else {
+    reply(flags);
   }
 });
+
+completion.on('arg3', ({ line, reply }) => reply(getFlagsForLine(line)));
+completion.on('arg4', ({ line, reply }) => reply(getFlagsForLine(line)));
+completion.on('arg5', ({ line, reply }) => reply(getFlagsForLine(line)));
 
 completion.init();
 
 // --- Argument Parsing ---
 
+const parseOptions: any = {};
+for (const [key, val] of Object.entries(ALL_OPTIONS)) {
+  parseOptions[key] = { type: val.type };
+  if ((val as any).short) parseOptions[key].short = (val as any).short;
+}
+
 const { positionals, values } = parseArgs({
   args: process.argv.slice(2),
-  options: {
-    help: { type: 'boolean', short: 'h' },
-    version: { type: 'boolean', short: 'v' },
-    grade: { type: 'boolean' },
-    'test-grader': { type: 'boolean' },
-    'gen-grader': { type: 'boolean' },
-    'gen-negative': { type: 'boolean' },
-    guided: { type: 'boolean' },
-    verbose: { type: 'boolean' },
-    usecases: { type: 'boolean' },
-    agent: { type: 'string' },
-    numRuns: { type: 'string' },
-    negative: { type: 'boolean' },
-    enableSkills: { type: 'boolean' },
-    mcpServers: { type: 'string' },
-  },
+  options: parseOptions,
   allowPositionals: true,
   strict: false,
 });
@@ -126,40 +198,17 @@ ${cBold('Guidance CLI')}
 
 ${cCyan('Usage:')} gd <command> [options]
 
-${cBold('Guide Development:')}
-  ${cCyan('audit')}                  Show status of all guides
-  ${cCyan('dev')} <dir> [options]    Auto-generate and calibrate guide artifacts
-
-${"Piece-wise options for `dev`:"}
-    ${cDim('--grade')}              Run/calibrate grader
-    ${cDim('--test-grader')}        Check grader calibration (demo + negative-demo)
-    ${cDim('--gen-grader')}         Generate a new grader script
-    ${cDim('--gen-negative')}       Generate negative examples
-    ${cDim('--guided')}             Skip calibration, run guided agent test only
-    ${cDim('--no-test')}            Skip agent tests after calibration
-    ${cDim('--verbose')}            Show additional output
-
-${cBold('Evaluation:')}
-  ${cCyan('eval')} [suite|tasks...]  Run the full evaluation suite, or specific tasks
-  ${cCyan('dashboard')}              Start the evaluation dashboard
-  ${cCyan('run')} <tmpl> <prompt>    Run an ad-hoc agent test against a template
-  ${cCyan('deploy')}                 Deploy the dashboard to GitHub Pages
-  ${cCyan('upload')} <suite>         Upload generated evaluation suite to GCS
-  ${cCyan('gen-negative-suite')}     Generate resources for negative suite
-
-${cBold('Other:')}
-  ${cCyan('baselinestatus')} <query>      Check browser support and Baseline status
-  ${cCyan('setup-completion')}       Install shell auto-completion
+${cBold('Commands:')}
+${Object.entries(COMMAND_METADATA).map(([cmd, meta]) => {
+  const flags = meta.flags.length > 0 ? ' [options]' : '';
+  return `  ${cCyan(cmd.padEnd(18))} ${meta.desc}${flags}`;
+}).join('\n')}
 
 ${cBold('Options:')}
-  ${cDim('-h, --help')}             Show this help
-  ${cDim('--verbose')}              Show additional output
-  ${cDim('--usecases')}             (Audit) Group by categories/usecases (default is features)
-  ${cDim('--agent <name>')}         (Eval) Set agent (e.g. claude_code, jetski, gemini_cli)
-  ${cDim('--numRuns <n>')}          (Eval) Number of runs per task
-  ${cDim('--negative')}             (Eval) Run negative suite tasks
-  ${cDim('--enableSkills')}         (Eval) Enable agent skills
-  ${cDim('--mcpServers <list>')}    (Eval) Comma-separated list of MCP servers
+${Object.entries(ALL_OPTIONS).map(([name, opt]) => {
+  const short = opt.short ? `-${opt.short}, ` : '    ';
+  return `  ${cDim(`${short}--${name.padEnd(15)}`)} ${opt.desc}`;
+}).join('\n')}
     `);
     process.exit(0);
   }
