@@ -2,9 +2,14 @@ import { promises as fs } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Get current directory in ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Get current directory in ESM or CJS gracefully
+const getDirname = () => {
+  if (typeof __dirname !== "undefined") return __dirname;
+  // @ts-ignore
+  if (typeof import.meta !== "undefined" && import.meta.url) return path.dirname(fileURLToPath(import.meta.url));
+  return process.cwd();
+};
+const _dirname = getDirname();
 
 
 
@@ -34,7 +39,7 @@ export async function getGuide(useCaseId: string): Promise<string | null> {
   const useCase = USE_CASES.find((u) => u.id === useCaseId);
   if (!useCase) return null;
 
-  const guidesDir = path.resolve(__dirname, "../../build/guides");
+  const guidesDir = path.resolve(_dirname, "../../build/guides");
   const filePath = path.join(guidesDir, useCase.category, `${useCaseId}.md`);
 
   try {

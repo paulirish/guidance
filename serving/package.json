@@ -20,6 +20,7 @@
     "prepublishOnly": "npm run build",
     "build": "node scripts/build-guides.ts",
     "build:megaskill": "node scripts/build-megaskill.ts",
+    "build:cli": "node scripts/build-cli.ts",
     "start": "node mcp-server/index.ts",
     "dev": "node scripts/build-guides.ts && node --watch mcp-server/index.ts",
     "test": "node scripts/build-guides.ts && vitest run",
@@ -39,6 +40,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "esbuild": "^0.27.4",
     "gray-matter": "^4.0.3",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"

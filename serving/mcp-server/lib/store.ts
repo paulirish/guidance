@@ -3,11 +3,16 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const getDirname = () => {
+  if (typeof __dirname !== "undefined") return __dirname;
+  // @ts-ignore
+  if (typeof import.meta !== "undefined" && import.meta.url) return path.dirname(fileURLToPath(import.meta.url));
+  return process.cwd();
+};
+const _dirname = getDirname();
 
 // Data directory for LanceDB
-const DATA_DIR = path.resolve(__dirname, "../../.mcp-data");
+const DATA_DIR = path.resolve(_dirname, "../../.mcp-data");
 
 export interface UseCase {
   id: string;
