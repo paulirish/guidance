@@ -1,8 +1,5 @@
 import { execSync } from 'child_process';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Returns the repository root directory. Uses `git rev-parse --show-toplevel`
@@ -15,8 +12,7 @@ export function getRootDir(): string {
       stdio: ['pipe', 'pipe', 'pipe'],
     }).trim();
   } catch {
-    // Fallback to __dirname-based resolution (e.g. outside a git repo).
-    return path.resolve(__dirname, '..');
+    return path.resolve(import.meta.dirname, '..');
   }
 }
 
