@@ -290,30 +290,26 @@ document.addEventListener('DOMContentLoaded', () => {
 function renderTestHeader(testId, jetskiVersion, timestamp, data) {
     const container = document.getElementById('test-header');
     if (container) {
-        let html = `Test ID: <strong>${escapeHtml(testId)}</strong>`;
-
+        let timeStr = '-';
         if (timestamp) {
-            let timeStr = timestamp;
             try {
                 const _date = new Date(timestamp);
                 timeStr = _date.toLocaleString('en-US', {
-                    month: 'long',
+                    month: 'short',
                     day: 'numeric',
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: true
                 }).replace(' at ', ', ');
             } catch { }
-            html += ` — ${timeStr}`;
         }
 
-        if (jetskiVersion) {
-            html += ` — Jetski Version: <strong>${escapeHtml(jetskiVersion)}</strong>`;
-        }
+        let agent = 'unknown';
+        let model = 'unknown';
+        let serving = 'unknown';
 
         if (data) {
-            let agent = data.agent || 'unknown';
-            let serving = 'unknown';
+            agent = data.agent || 'unknown';
             if (data.serving !== undefined) {
                 serving = data.serving;
             } else if (data.enableSkills !== undefined) {
@@ -325,16 +321,39 @@ function renderTestHeader(testId, jetskiVersion, timestamp, data) {
                 'mcp': 'MCP'
             };
             serving = servingDisplayNames[serving] || serving;
-            let model = data.model || 'unknown';
-
-            html += `<div style="margin-top: 6px; display: flex; flex-direction: column; gap: 2px;">
-                <span>Agent: <strong>${escapeHtml(agent)}</strong></span>
-                <span>Model: <strong style="color: var(--text-secondary);">${escapeHtml(model)}</strong></span>
-                <span>Serving: <strong>${escapeHtml(serving)}</strong></span>
-            </div>`;
+            model = data.model || 'unknown';
         }
 
-        container.innerHTML = html;
+        container.innerHTML = `
+            <div class="header-meta-grid">
+                <div class="header-meta-item">
+                    <span class="meta-label">Test ID</span>
+                    <span class="meta-value" title="${escapeHtml(testId)}">${escapeHtml(testId)}</span>
+                </div>
+                <div class="header-meta-item">
+                    <span class="meta-label">Action Date</span>
+                    <span class="meta-value">${escapeHtml(timeStr)}</span>
+                </div>
+                <div class="header-meta-item">
+                    <span class="meta-label">Agent</span>
+                    <span class="meta-value">${escapeHtml(agent)}</span>
+                </div>
+                <div class="header-meta-item">
+                    <span class="meta-label">Model</span>
+                    <span class="meta-value" title="${escapeHtml(model)}">${escapeHtml(model)}</span>
+                </div>
+                <div class="header-meta-item">
+                    <span class="meta-label">Serving Mode</span>
+                    <span class="meta-value">${escapeHtml(serving)}</span>
+                </div>
+                ${jetskiVersion ? `
+                <div class="header-meta-item">
+                    <span class="meta-label">Jetski Version</span>
+                    <span class="meta-value">${escapeHtml(jetskiVersion)}</span>
+                </div>
+                ` : ''}
+            </div>
+        `;
     }
 }
 
