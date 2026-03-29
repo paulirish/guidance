@@ -340,134 +340,242 @@ function renderTestHeader(testId, jetskiVersion, timestamp, data) {
 
 function renderSummary(data) {
     const container = document.getElementById('summary-stats');
-    const summary = data.summary;
-
-    const unguidedRate = summary.unguidedPassRate;
-    const guidedRate = summary.guidedPassRate;
-
-    container.innerHTML = `
-        <div class="stat-card">
-            <span class="stat-value" style="color: ${getColor(unguidedRate)}">
-                ${unguidedRate}%
-            </span>
-            <span class="stat-label">Unguided Pass Rate</span>
-            <div style="margin-top: 8px; font-size: 0.9em; color: var(--text-secondary);">
-                ${summary.unguidedPassed}/${summary.unguidedTotal} checks passed
-            </div>
-        </div>
-        <div class="stat-card">
-            <span class="stat-value" style="color: ${getColor(guidedRate)}">
-                ${guidedRate}%
-            </span>
-            <span class="stat-label">Guided Pass Rate</span>
-            <div style="margin-top: 8px; font-size: 0.9em; color: var(--text-secondary);">
-                ${summary.guidedPassed}/${summary.guidedTotal} checks passed
-            </div>
-            ${summary.toolActivationRate !== undefined ? `
-            <div style="margin-top: 6px; font-size: 0.85em; color: var(--text-secondary);">
-                Tool Activation: <span style="font-weight: bold; color: ${getColor(summary.toolActivationRate)}">${summary.toolActivationRate}%</span>
-                <span style="opacity: 0.8; color: ${getColor(summary.toolActivationRate)}">(${summary.toolActivationCount}/${summary.totalGuidedRuns} runs)</span>
-            </div>
-            ` : ''}
-            ${summary.guideUsageRate !== undefined ? `
-            <div style="margin-top: 6px; font-size: 0.85em; color: var(--text-secondary);">
-                Guide Usage: <span style="font-weight: bold; color: ${getColor(summary.guideUsageRate)}">${summary.guideUsageRate}%</span>
-                <span style="opacity: 0.8; color: ${getColor(summary.guideUsageRate)}">(${summary.guideUsageCount}/${summary.totalGuidedRuns} runs)</span>
-            </div>
-            ` : ''}
-        </div>
-    `;
+    if (container) {
+        container.innerHTML = ''; // Removed top summary cards
+    }
 }
 
 function renderGrid(data, testId) {
     const grid = document.getElementById('dashboard-grid');
+    if (!grid) return;
+    grid.innerHTML = ''; // Clear old content
     const results = data.results;
-    const stats = data.stats;
 
     sortedScenarios = [];
-    currentRunTypes = [];
 
     // Extract dimensions dynamically from data keys
     const keys = Object.keys(results);
     const partsMap = keys.map(k => k.split(' - '));
-
-    // Assume 3 parts: [appName, guide, runType]
     const validParts = partsMap.filter(p => p.length === 3);
 
     const sortedAppNames = [...new Set(validParts.map(p => p[0]))].sort();
     const sortedGuides = [...new Set(validParts.map(p => p[1]))].sort();
 
-    // Sort runTypes: unguided first, then guided, then alphabetical
-    const sortedRunTypes = [...new Set(validParts.map(p => p[2]))].sort((a, b) => {
-        if (a === 'unguided' && b === 'guided') return -1;
-        if (a === 'guided' && b === 'unguided') return 1;
-        return a.localeCompare(b);
-    });
-    currentRunTypes = sortedRunTypes;
-
     sortedAppNames.forEach(appName => {
         sortedGuides.forEach(guide => {
-            sortedScenarios.push(`${appName} - ${guide}`);
-            sortedRunTypes.forEach(runType => {
-                const testName = `${appName} - ${guide} - ${runType}`;
-                const runData = results[testName];
-                const testStats = stats[testName];
+            const scenarioName = `${appName} - ${guide}`;
+            const unguidedKey = `${scenarioName} - unguided`;
+            const guidedKey = `${scenarioName} - guided`;
 
-                if (!runData) return; // Skip combinations that don't exist
+            const unguidedRuns = results[unguidedKey];
+            const guidedRuns = results[guidedKey];
 
-                const card = document.createElement('div');
-                card.className = 'test-card';
+            if (!unguidedRuns && !guidedRuns) return; // Skip if neither exists
 
-                // Calculate Total/Average Pass Rate for this specific test configuration
-                const totalPassed = runData.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
-                const totalChecks = runData.reduce((acc, run) => acc + run.results.length, 0);
-                const avgRate = totalChecks > 0 ? Math.round((totalPassed / totalChecks) * 100) : 0;
+            sortedScenarios.push(scenarioName);
 
-                let toolActivationHtml = '';
-                if (runType === 'guided' && testStats && testStats.runsWithToolActivation !== undefined) {
-                    const count = testStats.runsWithToolActivation;
-                    const total = testStats.runCount;
-                    const toolActivationRate = total > 0 ? Math.round((count / total) * 100) : 0;
-                    const color = getColor(toolActivationRate);
-                    toolActivationHtml = `
-                        <div style="font-size: 0.85em; margin-top: 4px; color: ${color}; font-weight: 500;">
-                            Tool Activated (${count}/${total} runs)
-                        </div>
-                    `;
-                }
+            // Calculate averages
+            const getAvg = (runs) => {
+                if (!runs || runs.length === 0) return 0;
+                const totalPassed = runs.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
+                const totalChecks = runs.reduce((acc, run) => acc + run.results.length, 0);
+                return totalChecks > 0 ? Math.round((totalPassed / totalChecks) * 100) : 0;
+            };
 
-                let guideUsageHtml = '';
-                if (runType === 'guided' && testStats && testStats.runsUsingGuide !== undefined) {
-                    const count = testStats.runsUsingGuide;
-                    const total = testStats.runCount;
-                    const usageRate = total > 0 ? Math.round((count / total) * 100) : 0;
-                    const color = getColor(usageRate);
-                    guideUsageHtml = `
-                        <div style="font-size: 0.85em; margin-top: 6px; color: ${color}; font-weight: 500;">
-                            Guide Used (${count}/${total} runs)
-                        </div>
-                    `;
-                }
+            const unguidedAvg = getAvg(unguidedRuns);
+            const guidedAvg = getAvg(guidedRuns);
+            const uplift = guidedAvg - unguidedAvg;
 
-                card.onclick = () => showDetails(testName, runData, testStats, testId);
-                card.innerHTML = `
-                    <h3>${formatTestName(testName)}</h3>
-                    <div class="pass-rate-bar">
-                        <div class="pass-rate-fill" style="width: ${avgRate}%; background-color: ${getColor(avgRate)}"></div>
+            const accordion = document.createElement('div');
+            accordion.className = 'task-accordion';
+            
+            // Draw mini dumbbell slider track
+            const leftDot = Math.min(unguidedAvg, guidedAvg);
+            const rightDot = Math.max(unguidedAvg, guidedAvg);
+            const trackWidth = 250; // matches css
+            const scale = (val) => (val / 100) * trackWidth;
+
+            accordion.innerHTML = `
+                <div class="task-accordion-header">
+                    <div class="left-section">
+                        <span class="chevron" style="display: inline-block; transition: transform 0.2s; margin-right: 10px;">▶</span>
+                        <h3>${formatTestName(scenarioName)}</h3>
                     </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: var(--text-secondary);">
-                        <span>Average: ${avgRate}% <span style="opacity: 0.8">(${totalPassed}/${totalChecks})</span></span>
-                        <span>Runs: ${runData.length}</span>
+                    <div class="right-section">
+                        <div class="mini-dumbbell-track">
+                            <div class="connector" style="left: ${scale(leftDot)}px; width: ${scale(rightDot - leftDot)}px;"></div>
+                            <div class="dot unguided" style="left: ${scale(unguidedAvg)}px;"></div>
+                            <div class="dot guided" style="left: ${scale(guidedAvg)}px;"></div>
+                        </div>
+                        <div class="uplift-score ${uplift < 0 ? 'negative' : ''}">
+                            ${uplift >= 0 ? '+' : ''}${uplift}% UPLIFT
+                        </div>
                     </div>
-                    ${toolActivationHtml}
-                    ${guideUsageHtml}
-                `;
+                </div>
+                <div class="task-accordion-content">
+                    <div class="expansion-loading" style="color: var(--text-secondary);">Loading details...</div>
+                </div>
+            `;
 
-                grid.appendChild(card);
-            });
+            const header = accordion.querySelector('.task-accordion-header');
+            const content = accordion.querySelector('.task-accordion-content');
+            const chevron = accordion.querySelector('.chevron');
+
+            header.onclick = async () => {
+                const isOpen = accordion.classList.toggle('open');
+                chevron.style.transform = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+                
+                if (isOpen && content.querySelector('.expansion-loading')) {
+                    await fillAccordionDetails(content, scenarioName, unguidedRuns, guidedRuns, testId);
+                }
+            };
+
+            grid.appendChild(accordion);
         });
     });
 }
+
+async function fillAccordionDetails(container, scenarioName, unguidedRuns, guidedRuns, testId) {
+    try {
+        let promptHtml = '<div style="color: var(--text-secondary); margin-bottom: 20px;">Prompt fetch deferred or failed.</div>';
+        let baseApp = 'n/a';
+        
+        // Fetch prompt from the first run (unguided or guided)
+        const sampleRun = (unguidedRuns && unguidedRuns[0]) || (guidedRuns && guidedRuns[0]);
+        if (sampleRun && sampleRun.taskName) {
+            try {
+                const isNegative = sampleRun.taskName.endsWith('-negative');
+                const taskPath = `tasks/${isNegative ? 'negative/' : ''}${sampleRun.taskName}.md`;
+                const text = await api.getFileText(taskPath);
+
+                const frontmatterMatch = text.match(/^---([\s\S]+?)---/);
+                if (frontmatterMatch) {
+                    const yaml = frontmatterMatch[1];
+                    const baseAppMatch = yaml.match(/base_app:\s*([^\n\r]+)/);
+                    if (baseAppMatch) {
+                        baseApp = baseAppMatch[1].trim();
+                    }
+                }
+
+                const cleanedText = text.replace(/^---[\s\S]+?---\n+/, '');
+
+                promptHtml = `
+                    <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--text-secondary);">
+                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Agent Prompt</div>
+                        <p style="white-space: pre-wrap; font-family: inherit; margin: 0; color: var(--text-primary); font-size: 0.95rem;">${escapeHtml(cleanedText)}</p>
+                    </div>
+                `;
+            } catch (e) {
+                console.log('Task prompt fetch failed:', e);
+            }
+        }
+
+        // Combine assertions for the Truth Matrix
+        const assertionMap = new Map(); // message -> { unguided: boolean, guided: boolean }
+
+        const processResults = (runs, type) => {
+            if (!runs) return;
+            // Use the first run as representative or compare
+            const run = runs[0];
+            if (run && run.results) {
+                run.results.forEach(check => {
+                    const existing = assertionMap.get(check.message) || {};
+                    existing[type] = check.passed;
+                    assertionMap.set(check.message, existing);
+                });
+            }
+        };
+
+        processResults(unguidedRuns, 'unguided');
+        processResults(guidedRuns, 'guided');
+
+        let truthMatrixHtml = `
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Assertion Truth Matrix (Run 1)</div>
+                <table class="truth-matrix">
+                    <thead>
+                        <tr>
+                            <th>Assertion Requirement</th>
+                            <th class="center">Unguided</th>
+                            <th class="center">Guided</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        assertionMap.forEach((status, message) => {
+            truthMatrixHtml += `
+                <tr>
+                    <td>${escapeHtml(message)}</td>
+                    <td class="center ${status.unguided !== undefined ? (status.unguided ? 'pass' : 'fail') : ''}">
+                        ${status.unguided !== undefined ? (status.unguided ? '✅' : '❌') : '-'}
+                    </td>
+                    <td class="center ${status.guided !== undefined ? (status.guided ? 'pass' : 'fail') : ''}">
+                        ${status.guided !== undefined ? (status.guided ? '✅' : '❌') : '-'}
+                    </td>
+                </tr>
+            `;
+        });
+
+        if (assertionMap.size === 0) {
+            truthMatrixHtml += `<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">No assertions data</td></tr>`;
+        }
+
+        truthMatrixHtml += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        // Buttons and metadata row
+        let buttonsHtml = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
+                <div style="display: flex; gap: 20px;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Target Application</div>
+                        <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold; margin-top: 4px;">${escapeHtml(baseApp)}</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <!-- Placeholder buttons, link to showDetails for full view or actions -->
+                    <button class="secondary-btn" style="padding: 8px 16px; font-size: 0.9rem;" onclick="openDetailsFromTask('${escapeHtml(scenarioName)}', '${testId}')">View Detailed Runs</button>
+                </div>
+            </div>
+        `;
+
+        // Wait, for buttons like Diff or Trajectory, we need to know what run. In the accordion, we can add them if we assume Run 1, or we can just link to the detailed runs modal which has them.
+        // Let's keep it simple and link to the detailed view modal for now, or add specific buttons if we can easily resolve artifacts for Run 1.
+        // Let's just make a button to launch the full modal for that task! The full modal has all artifacts and runs.
+        
+        container.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                ${promptHtml}
+                ${truthMatrixHtml}
+                ${buttonsHtml}
+            </div>
+        `;
+
+    } catch (e) {
+        container.innerHTML = `<div style="color: var(--accent-failure);">Error loading details: ${e.message}</div>`;
+    }
+}
+
+// Global helper to open details from task list
+window.openDetailsFromTask = (scenarioName, testId) => {
+    // Attempt to find runData. We might need to fetch it or pass it.
+    // If we assume `allTestData` is available globally (it is), we can find it.
+    // Wait, and we need to call showDetails. Let's see if we can find any runType for this scenario to pass to showDetails.
+    // showDetails expects testName like "AppName - GuideName - RunType".
+    // Let's pass "AppName - GuideName - guided" as a default to showDetails if it exists, or unguided.
+    const guidedKey = `${scenarioName} - guided`;
+    const unguidedKey = `${scenarioName} - unguided`;
+    const finalKey = allTestData.results[guidedKey] ? guidedKey : unguidedKey;
+    if (allTestData.results[finalKey]) {
+        showDetails(finalKey, allTestData.results[finalKey], allTestData.stats[finalKey], testId);
+    } else {
+        alert('Could not find run data for this task.');
+    }
+};
 
 function openTrajectory(usedBasePath, sessionFile) {
     if (api.source === 'remote') {
