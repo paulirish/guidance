@@ -65,7 +65,13 @@ async function main() {
 
   for (let i = 0; i < queries.length; i++) {
     const q = queries[i];
-    const vector = await embedder.embed(q.query);
+    
+    let processedQuery = q.query;
+    if (embedder.modelName.toLowerCase().includes("gemma")) {
+       processedQuery = `task: search result | query: ${q.query}`;
+    }
+    
+    const vector = await embedder.embed(processedQuery);
     // Ask for top 5 so we can calculate MRR and top-k effectively
     const results = await store.search(vector, 5, 2.0); // maxDistance slightly higher to capture top 5
 

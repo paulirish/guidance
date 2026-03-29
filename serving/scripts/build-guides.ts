@@ -175,7 +175,12 @@ async function processSingleGuideFile(
 
   for (const chunk of chunks) {
     const embeddingText = `${id} (${category})\n\n${chunk}`;
-    const vector = await embedder.embed(embeddingText);
+    
+    let processedText = embeddingText;
+    if (embedder.modelName.toLowerCase().includes("gemma")) {
+       processedText = `title: none | text: ${embeddingText}`;
+    }
+    const vector = await embedder.embed(processedText);
 
     storeUseCases.push({
       id,

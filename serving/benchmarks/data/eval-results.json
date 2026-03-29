@@ -417,5 +417,14 @@
     "top3HitRate": 0.9176,
     "top5HitRate": 0.9765,
     "meanReciprocalRank": 0.8088
+  },
+  {
+    "timestamp": "2026-03-29T01:10:43.368Z",
+    "model": "onnx-community/embeddinggemma-300m-ONNX@q8 (Chunked)",
+    "totalQueries": 85,
+    "top1HitRate": 0.6941,
+    "top3HitRate": 0.9412,
+    "top5HitRate": 0.9529,
+    "meanReciprocalRank": 0.8069
   }
 ]
