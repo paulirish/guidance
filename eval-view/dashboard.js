@@ -480,7 +480,13 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
 
                 promptHtml = `
                     <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--text-secondary);">
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Agent Prompt</div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Agent Prompt</div>
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border-color);">
+                                <span style="color: var(--text-secondary);">Base App:</span> 
+                                <span style="color: var(--text-primary); font-weight: bold;">${escapeHtml(baseApp)}</span>
+                            </div>
+                        </div>
                         <p style="white-space: pre-wrap; font-family: inherit; margin: 0; color: var(--text-primary); font-size: 0.95rem;">${escapeHtml(cleanedText)}</p>
                     </div>
                 `;
@@ -489,47 +495,55 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
             }
         }
 
-        // 1. Truth Matrix (Keep as Run 1 summary)
-        const assertionMap = new Map();
-        const processResults = (runs, type) => {
-            if (!runs) return;
-            const run = runs[0];
-            if (run && run.results) {
-                run.results.forEach(check => {
-                    const existing = assertionMap.get(check.message) || {};
-                    existing[type] = check.passed;
-                    assertionMap.set(check.message, existing);
-                });
-            }
-        };
-        processResults(unguidedRuns, 'unguided');
-        processResults(guidedRuns, 'guided');
+        // 1. Truth Matrix (Combine all runs side-by-side if multiple)
+        const maxUnguided = unguidedRuns ? unguidedRuns.length : 0;
+        const maxGuided = guidedRuns ? guidedRuns.length : 0;
+        const maxRuns = Math.max(maxUnguided, maxGuided);
 
-        let truthMatrixHtml = `
-            <div style="margin-bottom: 16px;">
-                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Assertion Truth Matrix (Run 1)</div>
-                <table class="truth-matrix">
-                    <thead>
-                        <tr>
-                            <th>Assertion Requirement</th>
-                            <th class="center">Unguided</th>
-                            <th class="center">Guided</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
+        const assertionMap = new Map(); // message -> { unguided: [], guided: [] }
+        const processResultsToMap = (runs, type) => {
+            if (!runs) return;
+            runs.forEach((run, runIndex) => {
+                if (run && run.results) {
+                    run.results.forEach(check => {
+                        const existing = assertionMap.get(check.message) || { unguided: [], guided: [] };
+                        existing[type][runIndex] = check.passed;
+                        assertionMap.set(check.message, existing);
+                    });
+                }
+            });
+        };
+        processResultsToMap(unguidedRuns, 'unguided');
+        processResultsToMap(guidedRuns, 'guided');
+
+        let truthMatrixHtml = `<div style="margin-bottom: 16px;"><table class="truth-matrix"><thead><tr><th>Assertion Requirement</th>`;
+        
+        if (maxRuns > 1) {
+            for (let i = 0; i < maxRuns; i++) truthMatrixHtml += `<th class="center">Unguided #${i+1}</th>`;
+            for (let i = 0; i < maxRuns; i++) truthMatrixHtml += `<th class="center">Guided #${i+1}</th>`;
+        } else {
+            truthMatrixHtml += `<th class="center">Unguided</th><th class="center">Guided</th>`;
+        }
+        truthMatrixHtml += `</tr></thead><tbody>`;
+
         assertionMap.forEach((status, message) => {
-            truthMatrixHtml += `
-                <tr>
-                    <td>${escapeHtml(message)}</td>
-                    <td class="center ${status.unguided !== undefined ? (status.unguided ? 'pass' : 'fail') : ''}">
-                        ${status.unguided !== undefined ? (status.unguided ? '✅' : '❌') : '-'}
-                    </td>
-                    <td class="center ${status.guided !== undefined ? (status.guided ? 'pass' : 'fail') : ''}">
-                        ${status.guided !== undefined ? (status.guided ? '✅' : '❌') : '-'}
-                    </td>
-                </tr>
-            `;
+            truthMatrixHtml += `<tr><td>${escapeHtml(message)}</td>`;
+            if (maxRuns > 1) {
+                for (let i = 0; i < maxRuns; i++) {
+                    const pass = status.unguided[i];
+                    truthMatrixHtml += `<td class="center ${pass !== undefined ? (pass ? 'pass' : 'fail') : ''}">${pass !== undefined ? (pass ? '✅' : '❌') : '-'}</td>`;
+                }
+                for (let i = 0; i < maxRuns; i++) {
+                    const pass = status.guided[i];
+                    truthMatrixHtml += `<td class="center ${pass !== undefined ? (pass ? 'pass' : 'fail') : ''}">${pass !== undefined ? (pass ? '✅' : '❌') : '-'}</td>`;
+                }
+            } else {
+                const uPass = status.unguided[0];
+                const gPass = status.guided[0];
+                truthMatrixHtml += `<td class="center ${uPass !== undefined ? (uPass ? 'pass' : 'fail') : ''}">${uPass !== undefined ? (uPass ? '✅' : '❌') : '-'}</td>`;
+                truthMatrixHtml += `<td class="center ${gPass !== undefined ? (gPass ? 'pass' : 'fail') : ''}">${gPass !== undefined ? (gPass ? '✅' : '❌') : '-'}</td>`;
+            }
+            truthMatrixHtml += `</tr>`;
         });
         truthMatrixHtml += '</tbody></table></div>';
 
@@ -545,7 +559,7 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
 
             for (const run of runs) {
                 const s = getRunStats(run.results);
-                const { usedBasePath } = await getResultPaths(testId, run, `${scenarioName} - ${typeLabel.toLowerCase()}`);
+                const { setupPath, resultPath, usedBasePath } = await getResultPaths(testId, run, `${scenarioName} - ${typeLabel.toLowerCase()}`);
                 
                 let files = [];
                 try {
@@ -566,7 +580,7 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                             ${sessionFile ? `<button class="secondary-btn" style="font-size: 0.8rem; padding: 4px 8px;" onclick="openTrajectory('${escapeHtml(usedBasePath)}', '${escapeHtml(sessionFile)}')">Trajectory</button>` : ''}
                             ${hasDiff ? `<button class="secondary-btn" style="font-size: 0.8rem; padding: 4px 8px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/diff.txt`)}', '${escapeHtml(`${usedBasePath}/diff.txt`)}')">Diff</button>` : ''}
                             ${logFile ? `<button class="secondary-btn" style="font-size: 0.8rem; padding: 4px 8px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/${logFile}`)}', '${escapeHtml(`${usedBasePath}/${logFile}`)}')">Log</button>` : ''}
-                            <button class="secondary-btn" style="font-size: 0.8rem; padding: 4px 8px;" onclick="showRunDiff('${escapeHtml(`${scenarioName} - ${typeLabel.toLowerCase()}`)}', ${run.runNumber}, '${testId}', Array.from(allTestData.results['${scenarioName} - ${typeLabel.toLowerCase()}']).indexOf(allTestData.results['${scenarioName} - ${typeLabel.toLowerCase()}'].find(r => r.runNumber === ${run.runNumber})))">Diff Table</button>
+                            <button class="secondary-btn" style="font-size: 0.8rem; padding: 4px 8px;" onclick="viewDiff('${escapeHtml(setupPath)}', '${escapeHtml(resultPath)}', '${escapeHtml(scenarioName)}', ${run.runNumber})">Diff Table</button>
                         </div>
                     </div>
                 `;
@@ -579,22 +593,12 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
         const unguidedRunsHtml = await renderRunsGroup(unguidedRuns, 'Unguided');
         const guidedRunsHtml = await renderRunsGroup(guidedRuns, 'Guided');
 
-        let footerHtml = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
-                <div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Target Application</div>
-                    <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold; margin-top: 4px;">${escapeHtml(baseApp)}</div>
-                </div>
-            </div>
-        `;
-
         container.innerHTML = `
             <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
                 ${promptHtml}
                 ${truthMatrixHtml}
                 ${unguidedRunsHtml}
                 ${guidedRunsHtml}
-                ${footerHtml}
             </div>
         `;
 
@@ -638,6 +642,11 @@ function openTrajectory(usedBasePath, sessionFile) {
         window.open(api.getAbsoluteUrl(`${usedBasePath}/${sessionFile}`), '_blank');
     }
 }
+
+// Expose functions to window for onclick handlers
+window.openTrajectory = openTrajectory;
+window.viewContent = viewContent;
+window.viewDiff = viewDiff;
 
 async function showDetails(testName, runs, stats, testId) {
     // Update URL without reloading
