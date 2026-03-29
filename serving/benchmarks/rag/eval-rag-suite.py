@@ -103,10 +103,17 @@ def main():
         top_results = cos_scores.argsort(descending=True)
 
         found_rank = 0
+        if idx == 0:
+            print(f"\n[DEBUG] Query: '{query_text}'")
+            print(f"[DEBUG] Target guide: '{target_guide}'")
+            
         for i in range(min(5, len(top_results))):
             doc_idx = top_results[i].item()
             metadata = doc_metadata[doc_idx]
             
+            if idx == 0:
+                print(f"[DEBUG] Found Top-{i+1}: '{metadata['guide_id']}'")
+                
             if metadata["guide_id"] == target_guide:
                 found_rank = i + 1
                 break
