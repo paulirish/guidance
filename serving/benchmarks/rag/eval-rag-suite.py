@@ -23,8 +23,8 @@ def chunk_markdown(content: str) -> list[str]:
     return [c.strip() for c in chunks if c.strip()]
 
 def main():
-    print("Loading PyTorch EmbeddingGemma 300m model...")
-    model = SentenceTransformer("google/embeddinggemma-300m")
+    print("Loading PyTorch EmbeddingGemma 300m model on CPU (to avoid MPS NaN bugs)...")
+    model = SentenceTransformer("google/embeddinggemma-300m", device="cpu")
     
     # Locate paths relative to this script's directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
