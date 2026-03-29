@@ -33,6 +33,12 @@ def main():
 
     print(f"Reading guides from {guides_dir}...")
     
+    if not os.path.exists(guides_dir):
+        print(f"[ERROR] Directory does not exist: {guides_dir}")
+        return
+
+    print(f"[DEBUG] Guides dir listing: {os.listdir(guides_dir)}")
+    
     # Mirror JS logic: Only scan visible subdirectories (categories)
     guide_files = []
     for category in os.listdir(guides_dir):
