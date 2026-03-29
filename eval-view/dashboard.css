@@ -442,6 +442,21 @@ dialog#modal.diff-modal {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
+.feature-chip {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  margin-right: 12px;
+  font-weight: normal;
+  text-transform: none;
+}
+
 .task-accordion-header {
   padding: 12px 16px;
   display: flex;
