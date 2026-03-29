@@ -37,16 +37,11 @@ def main():
         print(f"[ERROR] Directory does not exist: {guides_dir}")
         return
 
-    print(f"[DEBUG] Guides dir listing: {os.listdir(guides_dir)}")
-    
-    # Mirror JS logic: Only scan visible subdirectories (categories)
+    # Scan for `guide.md` files anywhere under the guides_dir tree
     guide_files = []
-    for category in os.listdir(guides_dir):
-        cat_path = os.path.join(guides_dir, category)
-        if os.path.isdir(cat_path) and not category.startswith("."):
-            for f in os.listdir(cat_path):
-                if f.endswith(".md"):
-                    guide_files.append(os.path.join(cat_path, f))
+    import glob
+    for gf in glob.glob(os.path.join(guides_dir, "**/guide.md"), recursive=True):
+        guide_files.append(gf)
     
     documents = []
     doc_metadata = [] # map index to guideId and chunk
@@ -55,7 +50,7 @@ def main():
         if "node_modules" in gf or "expectations.md" in gf:
             continue
         
-        guide_id = os.path.splitext(os.path.basename(gf))[0]
+        guide_id = os.path.basename(os.path.dirname(gf))
         
         try:
             with open(gf, "r", encoding="utf-8") as f:
