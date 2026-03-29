@@ -576,9 +576,11 @@ dialog#modal.diff-modal {
 
 /* Header Meta Grid */
 .header-meta-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 30px;
   width: 100%;
   margin-top: 15px;
   background: rgba(255, 255, 255, 0.02);
