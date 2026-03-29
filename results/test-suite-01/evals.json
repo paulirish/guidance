@@ -1,0 +1,13 @@
+[
+  {
+    "testName": "Dummy Test Suite 01",
+    "score": 85,
+    "runs": [
+      {
+        "runNumber": 1,
+        "testName": "适应对比偏好 - adapt-scrollbar-to-contrast-preferences - guided",
+        "passed": true
+      }
+    ]
+  }
+]
