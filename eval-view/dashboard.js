@@ -516,18 +516,33 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
         processResultsToMap(unguidedRuns, 'unguided');
         processResultsToMap(guidedRuns, 'guided');
 
-        let truthMatrixHtml = `<div style="margin-bottom: 16px;"><table class="truth-matrix"><thead><tr><th>Assertion Requirement</th>`;
+        let truthMatrixHtml = `<div style="margin-bottom: 16px;"><table class="truth-matrix"><thead>`;
         
         if (maxRuns > 1) {
-            for (let i = 0; i < maxRuns; i++) truthMatrixHtml += `<th class="center">Unguided #${i+1}</th>`;
-            for (let i = 0; i < maxRuns; i++) truthMatrixHtml += `<th class="center">Guided #${i+1}</th>`;
+            truthMatrixHtml += `
+                <tr>
+                    <th class="center" colspan="${maxRuns}">Unguided</th>
+                    <th class="center" colspan="${maxRuns}">Guided</th>
+                    <th rowspan="2">Assertion Requirement</th>
+                </tr>
+                <tr>
+            `;
+            for (let i = 0; i < maxRuns; i++) truthMatrixHtml += `<th class="center">#${i+1}</th>`;
+            for (let i = 0; i < maxRuns; i++) truthMatrixHtml += `<th class="center">#${i+1}</th>`;
+            truthMatrixHtml += `</tr>`;
         } else {
-            truthMatrixHtml += `<th class="center">Unguided</th><th class="center">Guided</th>`;
+            truthMatrixHtml += `
+                <tr>
+                    <th class="center">Unguided</th>
+                    <th class="center">Guided</th>
+                    <th>Assertion Requirement</th>
+                </tr>
+            `;
         }
-        truthMatrixHtml += `</tr></thead><tbody>`;
+        truthMatrixHtml += `</thead><tbody>`;
 
         assertionMap.forEach((status, message) => {
-            truthMatrixHtml += `<tr><td>${escapeHtml(message)}</td>`;
+            truthMatrixHtml += `<tr>`;
             if (maxRuns > 1) {
                 for (let i = 0; i < maxRuns; i++) {
                     const pass = status.unguided[i];
@@ -543,7 +558,7 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                 truthMatrixHtml += `<td class="center ${uPass !== undefined ? (uPass ? 'pass' : 'fail') : ''}">${uPass !== undefined ? (uPass ? '✅' : '❌') : '-'}</td>`;
                 truthMatrixHtml += `<td class="center ${gPass !== undefined ? (gPass ? 'pass' : 'fail') : ''}">${gPass !== undefined ? (gPass ? '✅' : '❌') : '-'}</td>`;
             }
-            truthMatrixHtml += `</tr>`;
+            truthMatrixHtml += `<td>${escapeHtml(message)}</td></tr>`;
         });
         truthMatrixHtml += '</tbody></table></div>';
 
