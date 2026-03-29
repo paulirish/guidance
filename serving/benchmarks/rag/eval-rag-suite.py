@@ -32,7 +32,15 @@ def main():
     queries_path = os.path.abspath(os.path.join(script_dir, "../data/eval-queries-pool.json"))
 
     print(f"Reading guides from {guides_dir}...")
-    guide_files = glob.glob(os.path.join(guides_dir, "**/*.md"), recursive=True)
+    
+    # Mirror JS logic: Only scan visible subdirectories (categories)
+    guide_files = []
+    for category in os.listdir(guides_dir):
+        cat_path = os.path.join(guides_dir, category)
+        if os.path.isdir(cat_path) and not category.startswith("."):
+            for f in os.listdir(cat_path):
+                if f.endswith(".md"):
+                    guide_files.append(os.path.join(cat_path, f))
     
     documents = []
     doc_metadata = [] # map index to guideId and chunk
