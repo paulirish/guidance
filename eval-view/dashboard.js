@@ -479,8 +479,8 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                 const cleanedText = text.replace(/^---[\s\S]+?---\n+/, '');
 
                 promptHtml = `
-                    <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid var(--text-secondary);">
-                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Agent Prompt</div>
+                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--text-secondary);">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Agent Prompt</div>
                         <p style="white-space: pre-wrap; font-family: inherit; margin: 0; color: var(--text-primary); font-size: 0.95rem;">${escapeHtml(cleanedText)}</p>
                     </div>
                 `;
@@ -489,12 +489,10 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
             }
         }
 
-        // Combine assertions for the Truth Matrix
-        const assertionMap = new Map(); // message -> { unguided: boolean, guided: boolean }
-
+        // 1. Truth Matrix (Keep as Run 1 summary)
+        const assertionMap = new Map();
         const processResults = (runs, type) => {
             if (!runs) return;
-            // Use the first run as representative or compare
             const run = runs[0];
             if (run && run.results) {
                 run.results.forEach(check => {
@@ -504,13 +502,12 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                 });
             }
         };
-
         processResults(unguidedRuns, 'unguided');
         processResults(guidedRuns, 'guided');
 
         let truthMatrixHtml = `
-            <div style="margin-bottom: 24px;">
-                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Assertion Truth Matrix (Run 1)</div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">Assertion Truth Matrix (Run 1)</div>
                 <table class="truth-matrix">
                     <thead>
                         <tr>
@@ -521,7 +518,6 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                     </thead>
                     <tbody>
         `;
-
         assertionMap.forEach((status, message) => {
             truthMatrixHtml += `
                 <tr>
@@ -535,42 +531,70 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                 </tr>
             `;
         });
+        truthMatrixHtml += '</tbody></table></div>';
 
-        if (assertionMap.size === 0) {
-            truthMatrixHtml += `<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">No assertions data</td></tr>`;
-        }
+        // 2. Helper to render a group of runs with chips
+        const renderRunsGroup = async (runs, typeLabel) => {
+            if (!runs || runs.length === 0) return '';
 
-        truthMatrixHtml += `
-                    </tbody>
-                </table>
-            </div>
-        `;
+            let html = `
+                <div style="margin-bottom: 16px;">
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase;">${typeLabel} Run Details</div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+            `;
 
-        // Buttons and metadata row
-        let buttonsHtml = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
-                <div style="display: flex; gap: 20px;">
-                    <div>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Target Application</div>
-                        <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold; margin-top: 4px;">${escapeHtml(baseApp)}</div>
+            for (const run of runs) {
+                const s = getRunStats(run.results);
+                const { usedBasePath } = await getResultPaths(testId, run, `${scenarioName} - ${typeLabel.toLowerCase()}`);
+                
+                let files = [];
+                try {
+                    files = await api.getRunFiles(usedBasePath);
+                } catch (e) {}
+
+                const sessionFile = files.find(f => f.startsWith('session-') && f.endsWith('.html'));
+                const logFile = files.includes('mcp-server.log') ? 'mcp-server.log' : (files.includes('modern-web.log') ? 'modern-web.log' : null);
+                const hasDiff = files.includes('diff.txt');
+
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.01); border: 1px solid var(--border-color); border-radius: 6px;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <span style="font-weight: 600; font-size: 0.95rem;">Run ${run.runNumber}</span>
+                            <span style="color: ${getColor(s.rate)}; font-size: 0.9rem;">${s.rate}% Pass (${s.passed}/${s.total})</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            ${sessionFile ? `<button class="secondary-btn" style="font-size: 0.8rem; padding: 4px 8px;" onclick="openTrajectory('${escapeHtml(usedBasePath)}', '${escapeHtml(sessionFile)}')">Trajectory</button>` : ''}
+                            ${hasDiff ? `<button class="secondary-btn" style="font-size: 0.8rem; padding: 4px 8px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/diff.txt`)}', '${escapeHtml(`${usedBasePath}/diff.txt`)}')">Diff</button>` : ''}
+                            ${logFile ? `<button class="secondary-btn" style="font-size: 0.8rem; padding: 4px 8px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/${logFile}`)}', '${escapeHtml(`${usedBasePath}/${logFile}`)}')">Log</button>` : ''}
+                            <button class="secondary-btn" style="font-size: 0.8rem; padding: 4px 8px;" onclick="showRunDiff('${escapeHtml(`${scenarioName} - ${typeLabel.toLowerCase()}`)}', ${run.runNumber}, '${testId}', Array.from(allTestData.results['${scenarioName} - ${typeLabel.toLowerCase()}']).indexOf(allTestData.results['${scenarioName} - ${typeLabel.toLowerCase()}'].find(r => r.runNumber === ${run.runNumber})))">Diff Table</button>
+                        </div>
                     </div>
-                </div>
-                <div style="display: flex; gap: 12px;">
-                    <!-- Placeholder buttons, link to showDetails for full view or actions -->
-                    <button class="secondary-btn" style="padding: 8px 16px; font-size: 0.9rem;" onclick="openDetailsFromTask('${escapeHtml(scenarioName)}', '${testId}')">View Detailed Runs</button>
+                `;
+            }
+
+            html += '</div></div>';
+            return html;
+        };
+
+        const unguidedRunsHtml = await renderRunsGroup(unguidedRuns, 'Unguided');
+        const guidedRunsHtml = await renderRunsGroup(guidedRuns, 'Guided');
+
+        let footerHtml = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Target Application</div>
+                    <div style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold; margin-top: 4px;">${escapeHtml(baseApp)}</div>
                 </div>
             </div>
         `;
 
-        // Wait, for buttons like Diff or Trajectory, we need to know what run. In the accordion, we can add them if we assume Run 1, or we can just link to the detailed runs modal which has them.
-        // Let's keep it simple and link to the detailed view modal for now, or add specific buttons if we can easily resolve artifacts for Run 1.
-        // Let's just make a button to launch the full modal for that task! The full modal has all artifacts and runs.
-        
         container.innerHTML = `
-            <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
                 ${promptHtml}
                 ${truthMatrixHtml}
-                ${buttonsHtml}
+                ${unguidedRunsHtml}
+                ${guidedRunsHtml}
+                ${footerHtml}
             </div>
         `;
 

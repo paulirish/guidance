@@ -90,6 +90,22 @@ export function calculateRadarData(results) {
 
 export function formatTestName(name) {
     if (!name) return name;
+    const parts = name.split(' - ');
+    if (parts.length >= 2) {
+        const appName = parts[0];
+        const useCaseId = parts.slice(1).join(' - ');
+        
+        const usecaseFolder = appName.replace(/-task$/, '');
+        const featuresMap = window.__featuresMapping || {};
+        let featureId = '';
+        if (featuresMap[usecaseFolder] && featuresMap[usecaseFolder].length > 0) {
+            featureId = featuresMap[usecaseFolder][0]; // take primary feature
+        }
+        
+        if (featureId) {
+            return `${featureId}: ${useCaseId}`;
+        }
+    }
     return name.split(' - ').join(' / ');
 }
 
