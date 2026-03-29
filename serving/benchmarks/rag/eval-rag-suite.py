@@ -40,8 +40,8 @@ def main():
     for gf in guide_files:
         if "node_modules" in gf or "expectations.md" in gf:
             continue
-        rel_path = os.path.relpath(gf, guides_dir)
-        guide_id = os.path.splitext(rel_path)[0]
+        
+        guide_id = os.path.splitext(os.path.basename(gf))[0]
         
         try:
             with open(gf, "r", encoding="utf-8") as f:
