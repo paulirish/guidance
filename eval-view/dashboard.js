@@ -358,10 +358,83 @@ function renderTestHeader(testId, jetskiVersion, timestamp, data) {
 }
 
 function renderSummary(data) {
-    const container = document.getElementById('summary-stats');
-    if (container) {
-        container.innerHTML = ''; // Removed top summary cards
-    }
+    const container = document.getElementById('test-header');
+    if (!container) return;
+
+    const results = data.results;
+    let totalUnguidedPassed = 0;
+    let totalUnguidedChecks = 0;
+    let totalGuidedPassed = 0;
+    let totalGuidedChecks = 0;
+    let guidedRunsCount = 0;
+    let runsWithTools = 0;
+    let runsWithGuides = 0;
+
+    Object.keys(results).forEach(key => {
+        const runs = results[key];
+        const isGuided = key.endsWith(' - guided');
+        if (isGuided) guidedRunsCount += runs.length;
+
+        runs.forEach(run => {
+            const stats = getRunStats(run.results);
+            if (isGuided) {
+                totalGuidedPassed += stats.passed;
+                totalGuidedChecks += stats.total;
+                if (run.guidanceToolsUsed && run.guidanceToolsUsed.length > 0) runsWithTools++;
+                if (run.guidesUsed && run.guidesUsed.length > 0) runsWithGuides++;
+                // Handle guideUsed object if present
+                if (!run.guidesUsed && run.guideUsed && typeof run.guideUsed === 'object') {
+                    if (run.guideUsed.guidesUsed && run.guideUsed.guidesUsed.length > 0) runsWithGuides++;
+                }
+            } else {
+                totalUnguidedPassed += stats.passed;
+                totalUnguidedChecks += stats.total;
+            }
+        });
+    });
+
+    const unguidedPassRate = totalUnguidedChecks > 0 ? Math.round((totalUnguidedPassed / totalUnguidedChecks) * 100) : 0;
+    const guidedPassRate = totalGuidedChecks > 0 ? Math.round((totalGuidedPassed / totalGuidedChecks) * 100) : 0;
+    const toolActivationRate = guidedRunsCount > 0 ? Math.round((runsWithTools / guidedRunsCount) * 100) : 0;
+    const guideUsageRate = guidedRunsCount > 0 ? Math.round((runsWithGuides / guidedRunsCount) * 100) : 0;
+
+    const summaryEl = document.createElement('div');
+    summaryEl.className = 'header-summary-grid';
+    
+    summaryEl.innerHTML = `
+        <div class="header-meta-item" style="flex: 1;">
+            <span class="meta-label">Overall Pass Rate Comparison</span>
+            <div style="display: flex; align-items: center; gap: 15px; margin-top: 8px;">
+                <span style="font-size: 0.95rem; color: var(--text-secondary);">${unguidedPassRate}%</span>
+                <div style="flex: 1; height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
+                    <div style="position: absolute; left: calc(${unguidedPassRate}% - 4px); width: 8px; height: 8px; background: #ea4335; border-radius: 50%; top: 2px;" title="Unguided: ${unguidedPassRate}%"></div>
+                    <div style="position: absolute; left: calc(${guidedPassRate}% - 4px); width: 8px; height: 8px; background: #34a853; border-radius: 50%; top: 2px;" title="Guided: ${guidedPassRate}%"></div>
+                    <div style="position: absolute; left: calc(${Math.min(unguidedPassRate, guidedPassRate)}% + 2px); width: calc(${Math.abs(guidedPassRate - unguidedPassRate)}% - 4px); height: 2px; background: rgba(255,255,255,0.4); top: 5px;"></div>
+                </div>
+                <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold;">${guidedPassRate}%</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Checks Passed: <span style="color: var(--text-primary);">${totalUnguidedPassed}/${totalUnguidedChecks}</span> (Ung) vs <span style="color: var(--text-primary);">${totalGuidedPassed}/${totalGuidedChecks}</span> (Gui)</div>
+        </div>
+
+        <div class="header-meta-item" style="min-width: 140px;">
+            <span class="meta-label">Tool Activation</span>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                <meter value="${toolActivationRate}" min="0" max="100" style="width: 100px; height: 12px;"></meter>
+                <span style="font-size: 0.95rem; font-weight: bold; color: var(--text-primary);">${toolActivationRate}%</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">(${runsWithTools}/${guidedRunsCount}) runs</div>
+        </div>
+
+        <div class="header-meta-item" style="min-width: 140px;">
+            <span class="meta-label">Guide Usage</span>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
+                <meter value="${guideUsageRate}" min="0" max="100" style="width: 100px; height: 12px;"></meter>
+                <span style="font-size: 0.95rem; font-weight: bold; color: var(--text-primary);">${guideUsageRate}%</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">(${runsWithGuides}/${guidedRunsCount}) runs</div>
+        </div>
+    `;
+    container.appendChild(summaryEl);
 }
 
 function renderGrid(data, testId) {
