@@ -109,12 +109,17 @@ def main():
         cos_scores = util.cos_sim(query_embedding, doc_embeddings)[0]
         
         # Sort scores in descending order
+        # To be safe across PyTorch versions, use sort()[1] which returns indices
+        # We need largest values first!
         top_results = cos_scores.argsort(descending=True)
 
         found_rank = 0
         if idx == 0:
             print(f"\n[DEBUG] Query: '{query_text}'")
             print(f"[DEBUG] Target guide: '{target_guide}'")
+            print(f"[DEBUG] Cos scores (raw): {cos_scores[:5]}")
+            print(f"[DEBUG] Top results indices: {top_results[:5]}")
+            print(f"[DEBUG] Top results values: {[cos_scores[i].item() for i in top_results[:5]]}")
             
         for i in range(min(5, len(top_results))):
             doc_idx = top_results[i].item()
