@@ -82,9 +82,9 @@ h1 {
 }
 
 #dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .test-card {
@@ -428,4 +428,148 @@ dialog#modal.diff-modal {
 
 .radar-legend-item {
   cursor: pointer;
+}
+
+/* Accordion Task List */
+.task-accordion {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.task-accordion:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.task-accordion-header {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  background: var(--card-bg);
+}
+
+.task-accordion-header .left-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.task-accordion-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.task-accordion-header .right-section {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.task-accordion-content {
+  padding: 24px;
+  border-top: 1px solid var(--border-color);
+  display: none;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.task-accordion.open .task-accordion-content {
+  display: block;
+}
+
+/* Mini Dumbbell Slider Track */
+.mini-dumbbell-track {
+  width: 250px;
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  position: relative;
+}
+
+.mini-dumbbell-track .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: absolute;
+  top: -2px;
+}
+
+.mini-dumbbell-track .dot.unguided {
+  background: transparent;
+  border: 1.5px solid #8b949e;
+  width: 6px;
+  height: 6px;
+  top: -2.5px;
+}
+
+.mini-dumbbell-track .dot.guided {
+  background: oklch(65% 0.25 290);
+}
+
+.mini-dumbbell-track .connector {
+  height: 100%;
+  position: absolute;
+  background: oklch(65% 0.25 290);
+}
+
+/* Uplift Score */
+.uplift-score {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #7ee787;
+  min-width: 100px;
+  text-align: right;
+}
+
+.uplift-score.negative {
+  color: #ffa198;
+}
+
+/* Assertion Truth Matrix */
+.truth-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.truth-matrix th, .truth-matrix td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.truth-matrix th {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.truth-matrix td.center, .truth-matrix th.center {
+  text-align: center;
+  width: 120px;
+}
+
+.truth-matrix tr:last-child td {
+  border-bottom: none;
+}
+
+.truth-matrix tr:hover td {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.truth-matrix td.pass {
+  color: #7ee787;
+}
+
+.truth-matrix td.fail {
+  color: #ffa198;
 }
