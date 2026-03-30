@@ -655,13 +655,20 @@ dialog#modal.diff-modal {
 }
 
 .tfoot-action-btn {
-  font-size: 0.65rem;
+  font-size: 12px;
   padding: 2px 4px;
   display: flex !important;
   flex-direction: row;
   align-items: center;
   gap: 4px;
-  justify-content: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 2px 5px;
+  border-radius: 2px;
+}
+
+.tfoot-action-btn svg {
+  color: grey;
 }
 
 
