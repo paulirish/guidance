@@ -370,22 +370,31 @@ function renderSummary(data) {
     let runsWithTools = 0;
     let runsWithGuides = 0;
 
+    const baseKeys = new Set();
+    const tasksWithTools = new Set();
+    const tasksWithGuides = new Set();
+
     Object.keys(results).forEach(key => {
+        const base = key.replace(' - guided', '').replace(' - unguided', '');
+        baseKeys.add(base);
+
         const runs = results[key];
         const isGuided = key.endsWith(' - guided');
         if (isGuided) guidedRunsCount += runs.length;
 
         runs.forEach(run => {
+            const hasTools = run.guidanceToolsUsed && run.guidanceToolsUsed.length > 0;
+            const hasGuides = (run.guidesUsed && run.guidesUsed.length > 0) || (run.guideUsed && typeof run.guideUsed === 'object' && run.guideUsed.guidesUsed && run.guideUsed.guidesUsed.length > 0);
+            
+            if (isGuided && hasTools) tasksWithTools.add(base);
+            if (isGuided && hasGuides) tasksWithGuides.add(base);
+
             const stats = getRunStats(run.results);
             if (isGuided) {
                 totalGuidedPassed += stats.passed;
                 totalGuidedChecks += stats.total;
-                if (run.guidanceToolsUsed && run.guidanceToolsUsed.length > 0) runsWithTools++;
-                if (run.guidesUsed && run.guidesUsed.length > 0) runsWithGuides++;
-                // Handle guideUsed object if present
-                if (!run.guidesUsed && run.guideUsed && typeof run.guideUsed === 'object') {
-                    if (run.guideUsed.guidesUsed && run.guideUsed.guidesUsed.length > 0) runsWithGuides++;
-                }
+                if (hasTools) runsWithTools++;
+                if (hasGuides) runsWithGuides++;
             } else {
                 totalUnguidedPassed += stats.passed;
                 totalUnguidedChecks += stats.total;
@@ -393,58 +402,56 @@ function renderSummary(data) {
         });
     });
 
+    const tasksCount = baseKeys.size;
     const unguidedPassRate = totalUnguidedChecks > 0 ? Math.round((totalUnguidedPassed / totalUnguidedChecks) * 100) : 0;
     const guidedPassRate = totalGuidedChecks > 0 ? Math.round((totalGuidedPassed / totalGuidedChecks) * 100) : 0;
-    const toolActivationRate = guidedRunsCount > 0 ? Math.round((runsWithTools / guidedRunsCount) * 100) : 0;
-    const guideUsageRate = guidedRunsCount > 0 ? Math.round((runsWithGuides / guidedRunsCount) * 100) : 0;
+    const toolActivationRate = tasksCount > 0 ? Math.round((tasksWithTools.size / tasksCount) * 100) : 0;
+    const guideUsageRate = tasksCount > 0 ? Math.round((tasksWithGuides.size / tasksCount) * 100) : 0;
 
     const summaryEl = document.createElement('div');
     summaryEl.className = 'header-summary-grid';
     
     summaryEl.innerHTML = `
-        <div class="header-meta-item" style="flex: 1;">
-            <span class="meta-label">Overall Pass Rate Comparison</span>
-            <div style="display: flex; align-items: center; gap: 15px; margin-top: 8px;">
-                <span style="font-size: 0.95rem; color: var(--text-secondary);">${unguidedPassRate}%</span>
-                <div style="flex: 1; height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
+        <div class="header-meta-item" style="flex: 2;">
+            <span class="meta-label">Average Uplift</span>
+            <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+                <div style="height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
                     <div style="position: absolute; left: calc(${unguidedPassRate}% - 3px); width: 6px; height: 6px; border: 1.5px solid #8b949e; background: transparent; border-radius: 50%; top: 2px;" title="Unguided: ${unguidedPassRate}%"></div>
                     <div style="position: absolute; left: calc(${guidedPassRate}% - 4px); width: 8px; height: 8px; background: oklch(65% 0.25 290); border-radius: 50%; top: 2px;" title="Guided: ${guidedPassRate}%"></div>
                     <div style="position: absolute; left: calc(${Math.min(unguidedPassRate, guidedPassRate)}% + 2px); width: calc(${Math.abs(guidedPassRate - unguidedPassRate)}% - 4px); height: 2px; background: oklch(65% 0.25 290); top: 5px;"></div>
                 </div>
-                <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold;">${guidedPassRate}%</span>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">${unguidedPassRate}% → <span style="font-weight: bold; color: var(--text-primary);">${guidedPassRate}%</span></span>
             </div>
         </div>
 
         <div class="header-meta-item" style="flex: 1; max-width: 250px;">
-            <span class="meta-label">Checks Passed Count Comparison</span>
-            <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
-                <span style="font-size: 0.95rem; color: var(--text-secondary);">${totalUnguidedPassed}</span>
-                <div style="flex: 1; height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
+            <span class="meta-label">Assertions passed</span>
+            <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 8px;">
+                <div style="height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
                     <div style="position: absolute; left: calc(${(totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 3px); width: 6px; height: 6px; border: 1.5px solid #8b949e; background: transparent; border-radius: 50%; top: 2px;" title="Unguided Count: ${totalUnguidedPassed}"></div>
                     <div style="position: absolute; left: calc(${(totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 4px); width: 8px; height: 8px; background: oklch(65% 0.25 290); border-radius: 50%; top: 2px;" title="Guided Count: ${totalGuidedPassed}"></div>
                     <div style="position: absolute; left: calc(${Math.min((totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100, (totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% + 2px); width: calc(${Math.abs((totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100 - (totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% - 4px); height: 2px; background: oklch(65% 0.25 290); top: 5px;"></div>
                 </div>
-                <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold;">${totalGuidedPassed}</span>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">${totalUnguidedPassed} → <span style="font-weight: bold; color: var(--text-primary);">${totalGuidedPassed}</span> / ${Math.max(totalUnguidedChecks, totalGuidedChecks)}</span>
             </div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Out of max <span style="color: var(--text-primary);">${Math.max(totalUnguidedChecks, totalGuidedChecks)}</span> checks</div>
         </div>
 
         <div class="header-meta-item" style="min-width: 140px;">
-            <span class="meta-label">Tool Activation</span>
+            <span class="meta-label">Activation</span>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
                 <meter value="${toolActivationRate}" min="0" max="100" style="width: 100px; height: 12px;"></meter>
                 <span style="font-size: 0.95rem; font-weight: bold; color: var(--text-primary);">${toolActivationRate}%</span>
             </div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">(${runsWithTools}/${guidedRunsCount}) runs</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">(${tasksWithTools.size}/${tasksCount}) tasks</div>
         </div>
 
         <div class="header-meta-item" style="min-width: 140px;">
-            <span class="meta-label">Guide Usage</span>
+            <span class="meta-label">Guidance consumed</span>
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
                 <meter value="${guideUsageRate}" min="0" max="100" style="width: 100px; height: 12px;"></meter>
                 <span style="font-size: 0.95rem; font-weight: bold; color: var(--text-primary);">${guideUsageRate}%</span>
             </div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">(${runsWithGuides}/${guidedRunsCount}) runs</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">(${tasksWithGuides.size}/${tasksCount}) tasks</div>
         </div>
     `;
     container.appendChild(summaryEl);
