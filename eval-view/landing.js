@@ -444,7 +444,7 @@ function renderSuites() {
                 </td>
                 <td>${testInfo.agent}</td>
                 <td>${servingDisplayNames[testInfo.serving] || testInfo.serving}</td>
-                <td style="font-size: 0.85rem; color: var(--text-secondary); word-break: break-all;">${testInfo.model}</td>
+                <td style="font-size: 0.85rem; color: var(--text-secondary); word-break: break-all;">${escapeHtml(testInfo.model).replace(/-/g, '&shy;')}</td>
                 <td style="font-weight: 600;">${taskCount} ${maxRuns > 1 ? `<span style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 400;">×${maxRuns}</span>` : ''}</td>
                 <td class="rate-cell" data-compound-key="${compoundKey}">
                     <div class="rate-bar" style="width: ${gRate}%;"></div>
