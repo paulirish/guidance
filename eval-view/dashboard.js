@@ -1171,6 +1171,7 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
         const criteria = currentSuite ? { agent: currentSuite.agent, model: currentSuite.model, serving: currentSuite.serving } : null;
 
         let currentAssertions = [];
+        let currentPromptText = '';
         try {
             const currentRes = await fetch(`${currentTestId}/evals.json`);
             if (currentRes.ok) {
@@ -1182,6 +1183,15 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
                     currentAssertions = currentRunResults[0].results.map(r => r.message).sort();
                 }
             }
+            
+            // Fetch current prompt text to verify candidate matches
+            const runScriptText = await api.getFileText(`${currentTestId}/run.mjs`);
+            const match = runScriptText.match(/\.\.\.\[([\s\S]+?)\]/);
+            if (match) {
+                const arrayStr = `[${match[1]}]`;
+                const arr = JSON.parse(arrayStr);
+                currentPromptText = arr[1];
+            }
         } catch (e) {}
 
         let history = [];
@@ -1189,7 +1199,6 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
             if (criteria) {
                 if (suite.agent !== criteria.agent || suite.model !== criteria.model || suite.serving !== criteria.serving) continue;
             }
-            if (suite.id === currentTestId) continue;
 
             const res = await fetch(`${suite.id}/evals.json`);
             if (res.ok) {
@@ -1211,8 +1220,23 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
                     gRate = getRunStats(guidedRun[0].results).rate;
                 }
                 if (unguidedRun && unguidedRun[0]) {
-                    // Assuming assertions match guided if run together
                     uRate = getRunStats(unguidedRun[0].results).rate;
+                }
+
+                // Verify prompt text matches exactly!
+                let historyPromptText = '';
+                try {
+                    const runText = await api.getFileText(`${suite.id}/run.mjs`);
+                    const match = runText.match(/\.\.\.\[([\s\S]+?)\]/);
+                    if (match) {
+                        const arrayStr = `[${match[1]}]`;
+                        const arr = JSON.parse(arrayStr);
+                        historyPromptText = arr[1];
+                    }
+                } catch (e) {}
+
+                if (currentPromptText && historyPromptText && currentPromptText !== historyPromptText) {
+                    continue; // Skip if prompt modified!
                 }
 
                 if (gRate !== null || uRate !== null) {
@@ -1220,7 +1244,8 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
                         testId: suite.id,
                         timestamp: suite.timestamp,
                         guidedRate: gRate,
-                        unguidedRate: uRate
+                        unguidedRate: uRate,
+                        isCurrent: suite.id === currentTestId
                     });
                 }
             }
@@ -1232,6 +1257,17 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
         }
 
         history.sort((a,b) => a.testId.localeCompare(b.testId));
+
+        // Format short time ago (e.g. 3d, 11d)
+        function formatShortTime(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            if (diffDays < 1) return 'today';
+            return `${diffDays}d`;
+        }
 
         const width = Math.max(500, history.length * 60);
         const height = 150;
@@ -1271,22 +1307,27 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
                     <!-- Data Points -->
                     ${history.map((h, i) => {
                         const x = paddingX + i * stepX;
-                        const displayId = h.testId.split('-').pop(); // e.g. 13-12-05
+                        const displayId = formatShortTime(h.timestamp);
                         
                         let pointsHtml = '';
+                        const strokeColor = h.isCurrent ? '#fff' : 'var(--bg-primary)';
+                        const strokeWidth = h.isCurrent ? 3 : 2;
+                        const rG = h.isCurrent ? 7 : 5;
+                        const rU = h.isCurrent ? 6 : 4;
+
                         if (h.guidedRate !== null) {
                             const yG = height - paddingY - (h.guidedRate / 100 * graphHeight);
                             pointsHtml += `
-                                <circle cx="${x}" cy="${yG}" r="5" fill="${getColor(h.guidedRate)}" stroke="var(--bg-primary)" stroke-width="2">
+                                <circle cx="${x}" cy="${yG}" r="${rG}" fill="${getColor(h.guidedRate)}" stroke="${strokeColor}" stroke-width="${strokeWidth}">
                                     <title>Suite: ${h.testId}\nGuided: ${h.guidedRate}%</title>
                                 </circle>
-                                <text x="${x}" y="${yG - 10}" fill="${getColor(h.guidedRate)}" font-size="0.75rem" font-weight="bold" text-anchor="middle">${h.guidedRate}%</text>
+                                <text x="${x}" y="${yG - 12}" fill="${getColor(h.guidedRate)}" font-size="0.75rem" font-weight="bold" text-anchor="middle">${h.guidedRate}%</text>
                             `;
                         }
                         if (h.unguidedRate !== null) {
                             const yU = height - paddingY - (h.unguidedRate / 100 * graphHeight);
                             pointsHtml += `
-                                <circle cx="${x}" cy="${yU}" r="4" fill="rgba(255,255,255,0.3)" stroke="var(--bg-primary)" stroke-width="2">
+                                <circle cx="${x}" cy="${yU}" r="${rU}" fill="rgba(255,255,255,0.3)" stroke="${strokeColor}" stroke-width="${strokeWidth}">
                                     <title>Suite: ${h.testId}\nUnguided: ${h.unguidedRate}%</title>
                                 </circle>
                                 <text x="${x}" y="${yU + 14}" fill="rgba(255,255,255,0.5)" font-size="0.7rem" text-anchor="middle">${h.unguidedRate}%</text>
@@ -1295,9 +1336,9 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
 
                         return `
                             <g style="cursor: pointer;" onclick="window.location.href='dashboard.html?testId=${h.testId}&source=local'">
-                                <line x1="${x}" y1="${paddingY}" x2="${x}" y2="${height - paddingY}" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                                <line x1="${x}" y1="${paddingY}" x2="${x}" y2="${height - paddingY}" stroke="${h.isCurrent ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)'}" stroke-width="${h.isCurrent ? 1.5 : 1}" />
                                 ${pointsHtml}
-                                <text x="${x}" y="${height - paddingY + 18}" fill="var(--text-secondary)" font-size="0.7rem" text-anchor="middle">${displayId}</text>
+                                <text x="${x}" y="${height - paddingY + 18}" fill="${h.isCurrent ? '#fff' : 'var(--text-secondary)'}" font-size="0.7rem" font-weight="${h.isCurrent ? 'bold' : 'normal'}" text-anchor="middle">${displayId}</text>
                             </g>
                         `;
                     }).join('')}
