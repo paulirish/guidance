@@ -1256,7 +1256,8 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
             return;
         }
 
-        history.sort((a,b) => a.testId.localeCompare(b.testId));
+        // Sort chronologically by date epoch
+        history.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
 
         // Format short time ago (e.g. 3d, 11d)
         function formatShortTime(timestamp) {
@@ -1264,6 +1265,13 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
             const date = new Date(timestamp);
             const now = new Date();
             const diffMs = now - date;
+            
+            if (diffMs < 0) {
+                const diffDays = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60 * 24));
+                if (diffDays < 1) return 'today'; // Within <24h server skew group
+                return `+${diffDays}d`;
+            }
+
             const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
             if (diffDays < 1) return 'today';
             return `${diffDays}d`;
