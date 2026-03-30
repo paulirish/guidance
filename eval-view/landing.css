@@ -1,3 +1,4 @@
+
 /* Base Layout */
 .suites-table {
   width: 100%;
@@ -78,16 +79,14 @@
 .landing-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0 20px;
 }
 
 .header-nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
 }
 
 .landing-title {

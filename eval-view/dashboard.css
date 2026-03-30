@@ -1,3 +1,10 @@
+/* this file is shared by both landing and dashboard */
+/* its also the only styles loaded for dashboard */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   --bg-color: #0b0f15;
   --card-bg: #121822;
@@ -28,6 +35,10 @@ body {
 
 header {
 
+}
+
+header > div > div {
+  flex-grow: 1;
 }
 
 h1 {
@@ -599,11 +610,9 @@ dialog#modal.diff-modal {
   overflow-x: auto;
   gap: 30px;
   width: 100%;
-  margin-top: 15px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgb(8 8 8 / 74%);
   padding: 12px 16px;
   border-radius: 12px;
-  border: 1px solid var(--border-color);
 }
 
 .header-summary-grid {
