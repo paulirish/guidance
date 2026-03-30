@@ -580,12 +580,11 @@ dialog#modal.diff-modal {
   text-align: left;
 }
 
-.truth-matrix tr:nth-child(even) {
+.truth-matrix tbody tr:nth-child(even) {
   background: rgba(255, 255, 255, 0.015);
 }
 
 .truth-matrix th {
-  background: rgba(255, 255, 255, 0.03);
   color: var(--text-secondary);
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -642,8 +641,8 @@ dialog#modal.diff-modal {
 .header-meta-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px;
+  gap: 1px;
+  padding: 13px;
   width: 100%;
 }
 
