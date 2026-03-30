@@ -1196,20 +1196,31 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
                 const data = await res.json();
                 const guidedKey = `${scenarioName} - guided`;
                 const unguidedKey = `${scenarioName} - unguided`;
-                const runResults = data.results[guidedKey] || data.results[unguidedKey];
-                if (runResults && runResults[0]) {
-                    const historyAssertions = runResults[0].results.map(r => r.message).sort();
-                    if (currentAssertions.length > 0 && currentAssertions.join('|') !== historyAssertions.join('|')) {
-                        continue; // Skip if grader checks differ!
-                    }
+                
+                let gRate = null;
+                let uRate = null;
 
-                    const stats = getRunStats(runResults[0].results);
+                const guidedRun = data.results[guidedKey];
+                const unguidedRun = data.results[unguidedKey];
+
+                if (guidedRun && guidedRun[0]) {
+                    const historyAssertions = guidedRun[0].results.map(r => r.message).sort();
+                    if (currentAssertions.length > 0 && currentAssertions.join('|') !== historyAssertions.join('|')) {
+                         continue; // Skip if checks differ!
+                    }
+                    gRate = getRunStats(guidedRun[0].results).rate;
+                }
+                if (unguidedRun && unguidedRun[0]) {
+                    // Assuming assertions match guided if run together
+                    uRate = getRunStats(unguidedRun[0].results).rate;
+                }
+
+                if (gRate !== null || uRate !== null) {
                     history.push({
                         testId: suite.id,
                         timestamp: suite.timestamp,
-                        rate: stats.rate,
-                        passed: stats.passed,
-                        total: stats.total
+                        guidedRate: gRate,
+                        unguidedRate: uRate
                     });
                 }
             }
@@ -1220,26 +1231,26 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
             return;
         }
 
-        // Sort chronologically by suite ID timestamp
         history.sort((a,b) => a.testId.localeCompare(b.testId));
 
         const width = Math.max(500, history.length * 60);
-        const height = 120;
+        const height = 150;
         const paddingX = 40;
-        const paddingY = 20;
+        const paddingY = 30;
         const graphHeight = height - 2 * paddingY;
         const graphWidth = width - 2 * paddingX;
         const stepX = history.length > 1 ? graphWidth / (history.length - 1) : 0;
 
-        const points = history.map((h, i) => {
-            const x = paddingX + i * stepX;
-            const y = height - paddingY - (h.rate / 100 * graphHeight);
-            return `${x},${y}`;
-        }).join(' ');
+        const gPoints = history.map((h, i) => h.guidedRate !== null ? `${paddingX + i * stepX},${height - paddingY - (h.guidedRate / 100 * graphHeight)}` : '').filter(Boolean).join(' ');
+        const uPoints = history.map((h, i) => h.unguidedRate !== null ? `${paddingX + i * stepX},${height - paddingY - (h.unguidedRate / 100 * graphHeight)}` : '').filter(Boolean).join(' ');
 
         let svgHtml = `
             <div class="stability-title" style="font-size: 0.9rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 8px;">Reliability Trend Analysis</div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Chronological outcomes across identical trials</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                <span>Chronological outcomes across identical trials</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="display:inline-block; width: 10px; height: 10px; border-radius: 50%; background: oklch(65% 0.25 290);"></span> Guided</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="display:inline-block; width: 10px; height: 10px; border-radius: 50%; background: oklch(65% 0.1 200);"></span> Unguided</span>
+            </div>
             
             <div style="overflow-x: auto; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 15px; border: 1px solid var(--border-color);">
                 <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display: block;">
@@ -1253,21 +1264,40 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
                     <text x="${paddingX - 10}" y="${paddingY + graphHeight / 2 + 4}" fill="var(--text-secondary)" font-size="0.75rem" text-anchor="end">50%</text>
                     <text x="${paddingX - 10}" y="${height - paddingY + 4}" fill="var(--text-secondary)" font-size="0.75rem" text-anchor="end">0%</text>
 
-                    <!-- Connecting Line -->
-                    ${history.length > 1 ? `<polyline points="${points}" fill="none" stroke="oklch(65% 0.25 290)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+                    <!-- Connecting Lines -->
+                    ${gPoints ? `<polyline points="${gPoints}" fill="none" stroke="oklch(65% 0.25 290)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+                    ${uPoints ? `<polyline points="${uPoints}" fill="none" stroke="oklch(65% 0.1 200)" stroke-width="1.5" stroke-dasharray="3" stroke-linecap="round" stroke-linejoin="round" />` : ''}
 
                     <!-- Data Points -->
                     ${history.map((h, i) => {
                         const x = paddingX + i * stepX;
-                        const y = height - paddingY - (h.rate / 100 * graphHeight);
                         const displayId = h.testId.split('-').pop(); // e.g. 13-12-05
+                        
+                        let pointsHtml = '';
+                        if (h.guidedRate !== null) {
+                            const yG = height - paddingY - (h.guidedRate / 100 * graphHeight);
+                            pointsHtml += `
+                                <circle cx="${x}" cy="${yG}" r="5" fill="${getColor(h.guidedRate)}" stroke="var(--bg-primary)" stroke-width="2">
+                                    <title>Suite: ${h.testId}\nGuided: ${h.guidedRate}%</title>
+                                </circle>
+                                <text x="${x}" y="${yG - 10}" fill="${getColor(h.guidedRate)}" font-size="0.75rem" font-weight="bold" text-anchor="middle">${h.guidedRate}%</text>
+                            `;
+                        }
+                        if (h.unguidedRate !== null) {
+                            const yU = height - paddingY - (h.unguidedRate / 100 * graphHeight);
+                            pointsHtml += `
+                                <circle cx="${x}" cy="${yU}" r="4" fill="rgba(255,255,255,0.3)" stroke="var(--bg-primary)" stroke-width="2">
+                                    <title>Suite: ${h.testId}\nUnguided: ${h.unguidedRate}%</title>
+                                </circle>
+                                <text x="${x}" y="${yU + 14}" fill="rgba(255,255,255,0.5)" font-size="0.7rem" text-anchor="middle">${h.unguidedRate}%</text>
+                            `;
+                        }
+
                         return `
                             <g style="cursor: pointer;" onclick="window.location.href='dashboard.html?testId=${h.testId}&source=local'">
-                                <circle cx="${x}" cy="${y}" r="5" fill="${getColor(h.rate)}" stroke="var(--bg-primary)" stroke-width="2">
-                                    <title>Suite: ${h.testId}\nScore: ${h.rate}%</title>
-                                </circle>
-                                <text x="${x}" y="${height - paddingY + 15}" fill="var(--text-secondary)" font-size="0.7rem" text-anchor="middle">${displayId}</text>
-                                <text x="${x}" y="${y - 10}" fill="${getColor(h.rate)}" font-size="0.75rem" font-weight="bold" text-anchor="middle">${h.rate}%</text>
+                                <line x1="${x}" y1="${paddingY}" x2="${x}" y2="${height - paddingY}" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                                ${pointsHtml}
+                                <text x="${x}" y="${height - paddingY + 18}" fill="var(--text-secondary)" font-size="0.7rem" text-anchor="middle">${displayId}</text>
                             </g>
                         `;
                     }).join('')}
