@@ -434,6 +434,7 @@ function renderSummary(data) {
             </div>
         </div>
 
+        <div class="summary-subgrid">
         <div class="header-meta-item">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="meta-label">ASSERTIONS PASSED</span>
@@ -468,6 +469,7 @@ function renderSummary(data) {
                 <meter value="${guideUsageRate}" min="0" max="100" style="width: 100%; height: 12px;"></meter>
                 <div style="font-size: 0.8rem; color: var(--text-secondary);">(${tasksWithGuides.size}/${tasksCount}) tasks</div>
             </div>
+        </div>
         </div>
     `;
 }

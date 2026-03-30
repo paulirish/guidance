@@ -618,6 +618,13 @@ dialog#modal.diff-modal {
   border-radius: 12px;
 }
 
+.summary-subgrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+}
+
 .header-summary-grid {
   display: flex;
   flex-direction: row;
