@@ -615,13 +615,6 @@ dialog#modal.diff-modal {
 /* Header Meta Grid */
 .header-meta-grid {
   display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  gap: 30px;
-  width: 100%;
-  background: rgb(8 8 8 / 74%);
-  padding: 12px 16px;
   border-radius: 12px;
 }
 
@@ -667,16 +660,19 @@ dialog#modal.diff-modal {
 }
 
 .tfoot-action-btn {
-  font-size: 12px;
+  font-size: 0.65rem;
   padding: 2px 4px;
   display: flex !important;
   flex-direction: row;
   align-items: center;
   gap: 4px;
-  justify-content: flex-start;
-  width: 100%;
-  padding: 2px 5px;
-  border-radius: 2px;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: color 0.1s ease;
+}
+
+.tfoot-action-btn:hover {
+  color: var(--text-primary);
 }
 
 .tfoot-action-btn svg {

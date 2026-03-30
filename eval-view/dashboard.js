@@ -291,6 +291,10 @@ function renderTestHeader(testId, jetskiVersion, timestamp, data) {
     const container = document.getElementById('test-header');
     if (container) {
         let timeStr = '-';
+        if (!timestamp) {
+            const dateMatch = testId.match(/(\d{4}-\d{2}-\d{2})/);
+            if (dateMatch) timestamp = dateMatch[1];
+        }
         if (timestamp) {
             try {
                 const _date = new Date(timestamp);
@@ -301,6 +305,10 @@ function renderTestHeader(testId, jetskiVersion, timestamp, data) {
                     minute: '2-digit',
                     hour12: true
                 }).replace(' at ', ', ');
+                if (timeStr.includes('12:00 AM') || timeStr === 'Invalid Date' || isNaN(_date.getTime())) {
+                    const options = { month: 'short', day: 'numeric' };
+                    timeStr = _date.toLocaleDateString('en-US', options);
+                }
             } catch { }
         }
 
@@ -327,29 +335,29 @@ function renderTestHeader(testId, jetskiVersion, timestamp, data) {
         container.innerHTML = `
             <div class="header-meta-grid">
                 <div class="header-meta-item">
-                    <span class="meta-label">Test ID</span>
                     <span class="meta-value" title="${escapeHtml(testId)}">${escapeHtml(testId)}</span>
+                    <span class="meta-label">Test ID</span>
                 </div>
                 <div class="header-meta-item">
-                    <span class="meta-label">Action Date</span>
                     <span class="meta-value">${escapeHtml(timeStr)}</span>
+                    <span class="meta-label">Action Date</span>
                 </div>
                 <div class="header-meta-item">
-                    <span class="meta-label">Agent</span>
                     <span class="meta-value">${escapeHtml(agent)}</span>
+                    <span class="meta-label">Agent</span>
                 </div>
                 <div class="header-meta-item">
-                    <span class="meta-label">Model</span>
                     <span class="meta-value" title="${escapeHtml(model)}">${escapeHtml(model)}</span>
+                    <span class="meta-label">Model</span>
                 </div>
                 <div class="header-meta-item">
-                    <span class="meta-label">Serving Mode</span>
                     <span class="meta-value">${escapeHtml(serving)}</span>
+                    <span class="meta-label">Serving Mode</span>
                 </div>
                 ${jetskiVersion ? `
                 <div class="header-meta-item">
-                    <span class="meta-label">Jetski Version</span>
                     <span class="meta-value">${escapeHtml(jetskiVersion)}</span>
+                    <span class="meta-label">Jetski Version</span>
                 </div>
                 ` : ''}
             </div>
