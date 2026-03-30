@@ -1015,6 +1015,58 @@ async function viewContent(fileName, filePath) {
 
     try {
         const text = await api.getFileText(filePath);
+
+        if (fileName.endsWith('diff.txt')) {
+            body.innerHTML = '';
+            body.appendChild(renderBackButton());
+
+            const files = text.split(/^diff --git /m);
+            let anyRendered = false;
+
+            for (let i = 0; i < files.length; i++) {
+                let fileDiff = files[i].trim();
+                if (!fileDiff) continue;
+
+                // Extract a nice file header
+                const lines = fileDiff.split('\n');
+                let fileHeader = lines[0];
+                if (fileHeader.startsWith('a/')) {
+                    fileHeader = fileHeader.split(' b/')[0].replace(/^a\//, '');
+                }
+
+                const details = document.createElement('details');
+                details.style.marginBottom = '12px';
+                details.style.background = 'rgba(255, 255, 255, 0.02)';
+                details.style.border = '1px solid var(--border-color)';
+                details.style.borderRadius = '6px';
+                details.style.padding = '8px 12px';
+
+                const summary = document.createElement('summary');
+                summary.style.fontWeight = 'bold';
+                summary.style.cursor = 'pointer';
+                summary.style.fontSize = '0.85rem';
+                summary.style.color = 'var(--text-primary)';
+                summary.textContent = fileHeader;
+                details.appendChild(summary);
+
+                const preEl = document.createElement('pre');
+                preEl.className = 'diff-container';
+                preEl.style.marginTop = '10px';
+                preEl.style.background = 'transparent';
+                preEl.style.border = 'none';
+                preEl.style.padding = '0';
+                preEl.style.fontSize = '0.75rem';
+                
+                preEl.textContent = 'diff --git ' + fileDiff;
+                
+                details.appendChild(preEl);
+                body.appendChild(details);
+                anyRendered = true;
+            }
+
+            if (anyRendered) return; // intercepted successfully
+        }
+
         const lines = text.split('\n');
         const truncated = lines.length > 5000;
         const content = truncated ? lines.slice(0, 5000).join('\n') + '\n\n...[truncated for display]...' : text;

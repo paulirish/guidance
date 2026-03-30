@@ -344,6 +344,7 @@ dialog#modal[open] {
 /* Diff View Styles */
 .diff-container {
   font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.8rem;
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
