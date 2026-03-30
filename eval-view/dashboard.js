@@ -581,8 +581,8 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                 const cleanedText = text.replace(/^---[\s\S]+?---\n+/, '');
 
                 promptHtml = `
-                    <div style="display: flex; flex-direction: row; gap: 12px; align-items: flex-start; margin-bottom: 16px;">
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border-color); flex-shrink: 0; margin-top: 4px;">
+                    <div style="display: flex; flex-direction: row; gap: 12px; align-items: flex-start; ">
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border-color); flex-shrink: 0; ">
                             <span style="color: var(--text-secondary); white-space: nowrap; display:block;">Base App:</span> 
                             <span style="color: var(--text-primary); font-weight: bold; white-space: nowrap;">${escapeHtml(baseApp)}</span>
                         </div>

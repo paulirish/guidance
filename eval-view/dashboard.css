@@ -94,7 +94,7 @@ h1 {
 #dashboard-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 .test-card {
@@ -451,7 +451,6 @@ dialog#modal.diff-modal {
 }
 
 .task-accordion:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
