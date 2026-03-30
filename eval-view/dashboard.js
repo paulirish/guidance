@@ -704,7 +704,7 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
         };
 
         // Compute separate horizontal run boxes for Tools Used & Guides Used Only
-        const getRunCards = async (runs, typeLabel) => {
+                const getRunCards = async (runs, typeLabel) => {
              let html = '';
              for (let i = 0; i < maxRuns; i++) {
                  if (!runs || i >= runs.length) continue;
@@ -715,22 +715,20 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                  if (toolsUsed.length === 0 && guidesUsed.length === 0) continue;
 
                  html += `
-                     <div style="background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); flex: 1; min-width: 200px;">
-                         <div style="margin-bottom: 8px;">
-                             <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-primary);">${typeLabel} Run ${i + 1}</span>
-                         </div>
+                     <div style="background: rgba(255, 255, 255, 0.02); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; flex-direction: row; align-items: center; gap: 16px; flex: 1; min-width: 250px;">
+                         <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-primary); white-space: nowrap;">${typeLabel} Run ${i + 1}</span>
                          
                          ${toolsUsed.length > 0 ? `
-                         <div style="font-size: 0.75rem;">
-                             <div style="color: var(--text-secondary); margin-bottom: 4px;">Tools Used:</div>
+                         <div style="font-size: 0.75rem; display: flex; align-items: center; gap: 6px;">
+                             <span style="color: var(--text-secondary); white-space: nowrap;">Tools:</span>
                              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                  ${toolsUsed.map(t => `<span style="background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); font-family: monospace;">${escapeHtml(t)}</span>`).join('')}
                              </div>
                          </div>` : ''}
                          
                          ${guidesUsed.length > 0 ? `
-                         <div style="margin-top: 8px; font-size: 0.75rem;">
-                             <div style="color: var(--text-secondary); margin-bottom: 4px;">Guides Used:</div>
+                         <div style="font-size: 0.75rem; display: flex; align-items: center; gap: 6px;">
+                             <span style="color: var(--text-secondary); white-space: nowrap;">Guides:</span>
                              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                  ${guidesUsed.map(g => `<span style="background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); font-family: monospace;">${escapeHtml(g)}</span>`).join('')}
                              </div>
@@ -753,7 +751,7 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
         }
 const guidedCards = await getRunCards(guidedRuns, 'Guided');
         tfootHtml += `<td>
-${guidedCards}
+<div style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 12px;">${guidedCards}</div>
 </td></tr></tfoot>`;
 
         truthMatrixHtml = truthMatrixHtml.replace('</tbody></table></div>', `</tbody>${tfootHtml}</table></div>`);
