@@ -493,6 +493,7 @@ function renderGrid(data, testId) {
 
             const accordion = document.createElement('div');
             accordion.className = 'task-accordion';
+            accordion.id = `item-${scenarioName.replace(/\s+/g, '-').toLowerCase()}`;
             
             // Draw mini dumbbell slider track
             const leftDot = Math.min(unguidedAvg, guidedAvg);
@@ -795,225 +796,28 @@ window.viewContent = viewContent;
 window.viewDiff = viewDiff;
 
 async function showDetails(testName, runs, stats, testId) {
+    const modal = document.getElementById('modal');
+    if (modal && modal.open) modal.close();
+
     // Update URL without reloading
     const url = new URL(window.location.href);
     url.searchParams.set('testName', testName);
-    url.searchParams.delete('view');
-    url.searchParams.delete('run');
     window.history.replaceState({ testName }, '', url);
 
-    // Store current details for back navigation
+    // Store for back navigation
     currentDetails = { testName, runs, stats, testId };
 
-    const modal = document.getElementById('modal');
-    const title = document.getElementById('modal-title');
-    const contentDiv = document.querySelector('.modal-content');
-    const body = document.getElementById('modal-body');
-    const [, guide, runType] = testName.split(' - ');
-
-    // Reset modifier classes
-    modal.classList.remove('diff-modal');
-    contentDiv.classList.remove('diff-modal');
-    modal.dataset.view = 'details';
-
-    title.textContent = formatTestName(testName);
-
-    let promptHtml = ''; // Initialize promptHtml outside the map
-
-    const runDetailsPromises = runs.map(async (run) => {
-        const s = getRunStats(run.results);
-        // Determine file paths for this run
-        const { setupPath, resultPath, usedBasePath } = await getResultPaths(testId, run, testName);
-
-        let sessionFile = null;
-        let files = [];
-        try {
-            files = await api.getRunFiles(usedBasePath);
-            if (files && files.length > 0) {
-                sessionFile = files.find(f => f.startsWith('session-') && f.endsWith('.html'));
-            }
-        } catch (e) {
-            console.log('Error checking run files:', e);
+    const matchName = testName.split(' - ')[0];
+    const accordionId = `item-${matchName.replace(/\s+/g, '-').toLowerCase()}`;
+    const accordionEl = document.getElementById(accordionId);
+    
+    if (accordionEl) {
+        accordionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!accordionEl.classList.contains('open')) {
+            const header = accordionEl.querySelector('.task-accordion-header');
+            if (header) header.click();
         }
-
-        // Fetch prompt text from the task definition
-        if (run === runs[0]) {
-            try {
-                const isNegative = run.taskName && run.taskName.endsWith('-negative');
-                const taskPath = `tasks/${isNegative ? 'negative/' : ''}${run.taskName}.md`;
-                const text = await api.getFileText(taskPath);
-
-                // Extract base_app from YAML frontmatter
-                const frontmatterMatch = text.match(/^---([\s\S]+?)---/);
-                let baseApp = 'n/a';
-                if (frontmatterMatch) {
-                    const yaml = frontmatterMatch[1];
-                    const baseAppMatch = yaml.match(/base_app:\s*([^\n\r]+)/);
-                    if (baseAppMatch) {
-                        baseApp = baseAppMatch[1].trim();
-                    }
-                }
-
-                // Strip YAML frontmatter from the markdown task file
-                const cleanedText = text.replace(/^---[\s\S]+?---\n+/, '');
-
-                promptHtml = `
-                    <div class="prompt-section" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid var(--text-secondary);">
-                        <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 10px; display:block">Base App: <strong style="color: var(--text-primary);">${escapeHtml(baseApp)}</strong></div>
-                        <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 5px;">Prompt: <strong style="color: var(--text-primary); white-space: pre-wrap; font-family: inherit;">${escapeHtml(cleanedText)}</strong></div>
-                    </div>
-                `;
-            } catch (e) {
-                console.log('Task prompt file not found:', e.message);
-            }
-        }
-
-        let usageSection = '';
-        const toolsUsed = run.guidanceToolsUsed || [];
-        const expectedTool = run.expectedGuidanceTool;
-        const hasToolData = run.guidanceToolsUsed !== undefined;
-
-        const guidesUsed = run.guidesUsed || 
-               (run.guideUsed !== undefined ? 
-               (typeof run.guideUsed === 'object' && run.guideUsed !== null ? run.guideUsed.guidesUsed : []) 
-               : []);
-        const expectedGuide = run.expectedGuide || guide;
-        const hasGuideData = run.guidesUsed !== undefined || run.guideUsed !== undefined;
-
-        const logFile = files.includes('mcp-server.log') ? 'mcp-server.log' : 'modern-web.log';
-        const shouldUseTrajectory = (allTestData.serving ? (allTestData.serving === 'skills' || allTestData.serving === 'skills_cli') : allTestData.enableSkills) && sessionFile;
-
-        if (runType !== 'unguided' && (hasToolData || hasGuideData)) {
-            usageSection = `
-                <div class="usage-section" style="margin-top: 15px; padding: 12px 15px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid var(--border-color);">
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        ${hasToolData ? `
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <strong style="font-size: 0.9em; font-weight: 600; color: var(--text-secondary); min-width: 90px;">Tools Used:</strong>
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                ${toolsUsed.length > 0 ? toolsUsed.map(t => {
-                                    const isExpected = t === expectedTool;
-                                    return `<code style="background: ${isExpected ? 'rgba(0, 200, 0, 0.1)' : 'rgba(255,255,255,0.05)'}; padding: 3px 6px; border-radius: 4px; font-size: 0.85em; border: 1px solid ${isExpected ? 'var(--accent-success)' : 'var(--border-color)'}; color: ${isExpected ? 'var(--accent-success)' : 'var(--text-primary)'}">${escapeHtml(t)}</code>`;
-                                }).join('') : '<span style="color: var(--text-secondary); font-style: italic; font-size: 0.85em;">None</span>'}
-                            </div>
-                        </div>` : ''}
-
-                        ${hasGuideData ? `
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <strong style="font-size: 0.9em; font-weight: 600; color: var(--text-secondary); min-width: 90px;">Guides Used:</strong>
-                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                ${guidesUsed.length > 0 ? guidesUsed.map(g => {
-                                    const isExpected = g === expectedGuide;
-                                    return `<code style="background: ${isExpected ? 'rgba(0, 200, 0, 0.1)' : 'rgba(255,255,255,0.05)'}; padding: 3px 6px; border-radius: 4px; font-size: 0.85em; border: 1px solid ${isExpected ? 'var(--accent-success)' : 'var(--border-color)'}; color: ${isExpected ? 'var(--accent-success)' : 'var(--text-primary)'}">${escapeHtml(g)}</code>`;
-                                }).join('') : '<span style="color: var(--text-secondary); font-style: italic; font-size: 0.85em;">None</span>'}
-                            </div>
-                        </div>` : ''}
-
-                        <div style="margin-top: 5px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: flex-end;">
-                            <a href="#" class="view-resources-link" style="font-size: 0.8em; color: var(--text-secondary); text-decoration: underline; opacity: 0.7;">${shouldUseTrajectory ? 'Agent Trajectory' : logFile}</a>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        const runDetail = document.createElement('div');
-        runDetail.className = 'run-detail';
-        runDetail.innerHTML = `
-            <div class="run-header">
-                <strong>Run ${run.runNumber}</strong>
-                <span style="color: ${getColor(s.rate)}; margin-left: auto; margin-right: 15px;">${s.rate}% Pass (${s.passed}/${s.total})</span>
-                <div class="run-actions">
-                </div>
-            </div>
-            <ul class="check-list">
-                ${run.results.map(check => `
-                    <li class="check-item">
-                        <span class="check-status">${check.passed ? '✅' : '❌'}</span>
-                        <span class="check-message">${escapeHtml(check.message)}</span>
-                    </li>
-                `).join('')}
-            </ul>
-            ${usageSection}
-        `;
-
-        const viewResourcesLink = runDetail.querySelector('.view-resources-link');
-        if (viewResourcesLink) {
-            viewResourcesLink.onclick = (e) => {
-                e.preventDefault();
-                if (shouldUseTrajectory) {
-                    openTrajectory(usedBasePath, sessionFile);
-                } else {
-                    const resourcesPath = `${usedBasePath}/${logFile}`;
-                    viewContent(resourcesPath, resourcesPath);
-                }
-            };
-        }
-
-        const dropdown = document.createElement('select');
-        dropdown.className = 'run-actions-dropdown';
-        dropdown.style.cssText = 'padding: 4px; font-size: 0.9em; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer;';
-        dropdown.innerHTML = '<option value="" disabled selected>Artifacts</option>';
-
-        const sourceOpt = document.createElement('option');
-        sourceOpt.value = 'source';
-        sourceOpt.textContent = 'App';
-        dropdown.appendChild(sourceOpt);
-
-        const diffOpt = document.createElement('option');
-        diffOpt.value = 'diff';
-        diffOpt.textContent = 'Diff';
-        dropdown.appendChild(diffOpt);
-
-        try {
-            if (files && files.length > 0) {
-                const rawJson = files.find(f => f === `${guide}_results.json`);
-                if (rawJson) {
-                    const rawOpt = document.createElement('option');
-                    rawOpt.value = 'raw';
-                    rawOpt.textContent = 'Raw Test Results';
-                    dropdown.appendChild(rawOpt);
-                }
-
-                if (sessionFile) {
-                    const trajOpt = document.createElement('option');
-                    trajOpt.value = 'trajectory';
-                    trajOpt.textContent = 'Trajectory';
-                    dropdown.appendChild(trajOpt);
-                }
-            }
-        } catch (e) {
-            console.log('Error displaying options:', e);
-        }
-
-        dropdown.onchange = (e) => {
-            const val = e.target.value;
-            e.target.value = ''; // reset selection
-            if (val === 'source') {
-                if (api.source === 'remote') {
-                    // Open directly via the mTLS domain which handles auth and serves raw HTML
-                    window.open(`https://storage.mtls.cloud.google.com/guidance-evals/${resultPath.split('?')[0]}`, '_blank');
-                } else {
-                    window.open(api.getAbsoluteUrl(resultPath), '_blank');
-                }
-            } else if (val === 'diff') {
-                viewDiff(setupPath, resultPath, testName, run.runNumber);
-            } else if (val === 'trajectory' && sessionFile) {
-                openTrajectory(usedBasePath, sessionFile);
-            } else if (val === 'raw') {
-                const rawPath = `${usedBasePath}/${guide}_results.json`;
-                viewContent(rawPath, rawPath);
-            }
-        };
-
-        runDetail.querySelector('.run-actions').appendChild(dropdown);
-        return runDetail;
-    });
-
-    const runDetails = await Promise.all(runDetailsPromises);
-    body.innerHTML = promptHtml; // Insert promptHtml first
-    runDetails.forEach(detail => body.appendChild(detail));
-    modal.showModal();
+    }
 }
 
 function renderBackButton() {
