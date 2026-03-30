@@ -444,7 +444,7 @@ function renderSuites() {
                 </td>
                 <td>${testInfo.agent}</td>
                 <td>${servingDisplayNames[testInfo.serving] || testInfo.serving}</td>
-                <td style="font-size: 0.85rem; color: var(--text-secondary); word-break: break-all;">${escapeHtml(testInfo.model)}</td>
+                <td style="font-size: 0.85rem; color: var(--text-secondary); word-break: break-all;">${escapeHtml(testInfo.model).replaceAll('-', '-&shy;')}</td>
                 <td style="font-weight: 600;">${taskCount} ${maxRuns > 1 ? `<span style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 400;">×${maxRuns}</span>` : ''}</td>
                 <td class="uplift-cell" style="width: 200px; padding: 10px 15px; vertical-align: middle;">
                     <div style="height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
@@ -454,7 +454,6 @@ function renderSuites() {
                     </div>
                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; text-align: center;">
                         <span style="font-weight: bold; color: var(--text-primary);">${gRate - uRate >= 0 ? '+' : ''}${gRate - uRate}%</span>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary);">(${uRate}% → ${gRate}%)</span>
                     </div>
                 </td>
                 ${isRemoteDashboard() ? '' : `<td style="text-transform: capitalize;">${testInfo.source}</td>`}
