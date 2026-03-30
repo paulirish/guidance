@@ -568,7 +568,7 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                 promptHtml = `
                     <div style="display: flex; flex-direction: row; gap: 12px; align-items: flex-start; margin-bottom: 16px;">
                         <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border-color); flex-shrink: 0; margin-top: 4px;">
-                            <span style="color: var(--text-secondary); white-space: nowrap;">Base App:</span> 
+                            <span style="color: var(--text-secondary); white-space: nowrap; display:block;">Base App:</span> 
                             <span style="color: var(--text-primary); font-weight: bold; white-space: nowrap;">${escapeHtml(baseApp)}</span>
                         </div>
                         <div style="flex: 1; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border-left: 4px solid var(--text-secondary); position: relative;">
@@ -673,9 +673,9 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                          <span style="font-weight: bold; font-size: 0.85rem; color: ${getColor(s.rate)};">${s.rate}%</span>
                          <div style="display: flex; flex-direction: column; gap: 2px; width: 100%;">
                              ${sessionFile ? `<button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="openTrajectory('${escapeHtml(usedBasePath)}', '${escapeHtml(sessionFile)}')">Traj</button>` : ''}
-                             ${hasDiff ? `<button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/diff.txt`)}', '${escapeHtml(`${usedBasePath}/diff.txt`)}')">Diff</button>` : ''}
-                             ${logFile ? `<button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/${logFile}`)}', '${escapeHtml(`${usedBasePath}/${logFile}`)}')">Log</button>` : ''}
-                             <button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="viewDiff('${escapeHtml(setupPath)}', '${escapeHtml(resultPath)}', '${escapeHtml(scenarioName)}', ${run.runNumber})">Tbl Diff</button>
+                             ${hasDiff ? `<button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/diff.txt`)}', '${escapeHtml(`${usedBasePath}/diff.txt`)}')">Diff??!</button>` : ''}
+                             ${logFile ? `<button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/${logFile}`)}', '${escapeHtml(`${usedBasePath}/${logFile}`)}')">Tool Log</button>` : ''}
+                             <button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="viewDiff('${escapeHtml(setupPath)}', '${escapeHtml(resultPath)}', '${escapeHtml(scenarioName)}', ${run.runNumber})">Diff</button>
                          </div>
                      </div>
                  `);
@@ -859,7 +859,7 @@ async function showDetails(testName, runs, stats, testId) {
 
                 promptHtml = `
                     <div class="prompt-section" style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid var(--text-secondary);">
-                        <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 10px;">Base App: <strong style="color: var(--text-primary);">${escapeHtml(baseApp)}</strong></div>
+                        <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 10px; display:block">Base App: <strong style="color: var(--text-primary);">${escapeHtml(baseApp)}</strong></div>
                         <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 5px;">Prompt: <strong style="color: var(--text-primary); white-space: pre-wrap; font-family: inherit;">${escapeHtml(cleanedText)}</strong></div>
                     </div>
                 `;
