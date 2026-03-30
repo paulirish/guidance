@@ -643,7 +643,7 @@ function renderPivotInsights() {
                 <tr onclick="setInsightFilter('${filterKey}', '${key}')" style="cursor: pointer;">
                     <td>
                         <div style="font-weight: 600;">${key}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">${items.length} suites</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">${items.length} trials</div>
                     </td>
                     <td style="width: 120px; vertical-align: middle;">
                         <div style="height: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; position: relative; padding: 1px; width: 100px;">
