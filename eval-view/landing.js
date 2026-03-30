@@ -438,7 +438,7 @@ function renderSuites() {
 
         html += `
             <tr class="suite-table-row" onclick="window.location.href='${localLink}'" style="cursor: pointer;">
-                <td style="padding-left:15px; text-align: left; font-weight: 600;">
+                <td style="text-align: left; font-weight: 600;">
                     <div style="color: var(--text-primary); font-size: 0.95rem;">${testId}</div>
                     <div style="font-size: 0.8rem; font-weight: 400; color: var(--text-secondary); margin-top: 4px;">${timeAgoStr} • <span style="font-size: 0.75rem;">${prettyTimestampStr}</span></div>
                 </td>
