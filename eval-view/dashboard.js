@@ -1003,6 +1003,7 @@ async function viewContent(fileName, filePath) {
 
     title.textContent = fileName;
     modal.dataset.view = 'content';
+    if (!modal.open) modal.showModal();
     body.innerHTML = '<div style="text-align:center; padding: 20px;">Loading content...</div>';
 
     body.innerHTML = '';
@@ -1051,6 +1052,7 @@ async function viewDiff(setupPath, resultPath, testName, runNumber) {
     modal.classList.add('diff-modal');
     contentDiv.classList.add('diff-modal');
     modal.dataset.view = 'diff';
+    if (!modal.open) modal.showModal();
 
     try {
         let setupText = null;
