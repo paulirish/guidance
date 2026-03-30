@@ -425,10 +425,10 @@ function renderSummary(data) {
                 <span style="font-weight: bold; color: var(--text-primary); font-size: 1rem;">+${upliftDelta}%</span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
-                <div style="height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
-                    <div style="position: absolute; left: calc(${unguidedPassRate}% - 3px); width: 6px; height: 6px; border: 1.5px solid #8b949e; background: transparent; border-radius: 50%; top: 3px;" title="Unguided: ${unguidedPassRate}%"></div>
-                    <div style="position: absolute; left: calc(${guidedPassRate}% - 4px); width: 8px; height: 8px; background: oklch(65% 0.25 290); border-radius: 50%; top: 2px;" title="Guided: ${guidedPassRate}%"></div>
-                    <div style="position: absolute; left: calc(${Math.min(unguidedPassRate, guidedPassRate)}% + 2px); width: calc(${Math.abs(guidedPassRate - unguidedPassRate)}% - 4px); height: 2px; background: oklch(65% 0.25 290); top: 5px;"></div>
+                                <div style="height: 24px; background: rgba(255,255,255,0.05); border-radius: 12px; position: relative; padding: 4px;">
+                    <div style="position: absolute; left: calc(${unguidedPassRate}% - 6px); width: 12px; height: 12px; border: 2.5px solid #8b949e; background: transparent; border-radius: 50%; top: 50%; transform: translateY(-50%);" title="Unguided: ${unguidedPassRate}%"></div>
+                    <div style="position: absolute; left: calc(${guidedPassRate}% - 8px); width: 16px; height: 16px; background: oklch(65% 0.25 290); border-radius: 50%; top: 50%; transform: translateY(-50%);" title="Guided: ${guidedPassRate}%"></div>
+                    <div style="position: absolute; left: calc(${Math.min(unguidedPassRate, guidedPassRate)}% + 4px); width: calc(${Math.abs(guidedPassRate - unguidedPassRate)}% - 8px); height: 4px; background: oklch(65% 0.25 290); top: 50%; transform: translateY(-50%);"></div>
                 </div>
                 <span style="font-size: 0.85rem; color: var(--text-secondary);">${unguidedPassRate}% → <span">${guidedPassRate}%</span></span>
             </div>
