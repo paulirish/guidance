@@ -1170,6 +1170,20 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
         const currentSuite = manifest.suites.find(s => s.id === currentTestId);
         const criteria = currentSuite ? { agent: currentSuite.agent, model: currentSuite.model, serving: currentSuite.serving } : null;
 
+        let currentAssertions = [];
+        try {
+            const currentRes = await fetch(`${currentTestId}/evals.json`);
+            if (currentRes.ok) {
+                const currentData = await currentRes.json();
+                const guidedKey = `${scenarioName} - guided`;
+                const unguidedKey = `${scenarioName} - unguided`;
+                const currentRunResults = currentData.results[guidedKey] || currentData.results[unguidedKey];
+                if (currentRunResults && currentRunResults[0]) {
+                    currentAssertions = currentRunResults[0].results.map(r => r.message).sort();
+                }
+            }
+        } catch (e) {}
+
         let history = [];
         for (const suite of manifest.suites) {
             if (criteria) {
@@ -1184,6 +1198,11 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
                 const unguidedKey = `${scenarioName} - unguided`;
                 const runResults = data.results[guidedKey] || data.results[unguidedKey];
                 if (runResults && runResults[0]) {
+                    const historyAssertions = runResults[0].results.map(r => r.message).sort();
+                    if (currentAssertions.length > 0 && currentAssertions.join('|') !== historyAssertions.join('|')) {
+                        continue; // Skip if grader checks differ!
+                    }
+
                     const stats = getRunStats(runResults[0].results);
                     history.push({
                         testId: suite.id,
