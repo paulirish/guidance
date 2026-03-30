@@ -463,6 +463,7 @@ function renderSuites() {
 
     container.innerHTML = html;
     setupRateCellHovers();
+    renderPivotInsights(); // Refresh insights based on current filters
 }
 
 let tooltipChartInstance = null;
@@ -592,3 +593,99 @@ function getSortedTestIds() {
         return new Date(allTestData[b].timestamp) - new Date(allTestData[a].timestamp);
     });
 }
+
+function renderPivotInsights() {
+    const testIds = getSortedTestIds(); // Uses selected filters!
+    const grouped = {
+        agent: {},
+        serving: {},
+        model: {}
+    };
+
+    testIds.forEach(compoundKey => {
+        const testInfo = allTestData[compoundKey];
+        if (!testInfo) return;
+        
+        const data = testInfo.data;
+        const gStats = calculateGroupTotalStats(data.results, 'guided');
+        const uStats = calculateGroupTotalStats(data.results, 'unguided');
+        const gRate = gStats.total > 0 ? Math.round((gStats.passed / gStats.total) * 100) : 0;
+        const uRate = uStats.total > 0 ? Math.round((uStats.passed / uStats.total) * 100) : 0;
+        const uplift = gRate - uRate;
+
+        if (!grouped.agent[testInfo.agent]) grouped.agent[testInfo.agent] = [];
+        grouped.agent[testInfo.agent].push({ uplift, uRate, gRate });
+
+        if (!grouped.serving[testInfo.serving]) grouped.serving[testInfo.serving] = [];
+        grouped.serving[testInfo.serving].push({ uplift, uRate, gRate });
+
+        if (!grouped.model[testInfo.model]) grouped.model[testInfo.model] = [];
+        grouped.model[testInfo.model].push({ uplift, uRate, gRate });
+    });
+
+    const getDumbbellMedian = (arr) => {
+        if (arr.length === 0) return { uRate: 0, gRate: 0, uplift: 0 };
+        const sorted = [...arr].sort((a,b) => a.uplift - b.uplift);
+        const mid = Math.floor(sorted.length / 2);
+        return sorted[mid];
+    };
+
+    const renderPivotTable = (groupObj, filterKey) => {
+        let rowsHtml = '';
+        Object.keys(groupObj).forEach(key => {
+            const items = groupObj[key];
+            const medianItem = getDumbbellMedian(items);
+            const medUplift = medianItem.uplift;
+            const uRate = medianItem.uRate;
+            const gRate = medianItem.gRate;
+
+            rowsHtml += `
+                <tr onclick="setInsightFilter('${filterKey}', '${key}')" style="cursor: pointer;">
+                    <td>
+                        <div style="font-weight: 600;">${key}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">${items.length} suites</div>
+                    </td>
+                    <td style="width: 120px; vertical-align: middle;">
+                        <div style="height: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; position: relative; padding: 1px; width: 100px;">
+                            <div style="position: absolute; left: calc(${uRate}% - 2px); width: 4px; height: 4px; border: 1px solid #8b949e; background: transparent; border-radius: 50%; top: 50%; transform: translateY(-50%);"></div>
+                            <div style="position: absolute; left: calc(${gRate}% - 3px); width: 6px; height: 6px; background: oklch(65% 0.25 290); border-radius: 50%; top: 50%; transform: translateY(-50%);"></div>
+                            <div style="position: absolute; left: calc(${Math.min(uRate, gRate)}% + 1px); width: calc(${Math.abs(gRate - uRate)}% - 2px); height: 1.5px; background: oklch(65% 0.25 290); top: 50%; transform: translateY(-50%);"></div>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); text-align: center; margin-top: 2px;">${medUplift >= 0 ? '+' : ''}${medUplift}%</div>
+                    </td>
+                </tr>
+            `;
+        });
+        return `<table class="insights-table"><tbody>${rowsHtml}</tbody></table>`;
+    };
+
+    const container = document.getElementById('insights-container');
+    if (container) {
+        container.innerHTML = `
+            <div class="insights-panel">
+                <div class="insights-panel-title">By Agent</div>
+                ${renderPivotTable(grouped.agent, 'agent')}
+            </div>
+            <div class="insights-panel">
+                <div class="insights-panel-title">By Serving</div>
+                ${renderPivotTable(grouped.serving, 'serving')}
+            </div>
+            <div class="insights-panel">
+                <div class="insights-panel-title">By Model</div>
+                ${renderPivotTable(grouped.model, 'model')}
+            </div>
+        `;
+    }
+}
+
+window.setInsightFilter = (filterKey, value) => {
+    const selects = {
+        agent: document.getElementById('filter-agent'),
+        serving: document.getElementById('filter-serving'),
+        model: document.getElementById('filter-model')
+    };
+    if (selects[filterKey]) {
+        selects[filterKey].value = value;
+        selects[filterKey].dispatchEvent(new Event('change')); // Trigger table refresh!
+    }
+};
