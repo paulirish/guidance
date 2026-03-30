@@ -566,15 +566,15 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                 const cleanedText = text.replace(/^---[\s\S]+?---\n+/, '');
 
                 promptHtml = `
-                    <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--text-secondary);">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Agent Prompt</div>
-                            <div style="background: rgba(255, 255, 255, 0.05); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border-color);">
-                                <span style="color: var(--text-secondary);">Base App:</span> 
-                                <span style="color: var(--text-primary); font-weight: bold;">${escapeHtml(baseApp)}</span>
-                            </div>
+                    <div style="display: flex; flex-direction: row; gap: 12px; align-items: flex-start; margin-bottom: 16px;">
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border-color); flex-shrink: 0; margin-top: 4px;">
+                            <span style="color: var(--text-secondary); white-space: nowrap;">Base App:</span> 
+                            <span style="color: var(--text-primary); font-weight: bold; white-space: nowrap;">${escapeHtml(baseApp)}</span>
                         </div>
-                        <p style="white-space: pre-wrap; font-family: inherit; margin: 0; color: var(--text-primary); font-size: 0.95rem;">${escapeHtml(cleanedText)}</p>
+                        <div style="flex: 1; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border-left: 4px solid var(--text-secondary); position: relative;">
+                            <div style="font-size: 4rem; position: absolute; top: -15px; left: 5px; opacity: 0.15; font-family: Georgia, serif; color: var(--text-secondary); user-select: none; pointer-events: none;">“</div>
+                            <p style="white-space: pre-wrap; font-family: Georgia, 'Times New Roman', serif; margin: 0; margin-left: 30px; color: var(--text-primary); font-size: 0.95rem; line-height: 1.5;">${escapeHtml(cleanedText)}</p>
+                        </div>
                     </div>
                 `;
             } catch (e) {
