@@ -1183,23 +1183,61 @@ window.loadStabilityTrend = async (scenarioName, currentTestId) => {
             return;
         }
 
-        let plotHtml = `
+        // Sort chronologically by suite ID timestamp
+        history.sort((a,b) => a.testId.localeCompare(b.testId));
+
+        const width = Math.max(500, history.length * 60);
+        const height = 120;
+        const paddingX = 40;
+        const paddingY = 20;
+        const graphHeight = height - 2 * paddingY;
+        const graphWidth = width - 2 * paddingX;
+        const stepX = history.length > 1 ? graphWidth / (history.length - 1) : 0;
+
+        const points = history.map((h, i) => {
+            const x = paddingX + i * stepX;
+            const y = height - paddingY - (h.rate / 100 * graphHeight);
+            return `${x},${y}`;
+        }).join(' ');
+
+        let svgHtml = `
             <div class="stability-title" style="font-size: 0.9rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 8px;">Reliability Trend Analysis</div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">Showing outcomes for identical Agent, Model, and Serving factors</div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">Chronological outcomes across identical trials</div>
+            
+            <div style="overflow-x: auto; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 15px; border: 1px solid var(--border-color);">
+                <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="display: block;">
+                    <!-- Grid Lines -->
+                    <line x1="${paddingX}" y1="${paddingY}" x2="${width - paddingX}" y2="${paddingY}" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="4" />
+                    <line x1="${paddingX}" y1="${paddingY + graphHeight / 2}" x2="${width - paddingX}" y2="${paddingY + graphHeight / 2}" stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="4" />
+                    <line x1="${paddingX}" y1="${height - paddingY}" x2="${width - paddingX}" y2="${height - paddingY}" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+                    
+                    <!-- Labels Y -->
+                    <text x="${paddingX - 10}" y="${paddingY + 4}" fill="var(--text-secondary)" font-size="0.75rem" text-anchor="end">100%</text>
+                    <text x="${paddingX - 10}" y="${paddingY + graphHeight / 2 + 4}" fill="var(--text-secondary)" font-size="0.75rem" text-anchor="end">50%</text>
+                    <text x="${paddingX - 10}" y="${height - paddingY + 4}" fill="var(--text-secondary)" font-size="0.75rem" text-anchor="end">0%</text>
+
+                    <!-- Connecting Line -->
+                    ${history.length > 1 ? `<polyline points="${points}" fill="none" stroke="oklch(65% 0.25 290)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />` : ''}
+
+                    <!-- Data Points -->
+                    ${history.map((h, i) => {
+                        const x = paddingX + i * stepX;
+                        const y = height - paddingY - (h.rate / 100 * graphHeight);
+                        const displayId = h.testId.split('-').pop(); // e.g. 13-12-05
+                        return `
+                            <g style="cursor: pointer;" onclick="window.location.href='dashboard.html?testId=${h.testId}&source=local'">
+                                <circle cx="${x}" cy="${y}" r="5" fill="${getColor(h.rate)}" stroke="var(--bg-primary)" stroke-width="2">
+                                    <title>Suite: ${h.testId}\nScore: ${h.rate}%</title>
+                                </circle>
+                                <text x="${x}" y="${height - paddingY + 15}" fill="var(--text-secondary)" font-size="0.7rem" text-anchor="middle">${displayId}</text>
+                                <text x="${x}" y="${y - 10}" fill="${getColor(h.rate)}" font-size="0.75rem" font-weight="bold" text-anchor="middle">${h.rate}%</text>
+                            </g>
+                        `;
+                    }).join('')}
+                </svg>
+            </div>
         `;
-        history.forEach(h => {
-             plotHtml += `
-                 <div style="cursor: pointer; padding: 4px 8px; border-radius: 4px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.8rem;" onclick="window.location.href='dashboard.html?testId=${h.testId}&source=local'">
-                     <div style="display: flex; align-items: center; gap: 4px;">
-                         <span style="font-weight: bold; color: ${getColor(h.rate)};">${h.rate}%</span>
-                         <span style="color: rgba(255,255,255,0.4); font-size: 0.75rem;">${h.testId.split('-').pop()}</span>
-                     </div>
-                 </div>
-             `;
-        });
-        plotHtml += `</div>`;
-        container.innerHTML = plotHtml;
+        container.innerHTML = svgHtml;
 
     } catch (e) {
         container.innerHTML = `<div style="color: var(--accent-failure); font-size: 0.85rem;">Error querying trend: ${e.message}</div>`;
