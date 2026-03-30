@@ -737,20 +737,17 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
         } else {
             tfootHtml += `<td class="center" style="vertical-align: top;">${unguidedChips[0]}</td><td class="center" style="vertical-align: top;">${guidedChips[0]}</td>`;
         }
-        tfootHtml += `<td style="vertical-align: middle; padding-left: 12px; font-weight: bold; color: var(--text-secondary);">Run Metrics & Action Artifacts</td></tr></tfoot>`;
+const guidedCards = await getRunCards(guidedRuns, 'Guided');
+        tfootHtml += `<td>
+${guidedCards}
+</td></tr></tfoot>`;
 
         truthMatrixHtml = truthMatrixHtml.replace('</tbody></table></div>', `</tbody>${tfootHtml}</table></div>`);
-
-        const unguidedCards = await getRunCards(unguidedRuns, 'Unguided');
-        const guidedCards = await getRunCards(guidedRuns, 'Guided');
-
-        const runsGridHtml = (unguidedCards || guidedCards) ? `<div style="display: flex; flex-direction: row; gap: 12px; margin-top: 16px; flex-wrap: wrap;">${unguidedCards}${guidedCards}</div>` : '';
 
         container.innerHTML = `
             <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
                 ${promptHtml}
                 ${truthMatrixHtml}
-                ${runsGridHtml}
             </div>
         `;
 
