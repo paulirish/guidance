@@ -770,6 +770,10 @@ const guidedCards = await getRunCards(guidedRuns, 'Guided');
             <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
                 ${promptHtml}
                 ${truthMatrixHtml}
+                <div id="stability-trend-${escapeHtml(scenarioName.replace(/\s+/g, '-'))}" class="stability-section" style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                    <div class="stability-title" style="font-size: 0.9rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 8px;">Reliability Trend Analysis</div>
+                    <button class="secondary-btn" onclick="loadStabilityTrend('${escapeHtml(scenarioName)}', '${escapeHtml(testId)}')">Compare task results across trials</button>
+                </div>
             </div>
         `;
 
@@ -1132,3 +1136,72 @@ function renderRadarChart(data, testId) {
 async function getResultPaths(testId, run, testName) {
     return await api.getResultInfo(testId, run, testName);
 }
+
+window.loadStabilityTrend = async (scenarioName, currentTestId) => {
+    const containerId = `stability-trend-${scenarioName.replace(/\s+/g, '-')}`;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.85rem;">Loading historical data...</div>`;
+
+    try {
+        const response = await fetch('/api/suites');
+        if (!response.ok) throw new Error('Could not fetch suite manifest');
+        const manifest = await response.json();
+
+        const currentSuite = manifest.suites.find(s => s.id === currentTestId);
+        const criteria = currentSuite ? { agent: currentSuite.agent, model: currentSuite.model, serving: currentSuite.serving } : null;
+
+        let history = [];
+        for (const suite of manifest.suites) {
+            if (criteria) {
+                if (suite.agent !== criteria.agent || suite.model !== criteria.model || suite.serving !== criteria.serving) continue;
+            }
+            if (suite.id === currentTestId) continue;
+
+            const res = await fetch(`${suite.id}/evals.json`);
+            if (res.ok) {
+                const data = await res.json();
+                const guidedKey = `${scenarioName} - guided`;
+                const unguidedKey = `${scenarioName} - unguided`;
+                const runResults = data.results[guidedKey] || data.results[unguidedKey];
+                if (runResults && runResults[0]) {
+                    const stats = getRunStats(runResults[0].results);
+                    history.push({
+                        testId: suite.id,
+                        timestamp: suite.timestamp,
+                        rate: stats.rate,
+                        passed: stats.passed,
+                        total: stats.total
+                    });
+                }
+            }
+        }
+
+        if (history.length === 0) {
+            container.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.85rem;">No historical matches found for this task under identical parameters.</div>`;
+            return;
+        }
+
+        let plotHtml = `
+            <div class="stability-title" style="font-size: 0.9rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 8px;">Reliability Trend Analysis</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 10px;">Showing outcomes for identical Agent, Model, and Serving factors</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        `;
+        history.forEach(h => {
+             plotHtml += `
+                 <div style="cursor: pointer; padding: 4px 8px; border-radius: 4px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.8rem;" onclick="window.location.href='dashboard.html?testId=${h.testId}&source=local'">
+                     <div style="display: flex; align-items: center; gap: 4px;">
+                         <span style="font-weight: bold; color: ${getColor(h.rate)};">${h.rate}%</span>
+                         <span style="color: rgba(255,255,255,0.4); font-size: 0.75rem;">${h.testId.split('-').pop()}</span>
+                     </div>
+                 </div>
+             `;
+        });
+        plotHtml += `</div>`;
+        container.innerHTML = plotHtml;
+
+    } catch (e) {
+        container.innerHTML = `<div style="color: var(--accent-failure); font-size: 0.85rem;">Error querying trend: ${e.message}</div>`;
+    }
+};
