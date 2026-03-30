@@ -407,9 +407,9 @@ function renderSummary(data) {
             <div style="display: flex; align-items: center; gap: 15px; margin-top: 8px;">
                 <span style="font-size: 0.95rem; color: var(--text-secondary);">${unguidedPassRate}%</span>
                 <div style="flex: 1; height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
-                    <div style="position: absolute; left: calc(${unguidedPassRate}% - 4px); width: 8px; height: 8px; background: #ea4335; border-radius: 50%; top: 2px;" title="Unguided: ${unguidedPassRate}%"></div>
-                    <div style="position: absolute; left: calc(${guidedPassRate}% - 4px); width: 8px; height: 8px; background: #34a853; border-radius: 50%; top: 2px;" title="Guided: ${guidedPassRate}%"></div>
-                    <div style="position: absolute; left: calc(${Math.min(unguidedPassRate, guidedPassRate)}% + 2px); width: calc(${Math.abs(guidedPassRate - unguidedPassRate)}% - 4px); height: 2px; background: rgba(255,255,255,0.4); top: 5px;"></div>
+                    <div style="position: absolute; left: calc(${unguidedPassRate}% - 3px); width: 6px; height: 6px; border: 1.5px solid #8b949e; background: transparent; border-radius: 50%; top: 2px;" title="Unguided: ${unguidedPassRate}%"></div>
+                    <div style="position: absolute; left: calc(${guidedPassRate}% - 4px); width: 8px; height: 8px; background: oklch(65% 0.25 290); border-radius: 50%; top: 2px;" title="Guided: ${guidedPassRate}%"></div>
+                    <div style="position: absolute; left: calc(${Math.min(unguidedPassRate, guidedPassRate)}% + 2px); width: calc(${Math.abs(guidedPassRate - unguidedPassRate)}% - 4px); height: 2px; background: oklch(65% 0.25 290); top: 5px;"></div>
                 </div>
                 <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold;">${guidedPassRate}%</span>
             </div>
@@ -420,9 +420,9 @@ function renderSummary(data) {
             <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
                 <span style="font-size: 0.95rem; color: var(--text-secondary);">${totalUnguidedPassed}</span>
                 <div style="flex: 1; height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
-                    <div style="position: absolute; left: calc(${(totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 4px); width: 8px; height: 8px; background: #ea4335; border-radius: 50%; top: 2px;" title="Unguided Count: ${totalUnguidedPassed}"></div>
-                    <div style="position: absolute; left: calc(${(totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 4px); width: 8px; height: 8px; background: #34a853; border-radius: 50%; top: 2px;" title="Guided Count: ${totalGuidedPassed}"></div>
-                    <div style="position: absolute; left: calc(${Math.min((totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100, (totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% + 2px); width: calc(${Math.abs((totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100 - (totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% - 4px); height: 2px; background: rgba(255,255,255,0.4); top: 5px;"></div>
+                    <div style="position: absolute; left: calc(${(totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 3px); width: 6px; height: 6px; border: 1.5px solid #8b949e; background: transparent; border-radius: 50%; top: 2px;" title="Unguided Count: ${totalUnguidedPassed}"></div>
+                    <div style="position: absolute; left: calc(${(totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 4px); width: 8px; height: 8px; background: oklch(65% 0.25 290); border-radius: 50%; top: 2px;" title="Guided Count: ${totalGuidedPassed}"></div>
+                    <div style="position: absolute; left: calc(${Math.min((totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100, (totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% + 2px); width: calc(${Math.abs((totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100 - (totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% - 4px); height: 2px; background: oklch(65% 0.25 290); top: 5px;"></div>
                 </div>
                 <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold;">${totalGuidedPassed}</span>
             </div>
