@@ -653,3 +653,13 @@ dialog#modal.diff-modal {
   text-overflow: ellipsis;
   overflow: hidden;
 }
+
+.tfoot-action-btn {
+  font-size: 0.65rem;
+  padding: 2px 4px;
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+}
