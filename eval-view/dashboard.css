@@ -476,6 +476,18 @@ dialog#modal.diff-modal {
   align-items: center;
   cursor: pointer;
   background: var(--card-bg);
+  color: var(--text-secondary);
+  transition: color 0.1s ease;
+}
+
+.task-accordion-header:hover,
+.task-accordion.open .task-accordion-header {
+  color: var(--text-primary);
+}
+
+.task-title {
+  font-weight: bold;
+  font-size: 0.95rem;
 }
 
 .task-accordion-header .left-section {

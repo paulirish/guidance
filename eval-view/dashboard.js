@@ -520,7 +520,7 @@ function renderGrid(data, testId) {
                     <div class="left-section">
                         <span class="chevron" style="display: inline-block; transition: transform 0.2s; margin-right: 10px;">▶</span>
                         <span class="feature-chip">${escapeHtml(formatTestName(scenarioName).split(': ')[0])}</span>
-                        <span class="task-title" style="font-weight: bold; font-size: 0.95rem; color: var(--text-primary);">${escapeHtml(formatTestName(scenarioName).split(': ')[1] || '')}</span>
+                        <span class="task-title">${escapeHtml(formatTestName(scenarioName).split(': ')[1] || '')}</span>
                     </div>
                     <div class="right-section">
                         <div class="mini-dumbbell-track">
