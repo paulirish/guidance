@@ -520,7 +520,7 @@ function renderGrid(data, testId) {
             accordion.id = `item-${scenarioName.replace(/\s+/g, '-').toLowerCase()}`;
             
             // Draw mini dumbbell slider track
-            const leftDot = Math.min(unguidedAvg, guidedAvg);
+            const leftDot = Math.min(unguidedAvg, guidedAvg) + 2;
             const rightDot = Math.max(unguidedAvg, guidedAvg);
             const trackWidth = 250; // matches css
             const scale = (val) => (val / 100) * trackWidth;
@@ -575,30 +575,48 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
         const sampleRun = (unguidedRuns && unguidedRuns[0]) || (guidedRuns && guidedRuns[0]);
         if (sampleRun && sampleRun.taskName) {
             try {
-                const isNegative = sampleRun.taskName.endsWith('-negative');
-                const taskPath = `tasks/${isNegative ? 'negative/' : ''}${sampleRun.taskName}.md`;
-                const text = await api.getFileText(taskPath);
-
-                const frontmatterMatch = text.match(/^---([\s\S]+?)---/);
-                if (frontmatterMatch) {
-                    const yaml = frontmatterMatch[1];
-                    const baseAppMatch = yaml.match(/base_app:\s*([^\n\r]+)/);
-                    if (baseAppMatch) {
-                        baseApp = baseAppMatch[1].trim();
+                const typeLabel = (unguidedRuns && unguidedRuns[0]) ? 'unguided' : 'guided';
+                const { usedBasePath } = await getResultPaths(testId, sampleRun, `${scenarioName} - ${typeLabel}`);
+                
+                let promptText = '';
+                try {
+                    const runScriptText = await api.getFileText(`${usedBasePath}/run.mjs`);
+                    const match = runScriptText.match(/\.\.\.\[([\s\S]+?)\]/);
+                    if (match) {
+                        const arrayStr = `[${match[1]}]`;
+                        const arr = JSON.parse(arrayStr);
+                        promptText = arr[1];
+                        const baseAppPath = arr[4];
+                        if (baseAppPath) baseApp = baseAppPath.split('/').pop();
                     }
+                } catch (e) {
+                    console.log('Falling back to living guide file:', e);
                 }
 
-                const cleanedText = text.replace(/^---[\s\S]+?---\n+/, '');
+                // Fallback to HEAD guide if run.mjs parsing fails
+                if (!promptText) {
+                    const isNegative = sampleRun.taskName.endsWith('-negative');
+                    const taskPath = `tasks/${isNegative ? 'negative/' : ''}${sampleRun.taskName}.md`;
+                    const text = await api.getFileText(taskPath);
+
+                    const frontmatterMatch = text.match(/^---([\s\S]+?)---/);
+                    if (frontmatterMatch) {
+                        const yaml = frontmatterMatch[1];
+                        const baseAppMatch = yaml.match(/base_app:\s*([^\n\r]+)/);
+                        if (baseAppMatch) baseApp = baseAppMatch[1].trim();
+                    }
+                    promptText = text.replace(/^---[\s\S]+?---\n+/, '');
+                }
 
                 promptHtml = `
-                    <div style="display: flex; flex-direction: row; gap: 12px; align-items: flex-start; ">
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border-color); flex-shrink: 0; ">
+                    <div style="display: flex; flex-direction: row; gap: 12px; align-items: flex-start;">
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border-color); flex-shrink: 0;">
                             <span style="color: var(--text-secondary); white-space: nowrap; display:block;">Base App:</span> 
                             <span style="color: var(--text-primary); font-weight: bold; white-space: nowrap;">${escapeHtml(baseApp)}</span>
                         </div>
                         <div style="flex: 1; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border-left: 4px solid var(--text-secondary); position: relative;">
                             <div style="font-size: 4rem; position: absolute; top: -15px; left: 5px; opacity: 0.15; font-family: Georgia, serif; color: var(--text-secondary); user-select: none; pointer-events: none;">“</div>
-                            <p style="white-space: pre-wrap; font-family: Georgia, 'Times New Roman', serif; margin: 0; margin-left: 30px; color: var(--text-primary); font-size: 0.95rem; line-height: 1.5;">${escapeHtml(cleanedText)}</p>
+                            <p style="white-space: pre-wrap; font-family: Georgia, 'Times New Roman', serif; margin: 0; margin-left: 30px; color: var(--text-primary); font-size: 0.95rem; line-height: 1.5;">${escapeHtml(promptText)}</p>
                         </div>
                     </div>
                 `;
