@@ -413,7 +413,6 @@ function renderSummary(data) {
                 </div>
                 <span style="font-size: 0.95rem; color: var(--text-primary); font-weight: bold;">${guidedPassRate}%</span>
             </div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Checks Passed: <span style="color: var(--text-primary);">${totalUnguidedPassed}/${totalUnguidedChecks}</span> (Ung) vs <span style="color: var(--text-primary);">${totalGuidedPassed}/${totalGuidedChecks}</span> (Gui)</div>
         </div>
 
         <div class="header-meta-item" style="flex: 1; max-width: 250px;">

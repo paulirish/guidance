@@ -546,7 +546,6 @@ dialog#modal.diff-modal {
 .truth-matrix {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
   background: rgba(0, 0, 0, 0.1);
   border-radius: 6px;
   overflow: hidden;
@@ -612,7 +611,7 @@ dialog#modal.diff-modal {
   padding: 12px 16px;
   border-radius: 12px;
   border: 1px solid var(--border-color);
-  align-items: center;
+  align-items: flex-start;
 }
 
 .header-meta-item {
