@@ -426,11 +426,11 @@ function renderSummary(data) {
             </div>
             <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
                 <div style="height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
-                    <div style="position: absolute; left: calc(${unguidedPassRate}% - 3px); width: 6px; height: 6px; border: 1.5px solid #8b949e; background: transparent; border-radius: 50%; top: 2px;" title="Unguided: ${unguidedPassRate}%"></div>
+                    <div style="position: absolute; left: calc(${unguidedPassRate}% - 3px); width: 6px; height: 6px; border: 1.5px solid #8b949e; background: transparent; border-radius: 50%; top: 3px;" title="Unguided: ${unguidedPassRate}%"></div>
                     <div style="position: absolute; left: calc(${guidedPassRate}% - 4px); width: 8px; height: 8px; background: oklch(65% 0.25 290); border-radius: 50%; top: 2px;" title="Guided: ${guidedPassRate}%"></div>
                     <div style="position: absolute; left: calc(${Math.min(unguidedPassRate, guidedPassRate)}% + 2px); width: calc(${Math.abs(guidedPassRate - unguidedPassRate)}% - 4px); height: 2px; background: oklch(65% 0.25 290); top: 5px;"></div>
                 </div>
-                <span style="font-size: 0.85rem; color: var(--text-secondary);">${unguidedPassRate}% → <span style="font-weight: bold; color: var(--text-primary);">${guidedPassRate}%</span></span>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">${unguidedPassRate}% → <span">${guidedPassRate}%</span></span>
             </div>
         </div>
 
@@ -445,14 +445,14 @@ function renderSummary(data) {
                     <div style="position: absolute; left: calc(${(totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 4px); width: 8px; height: 8px; background: oklch(65% 0.25 290); border-radius: 50%; top: 2px;" title="Guided Count: ${totalGuidedPassed}"></div>
                     <div style="position: absolute; left: calc(${Math.min((totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100, (totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% + 2px); width: calc(${Math.abs((totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100 - (totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% - 4px); height: 2px; background: oklch(65% 0.25 290); top: 5px;"></div>
                 </div>
-                <span style="font-size: 0.85rem; color: var(--text-secondary);">${totalUnguidedPassed} → <span style="font-weight: bold; color: var(--text-primary);">${totalGuidedPassed}</span> <span style="font-size: 0.8rem; color: var(--text-secondary);">/ ${Math.max(totalUnguidedChecks, totalGuidedChecks)}</span></span>
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">${totalUnguidedPassed} → <span">${totalGuidedPassed}</span> <span style="font-size: 0.8rem; color: var(--text-secondary);">/ ${Math.max(totalUnguidedChecks, totalGuidedChecks)}</span></span>
             </div>
         </div>
 
         <div class="header-meta-item">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="meta-label">ACTIVATION</span>
-                <span style="font-weight: bold; color: var(--text-primary); font-size: 1rem;">${toolActivationRate}%</span>
+                <span style="color: var(--text-secondary); font-size: 1rem;">${toolActivationRate}%</span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
                 <meter value="${toolActivationRate}" min="0" max="100" style="width: 100%; height: 12px;"></meter>
@@ -463,7 +463,7 @@ function renderSummary(data) {
         <div class="header-meta-item">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="meta-label">GUIDANCE CONSUMED</span>
-                <span style="font-weight: bold; color: var(--text-primary); font-size: 1rem;">${guideUsageRate}%</span>
+                <span style="color: var(--text-secondary); font-size: 1rem;">${guideUsageRate}%</span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
                 <meter value="${guideUsageRate}" min="0" max="100" style="width: 100%; height: 12px;"></meter>
