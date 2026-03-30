@@ -564,7 +564,7 @@ dialog#modal.diff-modal {
 }
 
 .truth-matrix th, .truth-matrix td {
-  padding: 10px 12px;
+  padding: 2px 2px;
   text-align: left;
 }
 
@@ -662,4 +662,36 @@ dialog#modal.diff-modal {
   align-items: center;
   gap: 4px;
   justify-content: center;
+}
+
+
+.run-card {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 250px;
+}
+
+.run-card-title {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.run-card-row {
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.run-card-label {
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
