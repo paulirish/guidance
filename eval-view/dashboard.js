@@ -665,8 +665,11 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                  const logFile = files.includes('mcp-server.log') ? 'mcp-server.log' : (files.includes('modern-web.log') ? 'modern-web.log' : null);
                  const hasDiff = files.includes('diff.txt');
 
+                 const toolsUsed = run.guidanceToolsUsed || [];
+                 const guidesUsed = run.guidesUsed || (run.guideUsed && run.guideUsed.guidesUsed) || [];
+
                  html += `
-                     <div style="background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); flex: 1; min-width: 180px;">
+                     <div style="background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); flex: 1; min-width: 200px;">
                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                              <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-primary);">${typeLabel} Run ${i + 1}</span>
                              <span style="font-size: 0.8rem; color: ${getColor(s.rate)};">${s.rate}%</span>
@@ -677,6 +680,22 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                              ${logFile ? `<button class="secondary-btn" style="font-size: 0.75rem; padding: 4px 6px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/${logFile}`)}', '${escapeHtml(`${usedBasePath}/${logFile}`)}')">Log</button>` : ''}
                              <button class="secondary-btn" style="font-size: 0.75rem; padding: 4px 6px;" onclick="viewDiff('${escapeHtml(setupPath)}', '${escapeHtml(resultPath)}', '${escapeHtml(scenarioName)}', ${run.runNumber})">Diff Table</button>
                          </div>
+                         
+                         ${toolsUsed.length > 0 ? `
+                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem;">
+                             <div style="color: var(--text-secondary); margin-bottom: 4px;">Tools Used:</div>
+                             <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                 ${toolsUsed.map(t => `<span style="background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); font-family: monospace;">${escapeHtml(t)}</span>`).join('')}
+                             </div>
+                         </div>` : ''}
+                         
+                         ${guidesUsed.length > 0 ? `
+                         <div style="margin-top: 8px; font-size: 0.75rem;">
+                             <div style="color: var(--text-secondary); margin-bottom: 4px;">Guides Used:</div>
+                             <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                 ${guidesUsed.map(g => `<span style="background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); font-family: monospace;">${escapeHtml(g)}</span>`).join('')}
+                             </div>
+                         </div>` : ''}
                      </div>
                  `;
              }
