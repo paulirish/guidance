@@ -430,16 +430,22 @@ function renderSuites() {
         const localLink = `dashboard.html?testId=${testId}&source=${testInfo.source}`;
         const timeAgoStr = timeAgo(_date);
 
+        const scenarioKeys = Object.keys(data.results || {});
+        const distinctScenarios = new Set(scenarioKeys.map(k => k.split(' - ')[0]));
+        const taskCount = distinctScenarios.size;
+        let maxRuns = 1;
+        scenarioKeys.forEach(k => { if (data.results[k].length > maxRuns) maxRuns = data.results[k].length; });
+
         html += `
             <tr class="suite-table-row" onclick="window.location.href='${localLink}'" style="cursor: pointer;">
-                <td style="padding-left:15px; text-align: left; font-weight: 600;">${testId}</td>
-                <td style="padding-left:15px; text-align: left; font-size: 0.85rem;">
-                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">${timeAgoStr}</div>
-                    <div style="color: var(--text-secondary); font-size: 0.8em;">${prettyTimestampStr}</div>
+                <td style="padding-left:15px; text-align: left; font-weight: 600;">
+                    <div style="color: var(--text-primary); font-size: 0.95rem;">${testId}</div>
+                    <div style="font-size: 0.8rem; font-weight: 400; color: var(--text-secondary); margin-top: 4px;">${timeAgoStr} • <span style="font-size: 0.75rem;">${prettyTimestampStr}</span></div>
                 </td>
                 <td>${testInfo.agent}</td>
                 <td>${servingDisplayNames[testInfo.serving] || testInfo.serving}</td>
-                <td style="font-size: 0.85rem; color: var(--text-secondary);">${testInfo.model}</td>
+                <td style="font-size: 0.85rem; color: var(--text-secondary); word-break: break-all;">${testInfo.model}</td>
+                <td style="font-weight: 600;">${taskCount} ${maxRuns > 1 ? `<span style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 400;">×${maxRuns}</span>` : ''}</td>
                 <td class="rate-cell" data-compound-key="${compoundKey}">
                     <div class="rate-bar" style="width: ${gRate}%;"></div>
                     <div class="rate-value"><span style="font-weight: 700; color: ${getColor(gRate)};">${gRate}%</span></div>
