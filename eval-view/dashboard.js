@@ -1088,10 +1088,18 @@ function renderRadarChart(data, testId) {
         });
 
         if (originalKey) {
-            const testName = originalKey;
-            const runData = data.results[testName];
-            const testStats = data.stats[testName];
-            showDetails(testName, runData, testStats, testId);
+            const testName = originalKey; // "modern-web - autofill - guided"
+            const scenarioPart = testName.split(' - ')[1] || ''; // "autofill"
+            
+            const accordions = document.querySelectorAll('.task-accordion');
+            for (const acc of accordions) {
+                const titleEl = acc.querySelector('.task-title');
+                if (titleEl && titleEl.textContent.trim() === scenarioPart.trim()) {
+                    acc.classList.add('open'); // Toggle open
+                    acc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    break;
+                }
+            }
         }
     };
 
