@@ -1165,4 +1165,3 @@ function renderRadarChart(data, testId) {
 async function getResultPaths(testId, run, testName) {
     return await api.getResultInfo(testId, run, testName);
 }
-}
