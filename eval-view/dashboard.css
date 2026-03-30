@@ -698,6 +698,7 @@ dialog#modal.diff-modal {
   justify-content: center;
   color: var(--text-secondary);
   transition: color 0.1s ease;
+  border-radius: 4px;
 }
 
 .tfoot-action-btn:hover {
