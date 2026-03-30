@@ -1,7 +1,7 @@
 import { getRunStats, getColor, escapeHtml, formatTestName, initGoogleAuth, calculateRadarData } from './utils.js';
 import { ApiClient } from './api.js';
 import { DumbbellChart } from './dumbbell-chart.js';
-import './stability_trend.js';
+import { loadStabilityTrend } from './stability_trend.js';
 
 // Keep track of current details state for navigation
 let currentDetails = null;
@@ -785,16 +785,26 @@ const guidedCards = await getRunCards(guidedRuns, 'Guided');
 
         truthMatrixHtml = truthMatrixHtml.replace('</tbody></table></div>', `</tbody>${tfootHtml}</table></div>`);
 
+        const svgContainerId = `stability-trend-${scenarioName.replace(/\s+/g, '-')}`;
+        const loadBtnId = `load-btn-${scenarioName.replace(/\s+/g, '-')}`;
+
         container.innerHTML = `
             <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
                 ${promptHtml}
                 ${truthMatrixHtml}
-                <div id="stability-trend-${escapeHtml(scenarioName.replace(/\s+/g, '-'))}" class="stability-section" style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
+                <div id="${escapeHtml(svgContainerId)}" class="stability-section" style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
                     <div class="stability-title" style="font-size: 0.9rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 8px;">Reliability Trend Analysis</div>
-                    <button class="secondary-btn" onclick="loadStabilityTrend('${escapeHtml(scenarioName)}', '${escapeHtml(testId)}')">Compare task results across trials</button>
+                    <button id="${escapeHtml(loadBtnId)}" class="secondary-btn">Compare task results across trials</button>
                 </div>
             </div>
         `;
+
+        const loadBtn = container.querySelector(`#${loadBtnId}`);
+        if (loadBtn) {
+            loadBtn.addEventListener('click', () => {
+                loadStabilityTrend(scenarioName, testId);
+            });
+        }
 
     } catch (e) {
         container.innerHTML = `<div style="color: var(--accent-failure);">Error loading details: ${e.message}</div>`;

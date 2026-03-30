@@ -3,7 +3,7 @@ import { getRunStats, getColor, escapeHtml } from './utils.js';
 
 const api = new ApiClient();
 
-window.loadStabilityTrend = async (scenarioName, currentTestId) => {
+export async function loadStabilityTrend(scenarioName, currentTestId) {
     const containerId = `stability-trend-${scenarioName.replace(/\s+/g, '-')}`;
     const container = document.getElementById(containerId);
     if (!container) return;
