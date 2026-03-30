@@ -411,7 +411,7 @@ function renderSummary(data) {
     const upliftDelta = guidedPassRate - unguidedPassRate;
 
     container.innerHTML = `
-        <div class="header-meta-item" style="border: 1px solid var(--border-color); padding: 16px; border-radius: 8px; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 8px; width: 100%;">
+        <div class="header-meta-item">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="meta-label">AVERAGE UPLIFT</span>
                 <span style="font-weight: bold; color: var(--text-primary); font-size: 1rem;">+${upliftDelta}%</span>
@@ -426,7 +426,7 @@ function renderSummary(data) {
             </div>
         </div>
 
-        <div class="header-meta-item" style="border: 1px solid var(--border-color); padding: 16px; border-radius: 8px; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 8px; width: 100%;">
+        <div class="header-meta-item">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="meta-label">ASSERTIONS PASSED</span>
             </div>
@@ -440,7 +440,7 @@ function renderSummary(data) {
             </div>
         </div>
 
-        <div class="header-meta-item" style="border: 1px solid var(--border-color); padding: 16px; border-radius: 8px; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 8px; width: 100%;">
+        <div class="header-meta-item">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="meta-label">ACTIVATION</span>
                 <span style="font-weight: bold; color: var(--text-primary); font-size: 1rem;">${toolActivationRate}%</span>
@@ -451,7 +451,7 @@ function renderSummary(data) {
             </div>
         </div>
 
-        <div class="header-meta-item" style="border: 1px solid var(--border-color); padding: 16px; border-radius: 8px; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; gap: 8px; width: 100%;">
+        <div class="header-meta-item">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="meta-label">GUIDANCE CONSUMED</span>
                 <span style="font-weight: bold; color: var(--text-primary); font-size: 1rem;">${guideUsageRate}%</span>
