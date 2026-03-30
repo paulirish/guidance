@@ -6,8 +6,7 @@
 }
 
 .suites-table th {
-  padding: 12px 10px;
-  background-color: var(--bg-tertiary);
+  padding: 6px 2px;
   border-bottom: 2px solid var(--border-color);
   color: var(--text-secondary);
   font-weight: 600;
@@ -45,7 +44,7 @@
   background-position: right 8px center;
   background-size: 1em;
   padding-right: 28px;
-  width: auto;
+  width: 100px; /* if its auto then columns are way too wide */ 
   min-width: 90px;
 }
 
