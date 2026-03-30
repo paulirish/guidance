@@ -650,11 +650,14 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
         truthMatrixHtml += '</tbody></table></div>';
 
         // Compute run cards for separate horizontal grid
-        const getRunCards = async (runs, typeLabel) => {
-             let html = '';
-             const count = runs ? runs.length : 0;
+        // Compute column chips for the footer transposed layout (Percent + Traj + Diff Table + Log)
+        const getTfootChips = async (runs, typeLabel) => {
+             const chips = [];
              for (let i = 0; i < maxRuns; i++) {
-                 if (!runs || i >= runs.length) continue;
+                 if (!runs || i >= runs.length) {
+                     chips.push('-');
+                     continue;
+                 }
                  const run = runs[i];
                  const s = getRunStats(run.results);
                  const { setupPath, resultPath, usedBasePath } = await getResultPaths(testId, run, `${scenarioName} - ${typeLabel.toLowerCase()}`);
@@ -665,24 +668,40 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                  const logFile = files.includes('mcp-server.log') ? 'mcp-server.log' : (files.includes('modern-web.log') ? 'modern-web.log' : null);
                  const hasDiff = files.includes('diff.txt');
 
+                 chips.push(`
+                     <div style="display: flex; flex-direction: column; gap: 4px; align-items: center; padding: 4px;">
+                         <span style="font-weight: bold; font-size: 0.85rem; color: ${getColor(s.rate)};">${s.rate}%</span>
+                         <div style="display: flex; flex-direction: column; gap: 2px; width: 100%;">
+                             ${sessionFile ? `<button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="openTrajectory('${escapeHtml(usedBasePath)}', '${escapeHtml(sessionFile)}')">Traj</button>` : ''}
+                             ${hasDiff ? `<button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/diff.txt`)}', '${escapeHtml(`${usedBasePath}/diff.txt`)}')">Diff</button>` : ''}
+                             ${logFile ? `<button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/${logFile}`)}', '${escapeHtml(`${usedBasePath}/${logFile}`)}')">Log</button>` : ''}
+                             <button class="secondary-btn" style="font-size: 0.7rem; padding: 2px 4px;" onclick="viewDiff('${escapeHtml(setupPath)}', '${escapeHtml(resultPath)}', '${escapeHtml(scenarioName)}', ${run.runNumber})">Tbl Diff</button>
+                         </div>
+                     </div>
+                 `);
+             }
+             return chips;
+        };
+
+        // Compute separate horizontal run boxes for Tools Used & Guides Used Only
+        const getRunCards = async (runs, typeLabel) => {
+             let html = '';
+             for (let i = 0; i < maxRuns; i++) {
+                 if (!runs || i >= runs.length) continue;
+                 const run = runs[i];
                  const toolsUsed = run.guidanceToolsUsed || [];
                  const guidesUsed = run.guidesUsed || (run.guideUsed && run.guideUsed.guidesUsed) || [];
 
+                 if (toolsUsed.length === 0 && guidesUsed.length === 0) continue;
+
                  html += `
                      <div style="background: rgba(255, 255, 255, 0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); flex: 1; min-width: 200px;">
-                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                         <div style="margin-bottom: 8px;">
                              <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-primary);">${typeLabel} Run ${i + 1}</span>
-                             <span style="font-size: 0.8rem; color: ${getColor(s.rate)};">${s.rate}%</span>
-                         </div>
-                         <div style="display: flex; flex-direction: column; gap: 4px;">
-                             ${sessionFile ? `<button class="secondary-btn" style="font-size: 0.75rem; padding: 4px 6px;" onclick="openTrajectory('${escapeHtml(usedBasePath)}', '${escapeHtml(sessionFile)}')">Trajectory</button>` : ''}
-                             ${hasDiff ? `<button class="secondary-btn" style="font-size: 0.75rem; padding: 4px 6px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/diff.txt`)}', '${escapeHtml(`${usedBasePath}/diff.txt`)}')">Diff</button>` : ''}
-                             ${logFile ? `<button class="secondary-btn" style="font-size: 0.75rem; padding: 4px 6px;" onclick="viewContent('${escapeHtml(`${usedBasePath}/${logFile}`)}', '${escapeHtml(`${usedBasePath}/${logFile}`)}')">Log</button>` : ''}
-                             <button class="secondary-btn" style="font-size: 0.75rem; padding: 4px 6px;" onclick="viewDiff('${escapeHtml(setupPath)}', '${escapeHtml(resultPath)}', '${escapeHtml(scenarioName)}', ${run.runNumber})">Diff Table</button>
                          </div>
                          
                          ${toolsUsed.length > 0 ? `
-                         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem;">
+                         <div style="font-size: 0.75rem;">
                              <div style="color: var(--text-secondary); margin-bottom: 4px;">Tools Used:</div>
                              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
                                  ${toolsUsed.map(t => `<span style="background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); font-family: monospace;">${escapeHtml(t)}</span>`).join('')}
@@ -702,10 +721,24 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
              return html;
         };
 
+        const unguidedChips = await getTfootChips(unguidedRuns, 'Unguided');
+        const guidedChips = await getTfootChips(guidedRuns, 'Guided');
+
+        let tfootHtml = '<tfoot><tr>';
+        if (maxRuns > 1) {
+            unguidedChips.forEach(c => tfootHtml += `<td class="center" style="vertical-align: top;">${c}</td>`);
+            guidedChips.forEach(c => tfootHtml += `<td class="center" style="vertical-align: top;">${c}</td>`);
+        } else {
+            tfootHtml += `<td class="center" style="vertical-align: top;">${unguidedChips[0]}</td><td class="center" style="vertical-align: top;">${guidedChips[0]}</td>`;
+        }
+        tfootHtml += `<td style="vertical-align: middle; padding-left: 12px; font-weight: bold; color: var(--text-secondary);">Run Metrics & Action Artifacts</td></tr></tfoot>`;
+
+        truthMatrixHtml = truthMatrixHtml.replace('</tbody></table></div>', `</tbody>${tfootHtml}</table></div>`);
+
         const unguidedCards = await getRunCards(unguidedRuns, 'Unguided');
         const guidedCards = await getRunCards(guidedRuns, 'Guided');
 
-        const runsGridHtml = `<div style="display: flex; flex-direction: row; gap: 12px; margin-top: 16px; flex-wrap: wrap;">${unguidedCards}${guidedCards}</div>`;
+        const runsGridHtml = (unguidedCards || guidedCards) ? `<div style="display: flex; flex-direction: row; gap: 12px; margin-top: 16px; flex-wrap: wrap;">${unguidedCards}${guidedCards}</div>` : '';
 
         container.innerHTML = `
             <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
