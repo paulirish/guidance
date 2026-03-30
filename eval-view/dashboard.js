@@ -1095,7 +1095,10 @@ function renderRadarChart(data, testId) {
             for (const acc of accordions) {
                 const titleEl = acc.querySelector('.task-title');
                 if (titleEl && titleEl.textContent.trim() === scenarioPart.trim()) {
-                    acc.classList.add('open'); // Toggle open
+                    const headerEl = acc.querySelector('.task-accordion-header');
+                    if (!acc.classList.contains('open') && headerEl) {
+                        headerEl.click(); // Simulates click, which opens section and loads data!
+                    }
                     acc.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     break;
                 }
