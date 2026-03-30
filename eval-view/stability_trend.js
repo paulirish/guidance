@@ -69,10 +69,13 @@ export async function loadStabilityTrend(scenarioName, currentTestId) {
                 if (unguidedRun && unguidedRun[0]) {
                     uRate = getRunStats(unguidedRun[0].results).rate;
                 }
-
+                // Verify prompt text matches exactly!
                 let historyPromptText = '';
                 try {
-                    const runText = await api.getFileText(`${suite.id}/run.mjs`);
+                    const candidateRun = guidedRun[0] || unguidedRun[0];
+                    const typeLabel = guidedRun[0] ? 'guided' : 'unguided';
+                    const { usedBasePath } = await api.getResultInfo(suite.id, candidateRun, `${scenarioName} - ${typeLabel}`);
+                    const runText = await api.getFileText(`${usedBasePath}/run.mjs`);
                     const match = runText.match(/\.\.\.\[([\s\S]+?)\]/);
                     if (match) {
                         const arrayStr = `[${match[1]}]`;
