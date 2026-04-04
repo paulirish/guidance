@@ -8,7 +8,7 @@ export async function loadStabilityTrend(scenarioName, currentTestId) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    container.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.85rem;">Loading historical data...</div>`;
+    container.innerHTML = `<div class="stability-loading">Loading historical data...</div>`;
 
     try {
         const response = await fetch('/api/suites');
@@ -116,7 +116,7 @@ export async function loadStabilityTrend(scenarioName, currentTestId) {
         }
 
         if (history.length === 0) {
-            container.innerHTML = `<div style="color: var(--text-secondary); font-size: 0.85rem;">No historical matches found for this task under identical parameters.</div>`;
+            container.innerHTML = `<div class="stability-no-matches">No historical matches found for this task under identical parameters.</div>`;
             return;
         }
 
@@ -157,14 +157,14 @@ export async function loadStabilityTrend(scenarioName, currentTestId) {
         const gPoints = history.map((h, i) => h.guidedAvg !== null ? `${paddingX + i * stepX},${gOffset + paddingY + graphHeight - (h.guidedAvg / 100 * graphHeight)}` : '').filter(Boolean).join(' ');
 
         let svgHtml = `
-            <div class="stability-title" style="font-size: 0.9rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 8px;">Reliability Trend Analysis</div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+            <div class="stability-title">Reliability Trend Analysis</div>
+            <div class="stability-legend">
                 <span>Chronological outcomes across identical trials</span>
-                <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="display:inline-block; width: 10px; height: 10px; border-radius: 50%; background: oklch(65% 0.25 290);"></span> Guided</span>
-                <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="display:inline-block; width: 10px; height: 10px; border-radius: 50%; background: oklch(65% 0.1 200);"></span> Unguided</span>
+                <span class="stability-legend-item"><span class="stability-legend-dot guided"></span> Guided</span>
+                <span class="stability-legend-item"><span class="stability-legend-dot unguided"></span> Unguided</span>
             </div>
             
-            <div style="overflow-x: auto; background: rgba(0,0,0,0.3); border-radius: 6px; padding: 15px; border: 1px solid var(--border-color);">
+            <div class="stability-graph-container">
                 <svg width="${width}" height="${totalHeight}" viewBox="0 0 ${width} ${totalHeight}" style="display: block;">
                     
                     <!-- Top Subplot (Unguided) -->
@@ -221,7 +221,7 @@ export async function loadStabilityTrend(scenarioName, currentTestId) {
                         }
 
                         return `
-                            <g style="cursor: pointer;" onclick="window.location.href='dashboard.html?testId=${h.testId}&source=local'">
+                            <g class="stability-point-group" onclick="window.location.href='dashboard.html?testId=${h.testId}&source=local'">
                                 <line x1="${x}" y1="${paddingY}" x2="${x}" y2="${gOffset + paddingY + graphHeight}" stroke="${h.isCurrent ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)'}" stroke-width="${h.isCurrent ? 1.5 : 1}" />
                                 ${uTrialPoints}
                                 ${gTrialPoints}
@@ -235,6 +235,6 @@ export async function loadStabilityTrend(scenarioName, currentTestId) {
         container.innerHTML = svgHtml;
 
     } catch (e) {
-        container.innerHTML = `<div style="color: var(--accent-failure); font-size: 0.85rem;">Error querying trend: ${e.message}</div>`;
+        container.innerHTML = `<div class="stability-error">Error querying trend: ${e.message}</div>`;
     }
 };

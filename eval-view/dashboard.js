@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (initialTestID) {
         await loadDashboardData(initialTestID);
     } else {
-        document.body.innerHTML = `<div style="text-align:center; padding: 50px; color: red;">Error: No testId provided in query string.</div>`;
+        document.body.innerHTML = `<div class="error-message">Error: No testId provided in query string.</div>`;
     }
 });
 
@@ -45,7 +45,7 @@ async function loadDashboardData(testId) {
     try {
         const data = await api.getEvals(testId);
         if (!data) {
-            document.body.innerHTML = `<div style="text-align:center; padding: 50px; color: red;">Error: Failed to load evaluation data for ${testId}.</div>`;
+            document.body.innerHTML = `<div class="error-message">Error: Failed to load evaluation data for ${testId}.</div>`;
             return;
         }
 
@@ -421,32 +421,32 @@ function renderSummary(data) {
 
     container.innerHTML = `
         <div class="header-meta-item">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="meta-item-header">
                 <span class="meta-label">AVERAGE UPLIFT</span>
-                <span style="font-weight: bold; color: var(--text-primary); font-size: 1rem;">+${upliftDelta}%</span>
+                <span class="meta-value-highlight">+${upliftDelta}%</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
-                                <div style="height: 24px; background: rgba(255,255,255,0.05); border-radius: 12px; position: relative; padding: 4px;">
-                    <div style="position: absolute; left: calc(${unguidedPassRate}% - 6px); width: 12px; height: 12px; border: 2.5px solid #8b949e; background: transparent; border-radius: 50%; top: 50%; transform: translateY(-50%);" title="Unguided: ${unguidedPassRate}%"></div>
-                    <div style="position: absolute; left: calc(${guidedPassRate}% - 8px); width: 16px; height: 16px; background: oklch(65% 0.25 290); border-radius: 50%; top: 50%; transform: translateY(-50%);" title="Guided: ${guidedPassRate}%"></div>
-                    <div style="position: absolute; left: calc(${Math.min(unguidedPassRate, guidedPassRate)}% + 4px); width: calc(${Math.abs(guidedPassRate - unguidedPassRate)}% - 8px); height: 4px; background: oklch(65% 0.25 290); top: 50%; transform: translateY(-50%);"></div>
+            <div class="sparkline-container">
+                                <div class="sparkline-bar">
+                    <div class="sparkline-dot unguided" style="left: calc(${unguidedPassRate}% - 6px);" title="Unguided: ${unguidedPassRate}%"></div>
+                    <div class="sparkline-dot guided" style="left: calc(${guidedPassRate}% - 8px);" title="Guided: ${guidedPassRate}%"></div>
+                    <div class="sparkline-range" style="left: calc(${Math.min(unguidedPassRate, guidedPassRate)}% + 4px); width: calc(${Math.abs(guidedPassRate - unguidedPassRate)}% - 8px);"></div>
                 </div>
-                <span style="font-size: 0.85rem; color: var(--text-secondary);">${unguidedPassRate}% → <span">${guidedPassRate}%</span></span>
+                <span class="sparkline-labels">${unguidedPassRate}% → <span>${guidedPassRate}%</span></span>
             </div>
         </div>
 
         <div class="summary-subgrid">
         <div class="header-meta-item">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="meta-item-header">
                 <span class="meta-label">ASSERTIONS PASSED</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
-                <div style="height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
-                    <div style="position: absolute; left: calc(${(totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 3px); width: 6px; height: 6px; border: 1.5px solid #8b949e; background: transparent; border-radius: 50%; top: 3px;" title="Unguided Count: ${totalUnguidedPassed}"></div>
-                    <div style="position: absolute; left: calc(${(totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 4px); width: 8px; height: 8px; background: oklch(65% 0.25 290); border-radius: 50%; top: 2px;" title="Guided Count: ${totalGuidedPassed}"></div>
-                    <div style="position: absolute; left: calc(${Math.min((totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100, (totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% + 2px); width: calc(${Math.abs((totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100 - (totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% - 4px); height: 2px; background: oklch(65% 0.25 290); top: 5px;"></div>
+            <div class="sparkline-container">
+                <div class="sparkline-bar small">
+                    <div class="sparkline-dot unguided small" style="left: calc(${(totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 3px);" title="Unguided Count: ${totalUnguidedPassed}"></div>
+                    <div class="sparkline-dot guided small" style="left: calc(${(totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100}% - 4px);" title="Guided Count: ${totalGuidedPassed}"></div>
+                    <div class="sparkline-range small" style="left: calc(${Math.min((totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100, (totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% + 2px); width: calc(${Math.abs((totalGuidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100 - (totalUnguidedPassed / Math.max(totalUnguidedChecks, totalGuidedChecks)) * 100)}% - 4px);"></div>
                 </div>
-                <span style="font-size: 0.85rem; color: var(--text-secondary);">${totalUnguidedPassed} → <span">${totalGuidedPassed}</span> <span style="font-size: 0.8rem; color: var(--text-secondary);">/ ${Math.max(totalUnguidedChecks, totalGuidedChecks)}</span></span>
+                <span class="sparkline-labels-small">${totalUnguidedPassed} → <span>${totalGuidedPassed}</span> <span>/ ${Math.max(totalUnguidedChecks, totalGuidedChecks)}</span></span>
             </div>
         </div>
 
