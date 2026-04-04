@@ -6,28 +6,54 @@
 }
 
 :root {
-  --bg-color: #0b0f15;
-  --card-bg: #121822;
-  --text-primary: #e6edf3;
-  --text-secondary: #7d8590;
-  --accent-success: #238636;
-  --accent-failure: #da3633;
-  --border-color: #21262d;
-  --hover-bg: #1c2128;
-  --glass-bg: rgba(18, 24, 34, 0.7);
+  /* Design Tokens - Colors from Mockup */
+  --color-surface: #f8f9fa;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f4f5;
+  --color-surface-container: #edeeef;
+  --color-on-surface: #191c1d;
+  --color-on-surface-variant: #434654;
+  --color-primary: #003cb2;
+  --color-primary-container: #2454d4;
+  --color-outline: #747686;
+  --color-outline-variant: rgba(196, 197, 215, 0.4);
+  --color-accent-success: #22c55e;
+  --color-accent-failure: #ba1a1a;
+
+  /* Legacy Mapping for Smooth Transition */
+  --bg-color: var(--color-surface);
+  --card-bg: var(--color-surface-container-lowest);
+  --text-primary: var(--color-on-surface);
+  --text-secondary: var(--color-on-surface-variant);
+  --accent-success: var(--color-accent-success);
+  --accent-failure: var(--color-accent-failure);
+  --border-color: var(--color-outline-variant);
+  --hover-bg: var(--color-surface-container-low);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+
+  /* Typography Fallbacks */
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-serif: Georgia, "Times New Roman", Times, serif;
 
-  /* Spacing Tokens */
-  --spacing-xxs: 2px;
-  --spacing-xs: 4px;
-  --spacing-sm: 6px;
-  --spacing-md: 8px;
-  --spacing-lg: 10px;
-  --spacing-xl: 12px;
-  --spacing-xxl: 15px;
-  --spacing-xxxl: 20px;
-  --spacing-giant: 50px;
+  /* Spacing Primitives */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Spacing Tokens Mapping */
+  --spacing-xxs: var(--space-1);
+  --spacing-xs: var(--space-1);
+  --spacing-sm: var(--space-2);
+  --spacing-md: var(--space-2);
+  --spacing-lg: var(--space-3);
+  --spacing-xl: var(--space-3);
+  --spacing-xxl: var(--space-4);
+  --spacing-xxxl: var(--space-5);
+  --spacing-giant: var(--space-8);
 
   /* Font Size Tokens */
   --font-xs: 0.7rem;
@@ -40,10 +66,13 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--bg-color);
-  color: var(--text-primary);
+  color: var(--color-on-surface);
+  background-color: var(--color-surface);
+  min-height: 100vh;
   margin: 0;
   padding: 20px;
+  background-image: radial-gradient(rgba(196, 197, 215, 0.3) 1px, transparent 1px);
+  background-size: 20px 20px;
   line-height: 1.5;
 }
 
@@ -71,12 +100,25 @@ h1 {
 }
 
 .stat-card {
-  background: var(--card-bg);
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  background: var(--color-surface-container-lowest);
+  padding: 1.5rem;
+  border-radius: var(--radius-default);
+  box-shadow: 0 40px 60px -15px rgba(36,84,212,0.05);
+  border: 1px solid var(--color-outline-variant);
+  position: relative;
   flex: 1;
-  text-align: center;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid var(--color-primary);
+  border-left: 2px solid var(--color-primary);
+  pointer-events: none;
 }
 
 .stat-value {
@@ -93,11 +135,24 @@ h1 {
 }
 
 .chart-container {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: var(--color-surface-container-low);
+  padding: 1.5rem;
+  border-radius: var(--radius-default);
+  position: relative;
+  margin-bottom: 1rem;
+  border: 1px solid var(--color-outline-variant);
+}
+
+.chart-container::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid var(--color-primary);
+  border-left: 2px solid var(--color-primary);
+  pointer-events: none;
 }
 
 .chart-container.hidden {
