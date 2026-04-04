@@ -610,14 +610,14 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                 }
 
                 promptHtml = `
-                    <div style="display: flex; flex-direction: row; gap: 12px; align-items: flex-start;">
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border-color); flex-shrink: 0;">
-                            <span style="color: var(--text-secondary); white-space: nowrap; display:block;">Base App:</span> 
-                            <span style="color: var(--text-primary); font-weight: bold; white-space: nowrap;">${escapeHtml(baseApp)}</span>
+                    <div class="task-prompt-container">
+                        <div class="task-prompt-meta">
+                            <span class="task-prompt-meta-label">Base App:</span> 
+                            <span class="task-prompt-meta-value">${escapeHtml(baseApp)}</span>
                         </div>
-                        <div style="flex: 1; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border-left: 4px solid var(--text-secondary); position: relative;">
-                            <div style="font-size: 4rem; position: absolute; top: -15px; left: 5px; opacity: 0.15; font-family: Georgia, serif; color: var(--text-secondary); user-select: none; pointer-events: none;">“</div>
-                            <p style="white-space: pre-wrap; font-family: Georgia, 'Times New Roman', serif; margin: 0; margin-left: 30px; color: var(--text-primary); font-size: 0.95rem; line-height: 1.5;">${escapeHtml(promptText)}</p>
+                        <div class="task-prompt-quote">
+                            <div class="quote-icon">“</div>
+                            <p class="task-prompt-text">${escapeHtml(promptText)}</p>
                         </div>
                     </div>
                 `;
@@ -789,11 +789,11 @@ const guidedCards = await getRunCards(guidedRuns, 'Guided');
         const loadBtnId = `load-btn-${scenarioName.replace(/\s+/g, '-')}`;
 
         container.innerHTML = `
-            <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+            <div class="task-details-grid">
                 ${promptHtml}
                 ${truthMatrixHtml}
-                <div id="${escapeHtml(svgContainerId)}" class="stability-section" style="margin-top: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">
-                    <div class="stability-title" style="font-size: 0.9rem; font-weight: bold; color: var(--text-secondary); margin-bottom: 8px;">Reliability Trend Analysis</div>
+                <div id="${escapeHtml(svgContainerId)}" class="stability-section blueprint-framed">
+                    <div class="stability-title">Reliability Trend Analysis</div>
                     <button id="${escapeHtml(loadBtnId)}" class="secondary-btn">Compare task results across trials</button>
                 </div>
             </div>
@@ -929,25 +929,16 @@ async function viewContent(fileName, filePath) {
                 }
 
                 const details = document.createElement('details');
-                details.style.marginBottom = '12px';
-                details.style.background = 'rgba(255, 255, 255, 0.02)';
-                details.style.border = '1px solid var(--border-color)';
-                details.style.borderRadius = '6px';
-                details.style.padding = '8px 12px';
+                details.className = 'diff-file-details';
+                details.style.marginBottom = '12px'; // Keep margin for spacing
 
                 const summary = document.createElement('summary');
-                summary.style.fontWeight = 'bold';
-                summary.style.cursor = 'pointer';
-                summary.style.fontSize = '0.85rem';
-                summary.style.color = 'var(--text-primary)';
+                summary.className = 'diff-file-summary';
                 summary.textContent = fileHeader;
                 details.appendChild(summary);
 
                 const preEl = document.createElement('pre');
-                preEl.className = 'diff-container';
-                preEl.style.marginTop = '10px';
-                preEl.style.background = 'transparent';
-                preEl.style.border = 'none';
+                preEl.className = 'diff-container diff-file-pre';
                 preEl.style.padding = '0';
                 preEl.style.fontSize = '0.75rem';
                 

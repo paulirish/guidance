@@ -143,7 +143,7 @@ export class DumbbellChart {
         const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
         titleText.setAttribute("x", width / 2);
         titleText.setAttribute("y", 20);
-        titleText.setAttribute("fill", "#c9d1d9");
+        titleText.setAttribute("fill", "var(--color-on-surface)");
         titleText.setAttribute("font-size", "14");
         titleText.setAttribute("font-weight", "bold");
         titleText.setAttribute("text-anchor", "middle");
@@ -167,7 +167,7 @@ export class DumbbellChart {
 
       const uText = document.createElementNS("http://www.w3.org/2000/svg", "text");
       uText.setAttribute("x", "15");
-      uText.setAttribute("fill", "#c9d1d9");
+      uText.setAttribute("fill", "var(--color-on-surface)");
       uText.setAttribute("font-size", "12");
       uText.textContent = "Unguided";
       
@@ -179,7 +179,7 @@ export class DumbbellChart {
 
       const gText = document.createElementNS("http://www.w3.org/2000/svg", "text");
       gText.setAttribute("x", "90");
-      gText.setAttribute("fill", "#c9d1d9");
+      gText.setAttribute("fill", "var(--color-on-surface)");
       gText.setAttribute("font-size", "12");
       gText.textContent = "Guided";
 
@@ -210,7 +210,7 @@ export class DumbbellChart {
         const tickText = document.createElementNS("http://www.w3.org/2000/svg", "text");
         tickText.setAttribute("x", x);
         tickText.setAttribute("y", bottomAxisY + 20);
-        tickText.setAttribute("fill", "rgba(255, 255, 255, 0.6)");
+        tickText.setAttribute("fill", "var(--color-on-surface-variant)");
         tickText.setAttribute("font-size", "10");
         tickText.setAttribute("text-anchor", "middle");
         tickText.textContent = val + "%";
@@ -252,7 +252,7 @@ export class DumbbellChart {
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", scale(100) + 15);
         text.setAttribute("y", rowY);
-        text.setAttribute("fill", "#c9d1d9");
+        text.setAttribute("fill", "var(--color-on-surface)");
         text.setAttribute("font-size", "13");
         text.setAttribute("text-anchor", "start");
         text.setAttribute("alignment-baseline", "middle");
