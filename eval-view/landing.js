@@ -351,7 +351,7 @@ function registerTestData(testId, source, parsed, forcedTimestamp) {
 
     allTestData[compoundKey] = {
         testId: testId,
-        timestamp: forcedTimestamp || parsed.timestamp || new Date().toISOString(),
+        timestamp: parsed.timestamp || forcedTimestamp || new Date().toISOString(),
         data: parsed,
         source: source,
         agent: parsed.agent || 'unknown',
@@ -458,9 +458,19 @@ function renderSuites() {
         // try to extract a more specific date from the testId.
         const timeStr = _date.toLocaleTimeString('en-US');
         if (timeStr === '12:00:00 AM' || isNaN(_date.getTime())) {
-            const dateMatch = testId.match(/(\d{4}-\d{2}-\d{2})/);
-            if (dateMatch) {
-                const parsedDate = new Date(dateMatch[1]);
+            // Try to match YYYY-MM-DDTHH-mm-ss or YYYY-MM-DD
+            const isoLikeMatch = testId.match(/(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})/);
+            const dateOnlyMatch = testId.match(/(\d{4}-\d{2}-\d{2})/);
+            
+            if (isoLikeMatch) {
+                // Reconstruct to a valid ISO string YYYY-MM-DDTHH:mm:ss
+                const isoStr = `${isoLikeMatch[1]}T${isoLikeMatch[2]}:${isoLikeMatch[3]}:${isoLikeMatch[4]}`;
+                const parsedDate = new Date(isoStr);
+                if (!isNaN(parsedDate.getTime())) {
+                    _date = parsedDate;
+                }
+            } else if (dateOnlyMatch) {
+                const parsedDate = new Date(dateOnlyMatch[1]);
                 if (!isNaN(parsedDate.getTime())) {
                     _date = parsedDate;
                 }
