@@ -6,9 +6,10 @@
     "test": "npm run test:unit && npm run test:validation",
     "test:unit": "node --experimental-strip-types --test --test-reporter ${TEST_REPORTER:-dot} ./sync-use-cases.test.ts",
     "test:validation": "node --experimental-strip-types --test --test-reporter ${TEST_REPORTER:-dot} ./guides-integrity.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit --types node"
   },
   "devDependencies": {
+    "@types/node": "^25.5.2",
     "@octokit/rest": "^22.0.1",
     "@playwright/test": "^1.58.2",
     "gray-matter": "^4.0.3",

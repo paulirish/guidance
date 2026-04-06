@@ -243,8 +243,8 @@ export function getTaskMap(): Map<string, TaskInfo> {
   if (!fs.existsSync(guidesDir)) return taskMap;
 
   const categories = fs.readdirSync(guidesDir, { withFileTypes: true })
-    .filter(d => d.isDirectory() && !d.name.startsWith('.') && d.name !== 'node_modules')
-    .map(d => d.name);
+    .filter((d: fs.Dirent) => d.isDirectory() && !d.name.startsWith('.') && d.name !== 'node_modules')
+    .map((d: fs.Dirent) => d.name);
 
   for (const category of categories) {
     const categoryDir = path.join(guidesDir, category);
@@ -359,8 +359,8 @@ export function scanAllGuides(scanDir = guidesDir): GuideInventory[] {
   if (!fs.existsSync(guidesDir)) return guides;
 
   const categories = fs.readdirSync(scanDir, { withFileTypes: true })
-    .filter(d => d.isDirectory() && !d.name.startsWith('.') && d.name !== 'node_modules')
-    .map(d => d.name);
+    .filter((d: fs.Dirent) => d.isDirectory() && !d.name.startsWith('.') && d.name !== 'node_modules')
+    .map((d: fs.Dirent) => d.name);
 
   for (const category of categories) {
     const categoryDir = path.join(scanDir, category);

@@ -106,6 +106,7 @@ const server = http.createServer(async (req, res) => {
       const { getTaskMap } = await import('../lib/guide-validation.ts');
       const { USE_CASES } = await import('../serving/lib/practices.ts');
       const taskMap = getTaskMap();
+      /** @type {Record<string, Record<string, string[]>>} */
       const grouped = {}; // categoryName -> guideName -> [tasks]
       
       for (const [key, _] of taskMap.entries()) {
@@ -122,7 +123,8 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       console.error('Error fetching grouped tasks:', e);
       res.writeHead(500);
-      res.end(JSON.stringify({ error: e.message }));
+      const message = e instanceof Error ? e.message : String(e);
+      res.end(JSON.stringify({ error: message }));
     }
     return;
   }

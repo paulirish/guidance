@@ -65,6 +65,9 @@ importers:
       '@playwright/test':
         specifier: ^1.58.2
         version: 1.58.2
+      '@types/node':
+        specifier: ^25.5.2
+        version: 25.5.2
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -104,6 +107,10 @@ importers:
       puppeteer-core:
         specifier: ^24.39.1
         version: 24.39.1
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.2
+        version: 25.5.2
 
   serving:
     dependencies:
