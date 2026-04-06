@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execSync, spawn, type SpawnOptions } from 'child_process';
-import { Agents } from '../config.ts';
+import { Agents, Serving } from '../config.ts';
 import { classifyGuide, scanAllGuides } from '../../lib/guide-validation.ts';
 import { rootDir, guidesDir } from '../../lib/paths.ts';
 
@@ -223,7 +223,7 @@ export function updateMcpConfig(
  * @param agent The agent type
  * @returns True if successful, false otherwise
  */
-export function copySkills(homeDir: string, agent: string, cli: boolean): boolean {
+export function copySkills(homeDir: string, agent: string, serving: Serving): boolean {
   const guidesSource = guidesDir;
 
   let destDir = '';
@@ -240,7 +240,7 @@ export function copySkills(homeDir: string, agent: string, cli: boolean): boolea
   try {
     fs.mkdirSync(destDir, { recursive: true });
 
-    if (cli) { // Add modern-web-use-cases Skill (& resources) from skills-cli dist
+    if (serving === Serving.SKILLS_CLI) { // Add modern-web-use-cases Skill (& resources) from skills-cli dist
       const distSource = path.join(rootDir, 'dist/skills-cli/skills/modern-web-use-cases');
       if (!fs.existsSync(distSource)) {
         console.log(`skills-cli distribution not found at ${distSource}. Running 'pnpm --filter serving build-dist' automatically...`);
@@ -275,34 +275,71 @@ export function copySkills(homeDir: string, agent: string, cli: boolean): boolea
         console.error(`Failed to copy standalone skills-cli: ${e.message}`);
         return false;
       }
-    }
+    } else if (serving === Serving.MEGASKILL) {
+      // Add megaskill from dist/megaskill
+      const distSource = path.join(rootDir, 'dist/megaskill');
+      if (!fs.existsSync(distSource)) {
+        console.log(`Megaskill distribution not found at ${distSource}. Running build-megaskill-dist.ts automatically...`);
+        try {
+          execSync('node --experimental-strip-types serving/scripts/build-megaskill-dist.ts', {
+            cwd: rootDir,
+            stdio: 'inherit'
+          });
+          console.log("Megaskill distribution generated successfully.");
+        } catch (e: any) {
+          console.error(`Failed to auto-generate megaskill distribution: ${e.message}`);
+          return false;
+        }
+      }
 
-    if (!fs.existsSync(guidesSource)) {
-      console.warn(`Warning: Guides directory not found at ${guidesSource}`);
-      return false;
-    }
+      try {
+        const destSkillDir = path.join(destDir, 'modern-web');
+        fs.mkdirSync(destSkillDir, { recursive: true });
 
-    // 1. Scan top-level directories for SKILL.md and copy them
-    const topLevelDirs = fs.readdirSync(guidesSource, { withFileTypes: true })
-      .filter(
-        d => d.isDirectory() &&
-        !d.name.startsWith('.') &&
-        d.name !== 'node_modules' &&
-        d.name !== 'modern-web-use-cases' // only needed when using Skills (CLI), already added above
-      );
-
-    for (const dir of topLevelDirs) {
-      const categorySrc = path.join(guidesSource, dir.name);
-      const categoryDest = path.join(destDir, dir.name);
-      const skillPath = path.join(categorySrc, 'SKILL.md');
-
-      if (fs.existsSync(skillPath)) {
-        fs.mkdirSync(categoryDest, { recursive: true });
-        fs.copyFileSync(skillPath, path.join(categoryDest, 'SKILL.md'));
+        if (fs.existsSync(distSource)) {
+          // Clear dest first to ensure clean state
+          if (fs.existsSync(destSkillDir)) {
+            fs.rmSync(destSkillDir, { recursive: true, force: true });
+            fs.mkdirSync(destSkillDir, { recursive: true });
+          }
+          fs.cpSync(distSource, destSkillDir, { recursive: true });
+        } else {
+          console.error(`Megaskill distribution still not found after generation run!`);
+          return false;
+        }
+      } catch (e: any) {
+        console.error(`Failed to copy megaskill: ${e.message}`);
+        return false;
       }
     }
 
-    if (!cli) {
+    // Skills-discipline mode
+    if (serving !== Serving.MEGASKILL) {
+      if (!fs.existsSync(guidesSource)) {
+        console.warn(`Warning: Guides directory not found at ${guidesSource}`);
+        return false;
+      }
+
+      // 1. Scan top-level directories for SKILL.md and copy them
+      const topLevelDirs = fs.readdirSync(guidesSource, { withFileTypes: true })
+        .filter(
+          d => d.isDirectory() &&
+          !d.name.startsWith('.') &&
+          d.name !== 'node_modules' &&
+          d.name !== 'modern-web-use-cases' // only needed when using Skills (CLI), already added above
+        );
+
+      for (const dir of topLevelDirs) {
+        const categorySrc = path.join(guidesSource, dir.name);
+        const categoryDest = path.join(destDir, dir.name);
+        const skillPath = path.join(categorySrc, 'SKILL.md');
+
+        if (fs.existsSync(skillPath)) {
+          fs.mkdirSync(categoryDest, { recursive: true });
+          fs.copyFileSync(skillPath, path.join(categoryDest, 'SKILL.md'));
+        }
+      }
+
       // 2. Scan and copy guide.md for eval-ready guides
       const allGuides = scanAllGuides();
 
