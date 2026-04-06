@@ -8,6 +8,12 @@ let currentAgentFilter = 'all';
 let currentServingFilter = 'all';
 let currentModelFilter = 'all';
 
+const servingDisplayNames = {
+    'skills': 'Skills',
+    'skills_cli': 'Skills (CLI)',
+    'mcp': 'MCP'
+};
+
 function isRemoteDashboard() {
     return window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 }
@@ -356,6 +362,8 @@ function registerTestData(testId, source, parsed, forcedTimestamp) {
     };
     
     updateModelFilterOptions();
+    updateServingFilterOptions();
+    updateAgentFilterOptions();
 }
 
 function updateModelFilterOptions() {
@@ -378,6 +386,44 @@ function updateModelFilterOptions() {
     ).join('');
 }
 
+function updateServingFilterOptions() {
+    const servingGroup = document.getElementById('filter-serving-group');
+    if (!servingGroup) return;
+
+    const servs = new Set();
+    Object.values(allTestData).forEach(test => {
+        if (test.serving) servs.add(test.serving);
+    });
+
+    const sortedServs = Array.from(servs).sort();
+    
+    const currentOptions = Array.from(servingGroup.querySelectorAll('option')).map(o => o.value);
+    if (JSON.stringify(currentOptions) === JSON.stringify(sortedServs)) return;
+
+    servingGroup.innerHTML = sortedServs.map(s => 
+        `<option value="${escapeHtml(s)}">${escapeHtml(servingDisplayNames[s] || s)}</option>`
+    ).join('');
+}
+
+function updateAgentFilterOptions() {
+    const agentGroup = document.getElementById('filter-agent-group');
+    if (!agentGroup) return;
+
+    const agents = new Set();
+    Object.values(allTestData).forEach(test => {
+        if (test.agent) agents.add(test.agent);
+    });
+
+    const sortedAgents = Array.from(agents).sort();
+    
+    const currentOptions = Array.from(agentGroup.querySelectorAll('option')).map(o => o.value);
+    if (JSON.stringify(currentOptions) === JSON.stringify(sortedAgents)) return;
+
+    agentGroup.innerHTML = sortedAgents.map(a => 
+        `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`
+    ).join('');
+}
+
 // ==========================================
 // RENDERERS
 // ==========================================
@@ -390,11 +436,6 @@ function renderSuites() {
         headerSource.style.display = isRemoteDashboard() ? 'none' : '';
     }
 
-    const servingDisplayNames = {
-        'skills': 'Skills',
-        'skills_cli': 'Skills (CLI)',
-        'mcp': 'MCP'
-    };
     if (testIds.length === 0) return;
 
     let html = '';
@@ -444,7 +485,7 @@ function renderSuites() {
                 </td>
                 <td>${testInfo.agent}</td>
                 <td>${servingDisplayNames[testInfo.serving] || testInfo.serving}</td>
-                <td style="font-size: 0.85rem; color: var(--text-secondary); word-break: break-all;">${escapeHtml(testInfo.model).replaceAll('-', '-&shy;')}</td>
+                <td style="font-size: 0.85rem; color: var(--text-secondary); word-break: break-word; width: 120px;">${escapeHtml(testInfo.model).replaceAll('-', '-&shy;')}</td>
                 <td style="font-weight: 600;">${taskCount} ${maxRuns > 1 ? `<span style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 400;">×${maxRuns}</span>` : ''}</td>
                 <td class="uplift-cell" style="width: 200px; padding: 10px 15px; vertical-align: middle;">
                     <div style="height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; position: relative; padding: 2px;">
@@ -642,7 +683,7 @@ function renderPivotInsights() {
             rowsHtml += `
                 <tr onclick="setInsightFilter('${filterKey}', '${key}')" style="cursor: pointer;">
                     <td>
-                        <div style="font-weight: 600;">${key}</div>
+                        <div style="font-weight: 600;">${filterKey === 'serving' ? (servingDisplayNames[key] || key) : key}</div>
                         <div style="font-size: 0.75rem; color: var(--text-secondary);">${items.length} trials</div>
                     </td>
                     <td style="width: 120px; vertical-align: middle;">
