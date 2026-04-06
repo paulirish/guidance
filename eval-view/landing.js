@@ -451,7 +451,21 @@ function renderSuites() {
         if (currentModelFilter !== 'all' && testInfo.model !== currentModelFilter) return;
 
         const data = testInfo.data;
-        const _date = new Date(testInfo.timestamp);
+        let _date = new Date(testInfo.timestamp);
+        
+        // Match Action Date logic from dashboard.js: 
+        // If timestamp is missing or is exactly midnight (often indicates only a date was provided),
+        // try to extract a more specific date from the testId.
+        const timeStr = _date.toLocaleTimeString('en-US');
+        if (timeStr === '12:00:00 AM' || isNaN(_date.getTime())) {
+            const dateMatch = testId.match(/(\d{4}-\d{2}-\d{2})/);
+            if (dateMatch) {
+                const parsedDate = new Date(dateMatch[1]);
+                if (!isNaN(parsedDate.getTime())) {
+                    _date = parsedDate;
+                }
+            }
+        }
 
         // Custom format to match "March 5, 2:25PM"
         const prettyTimestampStr = _date.toLocaleString('en-US', {
@@ -461,6 +475,12 @@ function renderSuites() {
             minute: '2-digit',
             hour12: true
         }).replace(' at ', ', ');
+
+        // If it's still 12:00 AM after potential testId extraction, show only the date
+        const finalTimeStr = _date.toLocaleTimeString('en-US');
+        const displayTimestamp = (finalTimeStr === '12:00:00 AM') 
+            ? _date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            : prettyTimestampStr;
 
         const gStats = calculateGroupTotalStats(data.results, 'guided');
         const uStats = calculateGroupTotalStats(data.results, 'unguided');
@@ -481,7 +501,7 @@ function renderSuites() {
             <tr class="suite-table-row" onclick="window.location.href='${localLink}'" style="cursor: pointer;">
                 <td style="text-align: left; font-weight: 600;">
                     <div style="color: var(--text-primary); font-size: 0.95rem;">${testId}</div>
-                    <div style="font-size: 0.8rem; font-weight: 400; color: var(--text-secondary); margin-top: 4px;">${timeAgoStr} • <span style="font-size: 0.75rem;">${prettyTimestampStr}</span></div>
+                    <div style="font-size: 0.8rem; font-weight: 400; color: var(--text-secondary); margin-top: 4px;">${timeAgoStr} • <span style="font-size: 0.75rem;">${displayTimestamp}</span></div>
                 </td>
                 <td>${testInfo.agent}</td>
                 <td>${servingDisplayNames[testInfo.serving] || testInfo.serving}</td>
