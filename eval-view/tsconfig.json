@@ -13,6 +13,7 @@
     "lib": ["esnext", "dom", "dom.iterable"]
   },
   "include": [
+    // TODO: delete include to check ALL files.
     "server.js",
     "dashboard.js",
     "landing.js",
