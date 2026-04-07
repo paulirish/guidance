@@ -17,14 +17,7 @@ export interface EvalsReport {
   model: string;
 }
 
-export interface LooseEvalsReport {
-  summary?: Partial<Metrics['summary']>;
-  results?: Record<string, (Partial<FullRunResult> & Record<string, any>)[]>;
-  stats?: Partial<Metrics['testStats']>;
-  timestamp?: string;
-  runCount?: number;
-  agent?: string;
-  serving?: string;
-  model?: string;
+export interface LooseEvalsReport extends Partial<Omit<EvalsReport, 'results'>> {
+  results?: Record<string, any>;
   [key: string]: any;
 }

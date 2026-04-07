@@ -97,6 +97,10 @@ export function formatTestName(name) {
     return name.split(' - ').join(' / ');
 }
 
+/**
+ * @param {import('./evals').LooseEvalsReport} data
+ * @returns {import('./evals').EvalsReport}
+ */
 export function upgradeEvalsData(data) {
     if (!data) return data;
     

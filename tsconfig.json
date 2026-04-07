@@ -21,6 +21,7 @@
     "**/test-app-results/**",
     "**/test-app-results/**",
     "**/eval-view",
-    "**/eval-view/**/*"
+    "**/eval-view/**/*",
+    "harness/results/**"
   ]
 }
