@@ -45,7 +45,7 @@ export function capitalize(s) {
 }
 
 export function timeAgo(date) {
-    const diff = Math.floor((new Date() - new Date(date)) / 1000);
+    const diff = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
     const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
     const units = [
         { name: 'year', s: 31536000 }, { name: 'month', s: 2592000 },
@@ -53,7 +53,7 @@ export function timeAgo(date) {
         { name: 'minute', s: 60 }, { name: 'second', s: 1 }
     ];
     const u = units.find(u => Math.abs(diff) >= u.s) || units[units.length - 1];
-    return rtf.format(-Math.floor(diff / u.s), u.name);
+    return rtf.format(-Math.floor(diff / u.s), /** @type {Intl.RelativeTimeFormatUnit} */ (u.name));
 }
 
 export function calculateChartData(results) {
@@ -98,11 +98,11 @@ export function formatTestName(name) {
 }
 
 /**
- * @param {import('./evals').LooseEvalsReport} data
- * @returns {import('./evals').EvalsReport}
+ * @param {import('./evals.d.ts').LooseEvalsReport} data
+ * @returns {import('./evals.d.ts').EvalsReport}
  */
 export function upgradeEvalsData(data) {
-    if (!data) return data;
+    if (!data) return /** @type {any} */ (data);
     
     // Ensure top-level fields
     if (!data.timestamp) data.timestamp = new Date().toISOString();
@@ -148,7 +148,7 @@ export function upgradeEvalsData(data) {
         });
     });
     
-    return data;
+    return /** @type {import('./evals.d.ts').EvalsReport} */ (data);
 }
 
 // Google Identity Services (OAuth) Integration
@@ -167,7 +167,7 @@ export function initGoogleAuth(onAuthSuccess) {
             return;
         }
 
-        const authBtn = document.getElementById('auth-btn');
+        const authBtn = /** @type {HTMLButtonElement | null} */ (document.getElementById('auth-btn'));
         if (authBtn) {
             authBtn.style.display = 'block';
             if (accessToken) {
@@ -220,7 +220,7 @@ export async function authenticatedFetch(url, options = {}) {
         accessToken = null;
         
         // Reset button UI if available
-        const authBtn = document.getElementById('auth-btn');
+        const authBtn = /** @type {HTMLButtonElement | null} */ (document.getElementById('auth-btn'));
         if (authBtn) {
             authBtn.textContent = 'Sign in with Google';
             authBtn.disabled = false;
