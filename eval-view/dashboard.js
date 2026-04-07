@@ -740,8 +740,10 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                  const run = runs[i];
                  const toolsUsed = run.guidanceToolsUsed || [];
                  const guidesUsed = run.guidesUsed || (run.guideUsed && run.guideUsed.guidesUsed) || [];
+                 const retrievedGuides = run.retrievedGuides || [];
+                 const fileReadGuides = run.fileReadGuides || [];
 
-                 if (toolsUsed.length === 0 && guidesUsed.length === 0) continue;
+                 if (toolsUsed.length === 0 && guidesUsed.length === 0 && retrievedGuides.length === 0 && fileReadGuides.length === 0) continue;
 
                  html += `
                      <div class="run-card">
@@ -755,9 +757,25 @@ async function fillAccordionDetails(container, scenarioName, unguidedRuns, guide
                              </div>
                          </div>` : ''}
                          
+                         ${retrievedGuides.length > 0 ? `
+                         <div class="run-card-row">
+                             <span class="run-card-label">Retrieved Guides:</span>
+                             <div class="run-card-row-inner" style="flex-wrap: wrap;">
+                                 ${retrievedGuides.map(g => `<span style="background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); font-family: monospace;">${escapeHtml(g)}</span>`).join('')}
+                             </div>
+                         </div>` : ''}
+
+                         ${fileReadGuides.length > 0 ? `
+                         <div class="run-card-row">
+                             <span class="run-card-label">File Read Guides:</span>
+                             <div class="run-card-row-inner" style="flex-wrap: wrap;">
+                                 ${fileReadGuides.map(g => `<span style="background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); font-family: monospace;">${escapeHtml(g)}</span>`).join('')}
+                             </div>
+                         </div>` : ''}
+
                          ${guidesUsed.length > 0 ? `
                          <div class="run-card-row">
-                             <span class="run-card-label">Guides Used:</span>
+                             <span class="run-card-label">Combined Guides:</span>
                              <div class="run-card-row-inner" style="flex-wrap: wrap;">
                                  ${guidesUsed.map(g => `<span style="background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border-color); color: var(--text-primary); font-family: monospace;">${escapeHtml(g)}</span>`).join('')}
                              </div>

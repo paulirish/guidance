@@ -157,11 +157,16 @@ run();
       const [taskName, runType] = parts;
 
       let guidesUsedResult: string[] = [];
+      let retrievedGuides: string[] = [];
+      let fileReadGuides: string[] = [];
       let guidanceToolsUsedResult: string[] = [];
 
       if (runType === 'guided') {
         const serving = config.suite.serving;
-        guidesUsedResult = await collectGuidesUsed(dir, serving, config.suite.agent);
+        const usage = await collectGuidesUsed(dir, serving, config.suite.agent);
+        retrievedGuides = usage.retrievedGuides;
+        fileReadGuides = usage.fileReadGuides;
+        guidesUsedResult = [...new Set([...retrievedGuides, ...fileReadGuides])];
         guidanceToolsUsedResult = await collectGuidanceToolsUsed(dir, serving, config.suite.agent);
       }
 
@@ -254,6 +259,8 @@ run();
         runNumber: parseInt(runDir),
         results: scenarioResults,
         guidesUsed: guidesUsedResult,
+        retrievedGuides: retrievedGuides,
+        fileReadGuides: fileReadGuides,
         guidanceToolsUsed: guidanceToolsUsedResult,
         expectedGuidanceTool: expectedGuidanceTool,
         expectedGuide: guide,
