@@ -370,6 +370,12 @@ function renderSummary(data) {
     const container = document.getElementById('summary-side-panel');
     if (!container) return;
 
+    if (!data || !data.results) {
+        console.error('Problematic data object in renderSummary:', data);
+        container.innerHTML = '<div style="padding: 15px; color: var(--text-secondary); font-style: italic;">No results available for summary.</div>';
+        return;
+    }
+
     const results = data.results;
     let totalUnguidedPassed = 0;
     let totalUnguidedChecks = 0;
