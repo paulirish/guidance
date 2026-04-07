@@ -97,6 +97,56 @@ export function formatTestName(name) {
     return name.split(' - ').join(' / ');
 }
 
+export function upgradeEvalsData(data) {
+    if (!data) return data;
+    
+    // Ensure top-level fields
+    if (!data.timestamp) data.timestamp = new Date().toISOString();
+    if (!data.agent) data.agent = 'unknown';
+    if (!data.serving) data.serving = 'unknown';
+    if (!data.model) data.model = 'unknown';
+    
+    // Ensure summary
+    if (!data.summary) {
+        data.summary = {
+            unguidedMedian: 0,
+            guidedMedian: 0,
+            unguidedPassRate: 0,
+            guidedPassRate: 0,
+            unguidedPassed: 0,
+            unguidedTotal: 0,
+            guidedPassed: 0,
+            guidedTotal: 0,
+            runsPerTest: 0
+        };
+    }
+    
+    // Ensure results and stats
+    if (!data.results) data.results = {};
+    if (!data.stats) data.stats = {};
+    
+    // Upgrade results
+    Object.keys(data.results).forEach(key => {
+        const runs = data.results[key];
+        if (!Array.isArray(runs)) return;
+        
+        runs.forEach(run => {
+            if (!run.results) run.results = [];
+            if (!run.guidesUsed) run.guidesUsed = [];
+            if (!run.guidanceToolsUsed) run.guidanceToolsUsed = [];
+            
+            // Derive taskName and guideName from key if missing
+            const parts = key.split(' - ');
+            if (parts.length >= 2) {
+                if (!run.taskName) run.taskName = parts[0];
+                if (!run.guideName) run.guideName = parts[1];
+            }
+        });
+    });
+    
+    return data;
+}
+
 // Google Identity Services (OAuth) Integration
 const GOOGLE_CLIENT_ID = '169412140096-fk4rtf6iqk982d43385s1ilucrda91g2.apps.googleusercontent.com';
 let accessToken = localStorage.getItem('gcs_access_token') || null;
