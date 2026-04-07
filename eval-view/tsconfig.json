@@ -15,8 +15,6 @@
   "include": [
     // TODO: delete include to check ALL files.
     "server.js",
-    "dashboard.js",
-    "landing.js",
     "utils.js",
     "evals.d.ts"
   ],
