@@ -94,10 +94,7 @@ async function loadDashboardData(testId) {
         const filteredData = getFilteredData(data, true);
         const intersectionTasks = new Set(Object.keys(filteredData.results).map(k => k.split(' - ')[1])).size;
         
-        const makeDifference = 
-            allTasks !== intersectionTasks ||
-            filteredData.summary.unguidedTotal !== data.summary.unguidedTotal ||
-            filteredData.summary.guidedTotal !== data.summary.guidedTotal;
+        const makeDifference = allTasks !== intersectionTasks;
             
         if (!makeDifference) {
             if (toggle) {
@@ -500,9 +497,10 @@ function renderGrid(data, testId) {
                 const card = document.createElement('div');
                 card.className = 'test-card';
 
-                // Calculate Total/Average Pass Rate for this specific test configuration
-                const totalPassed = runData.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
-                const totalChecks = runData.reduce((acc, run) => acc + run.results.length, 0);
+                // Calculate Total/Average Pass Rate strictly for completed valid runs
+                const validRuns = runData.filter(run => !run.results.some(c => c.isEarlyFailure));
+                const totalPassed = validRuns.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
+                const totalChecks = validRuns.reduce((acc, run) => acc + run.results.length, 0);
                 const avgRate = totalChecks > 0 ? Math.round((totalPassed / totalChecks) * 100) : 0;
 
                 let toolActivationHtml = '';
