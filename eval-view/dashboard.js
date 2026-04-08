@@ -85,15 +85,17 @@ export function getFilteredData(data, intersectionOnly) {
         if (unguidedKey && results[unguidedKey]) {
             filteredResults[unguidedKey] = results[unguidedKey];
             const runData = results[unguidedKey];
-            unguidedPassed += runData.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
-            unguidedTotal += runData.reduce((acc, run) => acc + run.results.length, 0);
+            const validRuns = runData.filter(run => !run.results.some(c => c.isEarlyFailure));
+            unguidedPassed += validRuns.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
+            unguidedTotal += validRuns.reduce((acc, run) => acc + run.results.length, 0);
         }
 
         if (guidedKey && results[guidedKey]) {
             filteredResults[guidedKey] = results[guidedKey];
             const runData = results[guidedKey];
-            guidedPassed += runData.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
-            guidedTotal += runData.reduce((acc, run) => acc + run.results.length, 0);
+            const validRuns = runData.filter(run => !run.results.some(c => c.isEarlyFailure));
+            guidedPassed += validRuns.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
+            guidedTotal += validRuns.reduce((acc, run) => acc + run.results.length, 0);
         }
     });
 
