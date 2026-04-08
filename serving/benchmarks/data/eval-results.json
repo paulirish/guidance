@@ -262,11 +262,20 @@
   },
   {
     "timestamp": "2026-04-03T22:11:19.142Z",
-    "model": "all-MiniLM-L6-v2@q8 wasm-float",
+    "model": "nomic-ai/nomic-embed-text-v1.5 (Chunked)",
     "totalQueries": 848,
     "top1HitRate": 0.5483,
     "top3HitRate": 0.8396,
     "top5HitRate": 0.9127,
     "meanReciprocalRank": 0.6951
+  },
+  {
+    "timestamp": "2026-04-03T22:23:04.766Z",
+    "model": "onnx-community/embeddinggemma-300m-ONNX@q4 (Chunked)",
+    "totalQueries": 848,
+    "top1HitRate": 0.5413,
+    "top3HitRate": 0.8243,
+    "top5HitRate": 0.8939,
+    "meanReciprocalRank": 0.6801
   }
 ]
