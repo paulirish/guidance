@@ -1,7 +1,6 @@
 import './setup.ts';
 import { test } from 'node:test';
 import assert from 'node:assert';
-// @ts-expect-error - importing from js file
 import { getFilteredData } from '../../eval-view/metrics-utils.js';
 
 test('getFilteredData returns full data when intersectionOnly is false', () => {
@@ -13,7 +12,9 @@ test('getFilteredData returns full data when intersectionOnly is false', () => {
         summary: { unguidedPassed: 1, unguidedTotal: 1, guidedPassed: 1, guidedTotal: 1 }
     };
     const result = getFilteredData(data, false);
-    assert.deepStrictEqual(result, data);
+    assert.strictEqual(result.summary.taskCount, 2);
+    assert.strictEqual(result.summary.unguidedPassRate, 100);
+    assert.strictEqual(result.summary.guidedPassRate, 100);
 });
 
 test('getFilteredData returns intersection when intersectionOnly is true', () => {
