@@ -53,10 +53,10 @@ function getFilteredData(data, intersectionOnly) {
         return null;
     }).filter(p => p !== null);
 
-    const tasks = [...new Set(validParts.map(p => p.taskName))];
-    const intersectionTasks = tasks.filter(task => {
-        const hasUnguided = validParts.some(p => p.taskName === task && p.runType === 'unguided');
-        const hasGuided = validParts.some(p => p.taskName === task && p.runType === 'guided');
+    const uniqueGuides = [...new Set(validParts.map(p => p.guide))];
+    const intersectionGuides = uniqueGuides.filter(g => {
+        const hasUnguided = validParts.some(p => p.guide === g && p.runType === 'unguided');
+        const hasGuided = validParts.some(p => p.guide === g && p.runType === 'guided');
         return hasUnguided && hasGuided;
     });
 
@@ -66,9 +66,9 @@ function getFilteredData(data, intersectionOnly) {
     let guidedPassed = 0;
     let guidedTotal = 0;
 
-    intersectionTasks.forEach(task => {
-        const unguidedKey = validParts.find(p => p.taskName === task && p.runType === 'unguided')?.raw;
-        const guidedKey = validParts.find(p => p.taskName === task && p.runType === 'guided')?.raw;
+    intersectionGuides.forEach(g => {
+        const unguidedKey = validParts.find(p => p.guide === g && p.runType === 'unguided')?.raw;
+        const guidedKey = validParts.find(p => p.guide === g && p.runType === 'guided')?.raw;
 
         if (unguidedKey && results[unguidedKey]) {
             filteredResults[unguidedKey] = results[unguidedKey];
