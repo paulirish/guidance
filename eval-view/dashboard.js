@@ -86,6 +86,17 @@ async function loadDashboardData(testId) {
         // Setup intersection toggle listener
         const toggle = document.getElementById('intersection-toggle');
         const infoSpan = document.getElementById('intersection-info');
+        
+        // Check if intersection makes a difference
+        const allTasks = new Set(Object.keys(data.results).map(k => k.split(' - ')[1])).size;
+        const filteredData = getFilteredData(data, true);
+        const intersectionTasks = new Set(Object.keys(filteredData.results).map(k => k.split(' - ')[1])).size;
+        
+        if (allTasks === intersectionTasks) {
+            if (toggle) {
+                toggle.parentElement.style.display = 'none';
+            }
+        }
         if (toggle) {
             toggle.addEventListener('change', () => {
                 const intersectionOnly = toggle.checked;
