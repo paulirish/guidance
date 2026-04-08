@@ -40,6 +40,68 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+function getFilteredData(data, intersectionOnly) {
+    if (!intersectionOnly) return data;
+
+    const results = data.results;
+    const keys = Object.keys(results);
+    const validParts = keys.map(k => {
+        const parts = k.split(' - ');
+        if (parts.length === 3) {
+            return { raw: k, taskName: parts[0], guide: parts[1], runType: parts[2] };
+        }
+        return null;
+    }).filter(p => p !== null);
+
+    const tasks = [...new Set(validParts.map(p => p.taskName))];
+    const intersectionTasks = tasks.filter(task => {
+        const hasUnguided = validParts.some(p => p.taskName === task && p.runType === 'unguided');
+        const hasGuided = validParts.some(p => p.taskName === task && p.runType === 'guided');
+        return hasUnguided && hasGuided;
+    });
+
+    const filteredResults = {};
+    let unguidedPassed = 0;
+    let unguidedTotal = 0;
+    let guidedPassed = 0;
+    let guidedTotal = 0;
+
+    intersectionTasks.forEach(task => {
+        const unguidedKey = validParts.find(p => p.taskName === task && p.runType === 'unguided')?.raw;
+        const guidedKey = validParts.find(p => p.taskName === task && p.runType === 'guided')?.raw;
+
+        if (unguidedKey && results[unguidedKey]) {
+            filteredResults[unguidedKey] = results[unguidedKey];
+            const runData = results[unguidedKey];
+            unguidedPassed += runData.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
+            unguidedTotal += runData.reduce((acc, run) => acc + run.results.length, 0);
+        }
+
+        if (guidedKey && results[guidedKey]) {
+            filteredResults[guidedKey] = results[guidedKey];
+            const runData = results[guidedKey];
+            guidedPassed += runData.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
+            guidedTotal += runData.reduce((acc, run) => acc + run.results.length, 0);
+        }
+    });
+
+    const newSummary = {
+        ...data.summary,
+        unguidedPassed,
+        unguidedTotal,
+        guidedPassed,
+        guidedTotal,
+        unguidedPassRate: unguidedTotal ? Math.round((unguidedPassed / unguidedTotal) * 100) : 0,
+        guidedPassRate: guidedTotal ? Math.round((guidedPassed / guidedTotal) * 100) : 0,
+    };
+
+    return {
+        ...data,
+        summary: newSummary,
+        results: filteredResults
+    };
+}
+
 async function loadDashboardData(testId) {
     // Prevent double loading
     if (dashboardLoaded) return;
@@ -79,6 +141,18 @@ async function loadDashboardData(testId) {
         renderSummary(data);
         renderGrid(data, testId);
         renderDashboardDumbbellChart(data, testId);
+
+        // Setup intersection toggle listener
+        const toggle = document.getElementById('intersection-toggle');
+        if (toggle) {
+            toggle.addEventListener('change', () => {
+                const intersectionOnly = toggle.checked;
+                const filteredData = getFilteredData(data, intersectionOnly);
+                renderSummary(filteredData);
+                renderGrid(filteredData, testId);
+                renderDashboardDumbbellChart(filteredData, testId);
+            });
+        }
 
         // Check for deep link to modal
         const params = new URLSearchParams(window.location.search);
