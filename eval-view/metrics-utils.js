@@ -34,10 +34,24 @@ export function getFilteredData(data, intersectionOnly) {
     const targetGuides = intersectionOnly ? intersectionGuides : uniqueGuides;
 
     const filteredResults = {};
+    const filteredStats = {};
     let unguidedPassed = 0;
     let unguidedTotal = 0;
     let guidedPassed = 0;
     let guidedTotal = 0;
+
+    let guideUsageCount = 0;
+    let toolActivationCount = 0;
+    let unguidedEarlyFailures = 0;
+    let guidedEarlyFailures = 0;
+    let actualCompletedGuidedRuns = 0;
+    let actualAttemptedGuidedRuns = 0;
+    let actualAttemptedUnguidedRuns = 0;
+
+    let unguidedPassRateSum = 0;
+    let unguidedValidTaskCount = 0;
+    let guidedPassRateSum = 0;
+    let guidedValidTaskCount = 0;
 
     targetGuides.forEach(g => {
         const unguidedKey = validParts.find(p => p.guide === g && p.runType === 'unguided')?.raw;
@@ -47,16 +61,71 @@ export function getFilteredData(data, intersectionOnly) {
             filteredResults[unguidedKey] = results[unguidedKey];
             const runData = results[unguidedKey];
             const validRuns = runData.filter(run => !run.results.some(c => c.isEarlyFailure));
-            unguidedPassed += validRuns.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
-            unguidedTotal += validRuns.reduce((acc, run) => acc + run.results.length, 0);
+            const taskPassed = validRuns.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
+            const taskTotal = validRuns.reduce((acc, run) => acc + run.results.length, 0);
+            
+            unguidedPassed += taskPassed;
+            unguidedTotal += taskTotal;
+            
+            if (taskTotal > 0) {
+                unguidedPassRateSum += taskPassed / taskTotal;
+                unguidedValidTaskCount++;
+            }
+            
+            const earlyFailures = runData.length - validRuns.length;
+            unguidedEarlyFailures += earlyFailures;
+            actualAttemptedUnguidedRuns += runData.length;
+
+            if (data.stats && data.stats[unguidedKey]) {
+                filteredStats[unguidedKey] = { ...data.stats[unguidedKey], earlyFailures };
+            }
         }
 
         if (guidedKey && results[guidedKey]) {
             filteredResults[guidedKey] = results[guidedKey];
             const runData = results[guidedKey];
             const validRuns = runData.filter(run => !run.results.some(c => c.isEarlyFailure));
-            guidedPassed += validRuns.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
-            guidedTotal += validRuns.reduce((acc, run) => acc + run.results.length, 0);
+            const taskPassed = validRuns.reduce((acc, run) => acc + getRunStats(run.results).passed, 0);
+            const taskTotal = validRuns.reduce((acc, run) => acc + run.results.length, 0);
+
+            guidedPassed += taskPassed;
+            guidedTotal += taskTotal;
+
+            if (taskTotal > 0) {
+                guidedPassRateSum += taskPassed / taskTotal;
+                guidedValidTaskCount++;
+            }
+
+            const earlyFailures = runData.length - validRuns.length;
+            guidedEarlyFailures += earlyFailures;
+            actualCompletedGuidedRuns += validRuns.length;
+            actualAttemptedGuidedRuns += runData.length;
+
+            let taskGuideUsageCount = 0;
+            let taskToolActivationCount = 0;
+
+            // Recalculate usage counts manually from ONLY valid runs
+            validRuns.forEach(run => {
+                const toolsUsed = run.guidanceToolsUsed || [];
+                if (toolsUsed.length > 0) taskToolActivationCount++;
+                
+                const guidesUsed = run.guidesUsed || (run.guideUsed ? run.guideUsed.guidesUsed : []) || [];
+                const retrieved = run.fileReadGuides === undefined ? (run.retrievedGuides || guidesUsed) : run.fileReadGuides;
+                if (retrieved && retrieved.length > 0) taskGuideUsageCount++;
+            });
+
+            guideUsageCount += taskGuideUsageCount;
+            toolActivationCount += taskToolActivationCount;
+
+            if (data.stats && data.stats[guidedKey]) {
+                filteredStats[guidedKey] = {
+                    ...data.stats[guidedKey],
+                    earlyFailures,
+                    runsUsingGuide: taskGuideUsageCount,
+                    runsWithToolActivation: taskToolActivationCount,
+                    runCount: validRuns.length
+                };
+            }
         }
     });
 
@@ -64,33 +133,8 @@ export function getFilteredData(data, intersectionOnly) {
     const runsPerTest = data.summary.runsPerTest || 3;
     const expectedTotalRuns = taskCount * runsPerTest;
 
-    let guideUsageCount = 0;
-    let toolActivationCount = 0;
-    let unguidedEarlyFailures = 0;
-    let guidedEarlyFailures = 0;
-
-    targetGuides.forEach(g => {
-        const unguidedKey = validParts.find(p => p.guide === g && p.runType === 'unguided')?.raw;
-        const guidedKey = validParts.find(p => p.guide === g && p.runType === 'guided')?.raw;
-
-        if (unguidedKey && results[unguidedKey]) {
-            const runData = results[unguidedKey];
-            unguidedEarlyFailures += runData.filter(run => run.results.some(c => c.isEarlyFailure)).length;
-        }
-
-        if (guidedKey && results[guidedKey]) {
-            const runData = results[guidedKey];
-            guidedEarlyFailures += runData.filter(run => run.results.some(c => c.isEarlyFailure)).length;
-
-            if (data.stats && data.stats[guidedKey]) {
-                const stats = data.stats[guidedKey];
-                guideUsageCount += stats.runsUsingGuide || 0;
-                toolActivationCount += stats.runsWithToolActivation || 0;
-            }
-        }
-    });
-
-    const completedGuidedRuns = expectedTotalRuns - guidedEarlyFailures;
+    const unguidedPassRate = unguidedValidTaskCount ? Math.round((unguidedPassRateSum / unguidedValidTaskCount) * 100) : 0;
+    const guidedPassRate = guidedValidTaskCount ? Math.round((guidedPassRateSum / guidedValidTaskCount) * 100) : 0;
 
     const newSummary = {
         ...data.summary,
@@ -100,22 +144,23 @@ export function getFilteredData(data, intersectionOnly) {
         unguidedTotal,
         guidedPassed,
         guidedTotal,
-        unguidedPassRate: unguidedTotal ? Math.round((unguidedPassed / unguidedTotal) * 100) : 0,
-        guidedPassRate: guidedTotal ? Math.round((guidedPassed / guidedTotal) * 100) : 0,
+        unguidedPassRate,
+        guidedPassRate,
         unguidedEarlyFailures,
-        unguidedEarlyFailureRate: expectedTotalRuns ? Math.round((unguidedEarlyFailures / expectedTotalRuns) * 100) : 0,
+        unguidedEarlyFailureRate: actualAttemptedUnguidedRuns ? Math.round((unguidedEarlyFailures / actualAttemptedUnguidedRuns) * 100) : 0,
         guidedEarlyFailures,
-        guidedEarlyFailureRate: expectedTotalRuns ? Math.round((guidedEarlyFailures / expectedTotalRuns) * 100) : 0,
-        totalGuidedRuns: expectedTotalRuns,
+        guidedEarlyFailureRate: actualAttemptedGuidedRuns ? Math.round((guidedEarlyFailures / actualAttemptedGuidedRuns) * 100) : 0,
+        totalGuidedRuns: actualAttemptedGuidedRuns,
         guideUsageCount,
         toolActivationCount,
-        guideUsageRate: completedGuidedRuns ? Math.round((guideUsageCount / completedGuidedRuns) * 100) : 0,
-        toolActivationRate: completedGuidedRuns ? Math.round((toolActivationCount / completedGuidedRuns) * 100) : 0,
+        guideUsageRate: actualCompletedGuidedRuns ? Math.round((guideUsageCount / actualCompletedGuidedRuns) * 100) : 0,
+        toolActivationRate: actualCompletedGuidedRuns ? Math.round((toolActivationCount / actualCompletedGuidedRuns) * 100) : 0,
     };
 
     return {
         ...data,
         summary: newSummary,
-        results: filteredResults
+        results: filteredResults,
+        stats: { ...data.stats, ...filteredStats }
     };
 }
