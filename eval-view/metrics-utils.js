@@ -1,8 +1,7 @@
+// @ts-nocheck
 import { getRunStats } from './utils.js';
 
 export function getFilteredData(data, intersectionOnly) {
-    if (!intersectionOnly) return data;
-
     const results = data.results;
     const keys = Object.keys(results);
     const validParts = keys.map(k => {
@@ -32,13 +31,15 @@ export function getFilteredData(data, intersectionOnly) {
         return hasUnguided && hasGuided;
     });
 
+    const targetGuides = intersectionOnly ? intersectionGuides : uniqueGuides;
+
     const filteredResults = {};
     let unguidedPassed = 0;
     let unguidedTotal = 0;
     let guidedPassed = 0;
     let guidedTotal = 0;
 
-    intersectionGuides.forEach(g => {
+    targetGuides.forEach(g => {
         const unguidedKey = validParts.find(p => p.guide === g && p.runType === 'unguided')?.raw;
         const guidedKey = validParts.find(p => p.guide === g && p.runType === 'guided')?.raw;
 
@@ -59,7 +60,7 @@ export function getFilteredData(data, intersectionOnly) {
         }
     });
 
-    const taskCount = intersectionGuides.length;
+    const taskCount = targetGuides.length;
     const runsPerTest = data.summary.runsPerTest || 3;
     const expectedTotalRuns = taskCount * runsPerTest;
 
@@ -68,7 +69,7 @@ export function getFilteredData(data, intersectionOnly) {
     let unguidedEarlyFailures = 0;
     let guidedEarlyFailures = 0;
 
-    intersectionGuides.forEach(g => {
+    targetGuides.forEach(g => {
         const unguidedKey = validParts.find(p => p.guide === g && p.runType === 'unguided')?.raw;
         const guidedKey = validParts.find(p => p.guide === g && p.runType === 'guided')?.raw;
 

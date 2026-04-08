@@ -78,10 +78,12 @@ async function loadDashboardData(testId) {
             timestamp = manifestTimestamp;
         }
 
-        renderTestHeader(testId, jetskiVersion, timestamp, data);
-        renderSummary(data);
-        renderGrid(data, testId);
-        renderDashboardDumbbellChart(data, testId);
+        const initialData = getFilteredData(data, false);
+
+        renderTestHeader(testId, jetskiVersion, timestamp, initialData);
+        renderSummary(initialData);
+        renderGrid(initialData, testId);
+        renderDashboardDumbbellChart(initialData, testId);
 
         // Setup intersection toggle listener
         const toggle = document.getElementById('intersection-toggle');
