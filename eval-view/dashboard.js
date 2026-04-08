@@ -85,14 +85,41 @@ function getFilteredData(data, intersectionOnly) {
         }
     });
 
+    const taskCount = intersectionGuides.length;
+    const runsPerTest = data.summary.runsPerTest || 3;
+    const expectedTotalRuns = taskCount * runsPerTest;
+
+    let guideUsageCount = 0;
+    let toolActivationCount = 0;
+
+    intersectionGuides.forEach(g => {
+        const guidedKey = validParts.find(p => p.guide === g && p.runType === 'guided')?.raw;
+        if (guidedKey && data.stats && data.stats[guidedKey]) {
+            const stats = data.stats[guidedKey];
+            guideUsageCount += stats.runsUsingGuide || 0;
+            toolActivationCount += stats.runsWithToolActivation || 0;
+        }
+    });
+
     const newSummary = {
         ...data.summary,
+        taskCount,
+        expectedTotalRuns,
         unguidedPassed,
         unguidedTotal,
         guidedPassed,
         guidedTotal,
         unguidedPassRate: unguidedTotal ? Math.round((unguidedPassed / unguidedTotal) * 100) : 0,
         guidedPassRate: guidedTotal ? Math.round((guidedPassed / guidedTotal) * 100) : 0,
+        unguidedEarlyFailures: 0,
+        unguidedEarlyFailureRate: 0,
+        guidedEarlyFailures: 0,
+        guidedEarlyFailureRate: 0,
+        totalGuidedRuns: expectedTotalRuns,
+        guideUsageCount,
+        toolActivationCount,
+        guideUsageRate: expectedTotalRuns ? Math.round((guideUsageCount / expectedTotalRuns) * 100) : 0,
+        toolActivationRate: expectedTotalRuns ? Math.round((toolActivationCount / expectedTotalRuns) * 100) : 0,
     };
 
     return {
