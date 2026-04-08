@@ -50,3 +50,24 @@ Because browsers aggressively block `file://` protocol network requests via CORS
 npm run plot:serve
 ```
 This commands boots a static hosting daemon over port 3000, allowing you to easily view the interactive metrics scatter plot cleanly.
+
+## Python Baseline for Embedding Gemma
+
+To establish a high-fidelity baseline for `Embedding Gemma` and overcome numerical precision issues observed in the WebAssembly runtime (which collapsed into `NaN` values due to lack of advanced tensor operators in WASM), we implemented a native Python benchmarking script.
+
+This setup uses:
+- **Environment**: Managed via `uv` with Python 3.13.
+- **Dependencies**: `sentence-transformers` and the specific preview branch `git+https://github.com/huggingface/transformers@v4.56.0-Embedding-Gemma-preview` to support early Gemma architectures.
+- **Instruction Prompts**: Task-specific prefixes were applied (`task: search result | query: ` for queries and `title: none | text: ` for documents).
+
+### Comparative Results (Full Pool - 848 Queries)
+
+| Model Topology / Architecture | Top-1 Accuracy | Mean Reciprocal Rank (MRR) |
+| :--- | :--- | :--- |
+| **`Xenova/all-MiniLM-L6-v2@q8`** (JS/WASM Baseline) | **~71.7%** | **~0.826** |
+| **`Embedding Gemma`** (Python Native Baseline) | **61.44%** | **0.619** |
+
+Despite bridging all compatibility gaps (instruction formats + custom library builds), the smaller domain-specific MiniLM architecture consistently outscores Gemma on this specific sentence-similarity task.
+
+The Python script is available at `benchmarks/rag/eval_rag_gemma.py`.
+
