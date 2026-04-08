@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-function getFilteredData(data, intersectionOnly) {
+export function getFilteredData(data, intersectionOnly) {
     if (!intersectionOnly) return data;
 
     const results = data.results;
@@ -183,10 +183,23 @@ async function loadDashboardData(testId) {
 
         // Setup intersection toggle listener
         const toggle = document.getElementById('intersection-toggle');
+        const infoSpan = document.getElementById('intersection-info');
         if (toggle) {
             toggle.addEventListener('change', () => {
                 const intersectionOnly = toggle.checked;
                 const filteredData = getFilteredData(data, intersectionOnly);
+                
+                if (intersectionOnly) {
+                    const totalTasks = new Set(Object.keys(data.results).map(k => k.split(' - ')[1])).size;
+                    const includedTasks = new Set(Object.keys(filteredData.results).map(k => k.split(' - ')[1])).size;
+                    const excluded = totalTasks - includedTasks;
+                    if (infoSpan) {
+                        infoSpan.textContent = `Showing ${includedTasks}/${totalTasks} tasks (${excluded} excluded)`;
+                    }
+                } else {
+                    if (infoSpan) infoSpan.textContent = '';
+                }
+
                 renderSummary(filteredData);
                 renderGrid(filteredData, testId);
                 renderDashboardDumbbellChart(filteredData, testId);
@@ -521,6 +534,7 @@ function renderSummary(data) {
 
 function renderGrid(data, testId) {
     const grid = $('#dashboard-grid');
+    if (grid) grid.innerHTML = '';
     const results = data.results;
     const stats = data.stats;
 
