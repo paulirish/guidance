@@ -103,15 +103,31 @@ export function getFilteredData(data, intersectionOnly) {
 
     let guideUsageCount = 0;
     let toolActivationCount = 0;
+    let unguidedEarlyFailures = 0;
+    let guidedEarlyFailures = 0;
 
     intersectionGuides.forEach(g => {
+        const unguidedKey = validParts.find(p => p.guide === g && p.runType === 'unguided')?.raw;
         const guidedKey = validParts.find(p => p.guide === g && p.runType === 'guided')?.raw;
-        if (guidedKey && data.stats && data.stats[guidedKey]) {
-            const stats = data.stats[guidedKey];
-            guideUsageCount += stats.runsUsingGuide || 0;
-            toolActivationCount += stats.runsWithToolActivation || 0;
+
+        if (unguidedKey && results[unguidedKey]) {
+            const runData = results[unguidedKey];
+            unguidedEarlyFailures += runData.filter(run => run.results.some(c => c.isEarlyFailure)).length;
+        }
+
+        if (guidedKey && results[guidedKey]) {
+            const runData = results[guidedKey];
+            guidedEarlyFailures += runData.filter(run => run.results.some(c => c.isEarlyFailure)).length;
+
+            if (data.stats && data.stats[guidedKey]) {
+                const stats = data.stats[guidedKey];
+                guideUsageCount += stats.runsUsingGuide || 0;
+                toolActivationCount += stats.runsWithToolActivation || 0;
+            }
         }
     });
+
+    const completedGuidedRuns = expectedTotalRuns - guidedEarlyFailures;
 
     const newSummary = {
         ...data.summary,
@@ -123,15 +139,15 @@ export function getFilteredData(data, intersectionOnly) {
         guidedTotal,
         unguidedPassRate: unguidedTotal ? Math.round((unguidedPassed / unguidedTotal) * 100) : 0,
         guidedPassRate: guidedTotal ? Math.round((guidedPassed / guidedTotal) * 100) : 0,
-        unguidedEarlyFailures: 0,
-        unguidedEarlyFailureRate: 0,
-        guidedEarlyFailures: 0,
-        guidedEarlyFailureRate: 0,
+        unguidedEarlyFailures,
+        unguidedEarlyFailureRate: expectedTotalRuns ? Math.round((unguidedEarlyFailures / expectedTotalRuns) * 100) : 0,
+        guidedEarlyFailures,
+        guidedEarlyFailureRate: expectedTotalRuns ? Math.round((guidedEarlyFailures / expectedTotalRuns) * 100) : 0,
         totalGuidedRuns: expectedTotalRuns,
         guideUsageCount,
         toolActivationCount,
-        guideUsageRate: expectedTotalRuns ? Math.round((guideUsageCount / expectedTotalRuns) * 100) : 0,
-        toolActivationRate: expectedTotalRuns ? Math.round((toolActivationCount / expectedTotalRuns) * 100) : 0,
+        guideUsageRate: completedGuidedRuns ? Math.round((guideUsageCount / completedGuidedRuns) * 100) : 0,
+        toolActivationRate: completedGuidedRuns ? Math.round((toolActivationCount / completedGuidedRuns) * 100) : 0,
     };
 
     return {
