@@ -55,8 +55,20 @@ function getFilteredData(data, intersectionOnly) {
 
     const uniqueGuides = [...new Set(validParts.map(p => p.guide))];
     const intersectionGuides = uniqueGuides.filter(g => {
-        const hasUnguided = validParts.some(p => p.guide === g && p.runType === 'unguided');
-        const hasGuided = validParts.some(p => p.guide === g && p.runType === 'guided');
+        const hasUnguided = validParts.some(p => {
+            if (p.guide === g && p.runType === 'unguided') {
+                const runData = results[p.raw];
+                return runData && runData.some(run => !run.results.some(c => c.isEarlyFailure));
+            }
+            return false;
+        });
+        const hasGuided = validParts.some(p => {
+            if (p.guide === g && p.runType === 'guided') {
+                const runData = results[p.raw];
+                return runData && runData.some(run => !run.results.some(c => c.isEarlyFailure));
+            }
+            return false;
+        });
         return hasUnguided && hasGuided;
     });
 
