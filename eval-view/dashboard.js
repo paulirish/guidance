@@ -92,7 +92,12 @@ async function loadDashboardData(testId) {
         const filteredData = getFilteredData(data, true);
         const intersectionTasks = new Set(Object.keys(filteredData.results).map(k => k.split(' - ')[1])).size;
         
-        if (allTasks === intersectionTasks) {
+        const makeDifference = 
+            allTasks !== intersectionTasks ||
+            filteredData.summary.unguidedTotal !== data.summary.unguidedTotal ||
+            filteredData.summary.guidedTotal !== data.summary.guidedTotal;
+            
+        if (!makeDifference) {
             if (toggle) {
                 toggle.parentElement.style.display = 'none';
             }
