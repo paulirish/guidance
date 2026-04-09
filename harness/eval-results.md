@@ -67,7 +67,19 @@ This updates `evals.json` and `evals.md` in each suite directory.
 ### 3. Pushing Updates to GCS
 After backfilling, you should push the updated summaries back to GCS.
 
-You can use the **`--summary-only`** flag to only upload `evals.json` and `evals.md`, making the sync extremely fast:
+You can use the **`--summary-only`** flag to only upload `evals.json` and `evals.md`, making the sync extremely fast.
+
+To upload **all** suites in bulk from a custom directory, you can use a simple shell loop:
+
+```bash
+# Bulk upload ONLY summaries for all suites in ~/guidance-evals
+for d in ~/guidance-evals/*/ ; do
+    suite=$(basename "$d")
+    node harness/upload_suite.ts "$suite" ~/guidance-evals --summary-only
+done
+```
+
+For a single suite:
 
 ```bash
 # Upload ONLY summaries from your custom directory
