@@ -1,4 +1,11 @@
 import { validateFeature, getStatusMessage } from "../data/baseline.ts";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 /**
  * Parses macro arguments, respecting quotes and handling commas.
@@ -69,6 +76,24 @@ const MACRO_HANDLERS: Record<string, MacroHandler> = {
     }
 
     return status;
+  },
+  FALLBACK: (args, filePath) => {
+    const [featureId] = args;
+    if (!featureId) {
+      throw new MacroError(`Missing feature ID in FALLBACK macro (${filePath}).`);
+    }
+
+    const fallbackPath = path.resolve(__dirname, "../../../guides/_fallbacks", `${featureId}.md`);
+    
+    try {
+      if (!fs.existsSync(fallbackPath)) {
+        throw new MacroError(`Fallback file not found for feature "${featureId}" at ${fallbackPath} (referenced in ${filePath}).`);
+      }
+      return fs.readFileSync(fallbackPath, "utf-8");
+    } catch (err: any) {
+      if (err instanceof MacroError) throw err;
+      throw new MacroError(`Error reading fallback for feature "${featureId}": ${err.message} (${filePath}).`);
+    }
   }
 };
 

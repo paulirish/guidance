@@ -42,6 +42,20 @@ describe('replaceMacros (Functional with real data)', () => {
     });
   });
 
+  describe('FALLBACK', () => {
+    it('replaces macro with fallback content', () => {
+      const content = '{{ FALLBACK("scrollbar-color") }}';
+      const result = replaceMacros(content, 'test.md');
+      assert.ok(result.includes('::-webkit-scrollbar'));
+      assert.ok(result.includes('@supports not (scrollbar-color: auto)'));
+    });
+
+    it('throws error for non-existent fallback file', () => {
+      const content = '{{ FALLBACK("non-existent-feature") }}';
+      assert.throws(() => replaceMacros(content, 'test.md'), /Fallback file not found/);
+    });
+  });
+
   it('supports multiple macros and mixed quotes', () => {
     const content = '{{ BASELINE_STATUS("grid") }} and {{ BASELINE_STATUS("grid", "css.properties.grid-template-columns") }}';
     const result = replaceMacros(content, 'test.md');
