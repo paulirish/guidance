@@ -210,9 +210,6 @@ window.__featuresMapping = {
   "coordinate-global-events": [
     "temporal"
   ],
-  "countdown-timer": [
-    "intl-duration-format"
-  ],
   "cross-document-transitions": [
     "view-transitions",
     "cross-document-view-transitions"
@@ -242,9 +239,6 @@ window.__featuresMapping = {
   "dynamic-sibling-styling": [
     "sibling-count",
     "trig-functions"
-  ],
-  "estimated-time": [
-    "intl-duration-format"
   ],
   "flicker-free-client-side-ab-testing": [
     "blocking-render"
@@ -299,9 +293,6 @@ window.__featuresMapping = {
   ],
   "manage-recurring-intervals": [
     "temporal"
-  ],
-  "media-length": [
-    "intl-duration-format"
   ],
   "model-partial-time-concepts": [
     "temporal"
@@ -415,9 +406,6 @@ window.__featuresMapping = {
   ],
   "support-global-calendar-systems": [
     "temporal"
-  ],
-  "task-duration": [
-    "intl-duration-format"
   ],
   "theme-within-theme": [
     "color-scheme"
