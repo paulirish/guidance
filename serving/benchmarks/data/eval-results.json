@@ -771,5 +771,22 @@
     "top5HitRate": 0.9717,
     "meanReciprocalRank": 0.8117,
     "runId": "2026-04-09T21:35:03.972Z"
+  },
+  {
+    "timestamp": "2026-04-10T19:21:36.836Z",
+    "model": {
+      "name": "minilm",
+      "quantization": "q8",
+      "runtime": "tfjs",
+      "search": "maxsim",
+      "chunking": "chunked",
+      "variant": "pure-js-tokenizer"
+    },
+    "totalQueries": 848,
+    "top1HitRate": 0.6958,
+    "top3HitRate": 0.9316,
+    "top5HitRate": 0.9717,
+    "meanReciprocalRank": 0.812,
+    "runId": "2026-04-10T18:52:32.591Z"
   }
 ]

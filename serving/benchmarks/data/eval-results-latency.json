@@ -229,5 +229,27 @@
       41,
       43
     ]
+  },
+  {
+    "timestamp": "2026-04-10T18:52:26.239Z",
+    "model": "minilm q8 - trjs onnx native - maxsim",
+    "type": "e2e-latency-1-query",
+    "avgLatencyMs": 329.33,
+    "runs": [
+      911,
+      38,
+      39
+    ]
+  },
+  {
+    "timestamp": "2026-04-10T18:52:26.239Z",
+    "model": "minilm fp32 - TFJS - maxsim",
+    "type": "e2e-latency-1-query",
+    "avgLatencyMs": 2105.33,
+    "runs": [
+      2126,
+      2085,
+      2105
+    ]
   }
 ]
