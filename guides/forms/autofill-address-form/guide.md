@@ -52,20 +52,20 @@ Use `<button>` for buttons. You can also use `<input type="submit">`, but don't 
 
 Give each form submit button a value that says what it does. For each step towards checkout, use a descriptive call-to-action that shows progress and makes the next step obvious. For example, label the submit button on your delivery address form **Proceed to Payment** rather than **Continue** or **Save**.
 
-### Use a single name input where possible
+### Use a single name input
 
-Allow your users to enter their name using a single input, unless you have a good reason for separately storing given names, family names, honorifics, or other name parts. Using a single name input makes forms less complex, enables cut-and-paste, and makes autofill simpler.
+MANDATORY: Use a single `<input>` element for the full name (with `autocomplete="name"`), rather than splitting it into given name and family name. This makes forms less complex, enables cut-and-paste, and makes autofill simpler.
 
 Allow international names. For validation, avoid using regular expressions that only match Latin characters. Latin-only excludes users with names or addresses that include characters that aren't in the Latin alphabet. Allow Unicode letter matching instead—and ensure your backend supports Unicode securely as both input and output. Unicode in regular expressions is well supported by modern browsers.
 
 ### Allow for a variety of address formats
 
-When building an address form, be aware of the variety of address formats, even within a single country. Do not make assumptions about "normal" addresses.
+When building an address form, be aware of the variety of address formats.
 
-Use a single `<textarea>` element for the street address if possible.
+MANDATORY: You must use a single `<textarea>` element for the street address (with `autocomplete="street-address"`), rather than splitting it into multiple lines (like Address Line 1, Address Line 2).
 
 ```html
-<!-- textarea handles multi-line international address formats that split inputs can't accommodate -->
+<!-- MANDATORY: textarea handles multi-line international address formats -->
 <textarea id="address" name="address" autocomplete="street-address" required></textarea>
 ```
 
