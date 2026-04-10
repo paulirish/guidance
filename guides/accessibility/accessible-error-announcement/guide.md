@@ -21,7 +21,7 @@ See [MDN aria-invalid](https://developer.mozilla.org/en-US/docs/Web/Accessibilit
 
 1.  **Visual Layer**: Use CSS `:user-invalid` to show borders/icons.
 2.  **Accessibility Layer**: Use `aria-invalid` and `aria-errormessage` to communicate state to Assistive Technology (AT).
-3.  **Bridge Visual & Accessibility Layer**: Create a lightweight JavaScript utility that listens for `blur` and `input` events, checks if the element matches `:user-invalid`, and updates the ARIA attributes accordingly.
+3.  **Bridge Visual & Accessibility Layer**: MANDATORY: Create a lightweight JavaScript utility that listens for `blur` and `input` events, checks if the element matches `:user-invalid`, and updates the ARIA attributes accordingly.
 
 ## Implementation Guide
 
@@ -66,7 +66,7 @@ input:user-invalid {
 ```
 
 ### 3. JavaScript
-Since there is no "UserInvalidChanged" event, hook into standard form events to check the state.
+MANDATORY: You must synchronize the `aria-invalid` attribute with the visual state using JavaScript. Since there is no "UserInvalidChanged" event, hook into standard form events to check the state.
 
 ```javascript
 const updateAriaState = (event) => {
