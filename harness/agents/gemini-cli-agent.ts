@@ -8,6 +8,10 @@ import { getSuiteConfig, updateMcpConfig, createIsolatedHome, cleanupIsolatedHom
 
 import type { ConversationRecord } from '@google/gemini-cli-core';
 
+export interface GuidedUsage {
+  retrievedGuides: string[];
+  fileReadGuides: string[];
+}
 import { MODERN_WEB_LOG_FILE } from '../../constants.ts';
 
 // Usage: node gemini-cli-agent.ts <prompt> <runType> <targetDir> <templateDir>
@@ -44,8 +48,8 @@ function setupIsolatedWorkDir(templateDir: string, runType: string): string {
     const suiteConfig = getSuiteConfig();
     const approach = suiteConfig.serving;
 
-    if (approach === Serving.SKILLS_CLI || approach === Serving.SKILLS || approach === Serving.MEGASKILL) {
-      copySkills(tempHome, Agents.GEMINI_CLI, approach);
+    if (approach === Serving.SKILLS_CLI || approach === Serving.SKILLS) {
+      copySkills(tempHome, Agents.GEMINI_CLI, approach === Serving.SKILLS_CLI);
     } else if (approach === Serving.MCP) {
       updateMcpConfig(
         path.join(geminiDest, 'settings.json'),
@@ -118,13 +122,9 @@ function readTrajectory(filePath: string): ConversationRecord {
   return JSON.parse(content) as ConversationRecord;
 }
 
-function readTrajectory(filePath: string): ConversationRecord {
-  const content = fs.readFileSync(filePath, 'utf8');
-  return JSON.parse(content) as ConversationRecord;
-}
-
-export async function collectGeminiGuidesFromTrajectory(dirPath: string, serving: string): Promise<string[]> {
-  const guidesFromSkills: string[] = [];
+export async function collectGeminiGuidesFromTrajectory(dirPath: string, _serving: string): Promise<GuidedUsage> {
+  const retrievedGuides: string[] = [];
+  const fileReadGuides: string[] = [];
   try {
     const files = fs.readdirSync(dirPath);
     const sessionFiles = files.filter(f => f.startsWith('session-') && f.endsWith('.json'));
@@ -137,42 +137,37 @@ export async function collectGeminiGuidesFromTrajectory(dirPath: string, serving
         for (const msg of session.messages) {
           if (msg.type === 'gemini' && msg.toolCalls) {
             for (const tc of msg.toolCalls) {
-              if ((serving === Serving.SKILLS || serving === Serving.MEGASKILL) && tc.name === 'read_file' && tc.args && (tc.args as any).file_path) {
-                const filePath = (tc.args as any).file_path;
-                  if (filePath.includes('/skills/')) {
-                    if (filePath.endsWith('/guide.md')) {
-                      const match = filePath.match(/\/skills\/[^/]+\/([^/]+)\/guide\.md$/);
-                      if (match) {
-                        guidesFromSkills.push(match[1]);
-                      }
-                    } else if (filePath.endsWith('.md')) {
-                      const match = filePath.match(/\/skills\/[^/]+\/(?:references\/)?(?:[^/]+\/)*([^/]+)\.md$/);
-                      if (match) {
-                        guidesFromSkills.push(match[1]);
-                      }
-                    }
+              if (tc.name.includes('get_best_practices') && tc.args?.use_case_id) {
+                retrievedGuides.push(tc.args.use_case_id as string);
+              } else if (tc.name === 'read_file' && tc.args?.file_path) {
+                const filePath = tc.args.file_path as string;
+                if (filePath.includes('/skills/')) {
+                  // Prioritize guide.md folder name, fallback to reference filename
+                  const match = filePath.match(/\/skills\/[^/]+\/([^/]+)\/guide\.md$/) ||
+                                filePath.match(/\/skills\/[^/]+\/(?:references\/)?(?:[^/]+\/)*([^/]+)\.md$/);
+                  if (match) {
+                    fileReadGuides.push(match[1]);
                   }
-              } else if (serving === Serving.SKILLS_CLI && tc.name === 'run_shell_command' && tc.args && (tc.args as any).command) {
-                const command = (tc.args as any).command;
-                  if (command.includes('modern-web') && command.includes('--retrieve')) {
-                    const match = command.match(/--retrieve\s+["']?([^"'\s]+)["']?/);
-                    if (match) {
-                      const ids = match[1].split(',');
-                      for (const id of ids) {
-                        guidesFromSkills.push(id.trim());
-                      }
-                    }
-                  }
+                }
+              } else if (tc.name === 'run_shell_command' && tc.args?.command) {
+                const command = tc.args.command as string;
+                const match = command.match(/--retrieve\s+["']?([^"'\s]+)["']?/);
+                if (match) {
+                  retrievedGuides.push(...match[1].split(',').map(s => s.trim()));
                 }
               }
             }
           }
         }
       }
+    }
   } catch (e) {
     console.error(`Error reading session files in ${dirPath}:`, e);
   }
-  return [...new Set(guidesFromSkills)];
+  return {
+    retrievedGuides: [...new Set(retrievedGuides)],
+    fileReadGuides: [...new Set(fileReadGuides)]
+  };
 }
 
 export function extractGeminiCliModel(resultsDir: string): string {
