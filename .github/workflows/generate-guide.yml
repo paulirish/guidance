@@ -1,0 +1,117 @@
+name: Generate Guide
+
+# ── PURIFY INSTRUCTIONS FOR MAIN ─────────────────────────────────────────────
+# 1. Remove the 'push' trigger for 'pipelinev2' below.
+# 2. Re-enable the 'push' trigger for 'guidance-bot/**' branches (currently commented out).
+# 3. In the 'generate' job, revert FEATURE_ID, REVIEWER, etc., to use ONLY inputs:
+#    e.g., FEATURE_ID="${{ inputs.feature_id }}" (remove the '|| intl-locale-info' fallback).
+# 4. Remove the 'if: ... || github.ref == 'refs/heads/pipelinev2'' condition on the 'generate' job.
+# ──────────────────────────────────────────────────────────────────────────────
+
+# Triggered manually to generate a full guide package from a web-feature-id,
+# or automatically on guidance-bot/* branches to re-run affected pipeline stages
+# when an SME edits files in the PR.
+
+on:
+  push:
+    branches:
+      - 'pipelinev2'
+  workflow_dispatch:
+    inputs:
+      feature_id:
+        description: 'web-features ID (e.g., intl-duration-format)'
+        required: true
+        type: string
+      reviewer:
+        description: 'GitHub username to assign as PR reviewer'
+        required: true
+        type: string
+      category:
+        description: 'Guide category (performance, user-experience, accessibility, security)'
+        required: false
+        default: 'user-experience'
+        type: string
+      slug:
+        description: 'Guide directory name (defaults to feature_id)'
+        required: false
+        type: string
+
+  # SME feedback: re-run affected pipeline stages on guidance-bot/* branches
+  # (Original push trigger logic kept for other branches)
+  # push:
+  #   branches:
+  #     - 'guidance-bot/**'
+  #   paths:
+  #     - 'guides/**/guide.md'
+  #     - 'guides/**/expectations.md'
+  #     - 'guides/**/demo.html'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Gemini CLI picks up GEMINI_API_KEY for non-OAuth auth in CI
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_MODEL: gemini-3-flash-preview
+
+jobs:
+  # ── Manual trigger or Test trigger: generate a brand-new guide package ─────
+  generate:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/pipelinev2')
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm run setup:playwright
+
+      - name: Generate GitHub App token
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Generate guide package (guide.md, demo.html, expectations.md)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+
+          # Use inputs or defaults for testing on push
+          FEATURE_ID="${{ inputs.feature_id || 'subgrid' }}"
+          CATEGORY="${{ inputs.category || 'user-experience' }}"
+          SLUG="${{ inputs.slug }}"
+          
+          SLUG_ARG=""
+          if [ -n "${SLUG}" ]; then SLUG_ARG="--slug ${SLUG}"; fi
+          node --experimental-strip-types guides/guide-gen.ts \
+            "${FEATURE_ID}" \
+            --category "${CATEGORY}" \
+            ${SLUG_ARG}
+
+      - name: Configure git
+        run: |
+          git config user.name "chrome-devrel-infra[bot]"
+          git config user.email "124898761+chrome-devrel-infra[bot]@users.noreply.github.com"
+
+
+
+
+

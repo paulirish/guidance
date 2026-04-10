@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [ pipelinev2 ]
+  pull_request:
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  basics:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Preflight (Typecheck, Lint, Tests)
+        env:
+          TEST_REPORTER: spec
+        run: pnpm run preflight
+
+      # Fail if any changes were written to any source files or generated untracked files
+      - run: git add -A && git diff --cached --exit-code
+
+      #  TODO(paulirish): restore this after fixing:
+      #      fatal: You are not currently on a branch. To push the history leading to the current (detached HEAD) state now, use git push origin HEAD:<name-of-remote-branch>       
+      #
+      # - name: Generate guides diagram and commit
+      #   run: |
+      #     node guides/guide-features-diagram.mjs
+      #     git config user.name "github-actions[bot]"
+      #     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      #     git add guides/features-and-use-cases.md
+      - name: Deploy Dashboard
+        if: github.ref == 'refs/heads/pipelinev2'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          pnpm run deploy:dashboard
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  browser:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: echo "version=$(pnpm list --filter eval-view --depth 0 playwright --json | jq -r '.[0].devDependencies.playwright.version')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright Browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm run setup:playwright --with-deps
+
+      - name: Install Playwright System Dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter eval-view exec playwright install-deps
+
+      - name: Playwright E2E Tests
+        run: pnpm --filter eval-view run test:e2e
+
+      - name: Test Grader Calibration
+        # Ensuring playwright is happy
+        run: node bin/gd.ts dev guides/user-experience/adapt-scrollbar-to-contrast-preferences/ --test-grader
