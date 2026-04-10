@@ -117,6 +117,11 @@ async function run() {
   }
 }
 
+function readTrajectory(filePath: string): ConversationRecord {
+  const content = fs.readFileSync(filePath, 'utf8');
+  return JSON.parse(content) as ConversationRecord;
+}
+
 export async function collectGeminiGuidesFromTrajectory(dirPath: string, serving: string): Promise<GuidedUsage> {
   const retrievedGuides: string[] = [];
   const fileReadGuides: string[] = [];
@@ -126,45 +131,35 @@ export async function collectGeminiGuidesFromTrajectory(dirPath: string, serving
 
     for (const file of sessionFiles) {
       const sessionPath = path.join(dirPath, file);
-      const sessionContent = fs.readFileSync(sessionPath, 'utf8');
-      const session = JSON.parse(sessionContent) as ConversationRecord;
+      const session = readTrajectory(sessionPath);
 
       if (session.messages) {
         for (const msg of session.messages) {
           if (msg.type === 'gemini' && msg.toolCalls) {
             for (const tc of msg.toolCalls) {
-              if ((serving === Serving.SKILLS || serving === Serving.MEGASKILL) && tc.name === 'read_file' && tc.args && (tc.args as any).file_path) {
-                const filePath = (tc.args as any).file_path;
-                  if (filePath.includes('/skills/')) {
-                    if (filePath.endsWith('/guide.md')) {
-                      const match = filePath.match(/\/skills\/[^/]+\/([^/]+)\/guide\.md$/);
-                      if (match) {
-                        fileReadGuides.push(match[1]);
-                      }
-                    } else if (filePath.endsWith('.md')) {
-                      const match = filePath.match(/\/skills\/[^/]+\/(?:references\/)?(?:[^/]+\/)*([^/]+)\.md$/);
-                      if (match) {
-                        fileReadGuides.push(match[1]);
-                      }
-                    }
+              if (tc.name.includes('get_best_practices') && tc.args?.use_case_id) {
+                retrievedGuides.push(tc.args.use_case_id as string);
+              } else if ((serving === Serving.SKILLS || serving === Serving.MEGASKILL) && tc.name === 'read_file' && tc.args?.file_path) {
+                const filePath = tc.args.file_path as string;
+                if (filePath.includes('/skills/')) {
+                  const match = filePath.match(/\/skills\/[^/]+\/([^/]+)\/guide\.md$/) ||
+                                filePath.match(/\/skills\/[^/]+\/(?:references\/)?(?:[^/]+\/)*([^/]+)\.md$/);
+                  if (match) {
+                    fileReadGuides.push(match[1]);
                   }
-              } else if (serving === Serving.SKILLS_CLI && tc.name === 'run_shell_command' && tc.args && (tc.args as any).command) {
-                const command = (tc.args as any).command;
-                  if (command.includes('modern-web') && command.includes('--retrieve')) {
-                    const match = command.match(/--retrieve\s+["']?([^"'\s]+)["']?/);
-                    if (match) {
-                      const ids = match[1].split(',');
-                      for (const id of ids) {
-                        retrievedGuides.push(id.trim());
-                      }
-                    }
-                  }
+                }
+              } else if (tc.name === 'run_shell_command' && tc.args?.command) {
+                const command = tc.args.command as string;
+                const match = command.match(/--retrieve\s+["']?([^"'\s]+)["']?/);
+                if (match) {
+                  retrievedGuides.push(...match[1].split(',').map(s => s.trim()));
                 }
               }
             }
           }
         }
       }
+    }
   } catch (e) {
     console.error(`Error reading session files in ${dirPath}:`, e);
   }
@@ -182,8 +177,7 @@ export function extractGeminiCliModel(resultsDir: string): string {
   for (const relativePath of sessionFiles as string[]) {
     const sessionPath = path.join(resultsDir, relativePath);
     try {
-      const content = fs.readFileSync(sessionPath, 'utf8');
-      const session = JSON.parse(content) as ConversationRecord;
+      const session = readTrajectory(sessionPath);
       if (session.messages) {
         for (const m of session.messages) {
           if (m.type === 'gemini' && m.model) {
@@ -204,23 +198,22 @@ export function extractGeminiCliModel(resultsDir: string): string {
 
 export function collectGeminiToolsFromTrajectory(dir: string): string[] {
   const toolsUsed: string[] = [];
-  const sessionFiles = fs.globSync('session-*.json', { cwd: dir });
+  const files = fs.readdirSync(dir);
+  const sessionFiles = files.filter(f => f.startsWith('session-') && f.endsWith('.json'));
   const firstSession = sessionFiles[0];
   if (!firstSession) return toolsUsed;
 
   try {
     const sessionPath = path.join(dir, firstSession);
-    const content = fs.readFileSync(sessionPath, 'utf8');
-    const session = JSON.parse(content) as ConversationRecord;
-    if (session.messages) {
+    const session = readTrajectory(sessionPath);
+    if (Array.isArray(session.messages)) {
       for (const msg of session.messages) {
-        if (msg.type === 'gemini' && msg.toolCalls) {
+        if (msg.type === 'gemini' && Array.isArray(msg.toolCalls)) {
           for (const tc of msg.toolCalls) {
-            if (tc.name === 'activate_skill' && tc.args) {
-              const args = tc.args as unknown as { name?: string };
-              if (args.name) {
-                toolsUsed.push(args.name);
-              }
+            if (tc.name.includes('get_best_practices')) {
+              toolsUsed.push('modern-web');
+            } else if (tc.name === 'activate_skill' && tc.args && tc.args.name) {
+              toolsUsed.push(tc.args.name as string);
             }
           }
         }
