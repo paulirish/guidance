@@ -1,6 +1,6 @@
 import { setBackend, tensor2d, Tensor } from "@tensorflow/tfjs-core";
 import { loadGraphModel, GraphModel } from "@tensorflow/tfjs-converter";
-import { BertTokenizer } from "@huggingface/transformers";
+import { PureJsTokenizer } from "./pure-js-tokenizer.ts";
 import "./tfjs-kernels.ts";
 import path from "path";
 import fs from "fs";
@@ -77,7 +77,8 @@ export class TfjsEmbedder {
 
         // Load tokenizer from local files committed to the repo
         const tokenizerPath = path.resolve(import.meta.dirname, '../models/all-MiniLM-L6-v2');
-        this.tokenizer = await BertTokenizer.from_pretrained(tokenizerPath, { local_files_only: true });
+        const tokenizerJsonPath = path.resolve(tokenizerPath, 'tokenizer.json');
+        this.tokenizer = PureJsTokenizer.loadFromFile(tokenizerJsonPath);
     } catch (e) {
         console.error("Failed to load TFJS model:", e);
         throw e;
@@ -92,21 +93,11 @@ export class TfjsEmbedder {
         throw new Error("Failed to initialize TFJS Embedder");
     }
 
-    const tokenized = await this.tokenizer(text, { padding: true, truncation: true });
+    const tokenized = this.tokenizer.encode(text);
 
-    // Extract data and convert to numbers (handling BigInt if present)
-    const extractData = (tensor: any) => {
-        const data = tensor.data || tensor;
-        return Array.from(data).map((x: any) => Number(x));
-    };
-
-    const inputIdsData = extractData(tokenized.input_ids);
-    const attentionMaskData = extractData(tokenized.attention_mask);
-    const tokenTypeIdsData = extractData(tokenized.token_type_ids);
-
-    const inputIds = tensor2d([inputIdsData], undefined, 'int32');
-    const attentionMask = tensor2d([attentionMaskData], undefined, 'int32');
-    const tokenTypeIds = tensor2d([tokenTypeIdsData], undefined, 'int32');
+    const inputIds = tensor2d([tokenized.input_ids], undefined, 'int32');
+    const attentionMask = tensor2d([tokenized.attention_mask], undefined, 'int32');
+    const tokenTypeIds = tensor2d([tokenized.token_type_ids], undefined, 'int32');
 
     const result = this.model.predict({
         "input_ids": inputIds,
