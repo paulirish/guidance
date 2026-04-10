@@ -13,36 +13,47 @@ const targetDir = path.dirname(filePath);
 const demoName = path.basename(filePath);
 const demoUrl = `http://localhost/${demoName}`;
 
+const getAllContent = () => {
+  const html = fs.readFileSync(filePath, 'utf-8');
+  const cssFiles = fs.readdirSync(targetDir).filter(f => f.endsWith('.css'));
+  let allContent = html;
+  for (const cssFile of cssFiles) {
+    allContent += fs.readFileSync(path.join(targetDir, cssFile), 'utf-8');
+  }
+  return allContent;
+};
+
 test.describe(`Scrollbar Customization Expectations: ${demoName}`, () => {
   // Static assertions
   test('Standard scrollbar-width property is used in CSS', async () => {
-    const html = fs.readFileSync(filePath, 'utf-8');
-    expect(html).toMatch(/scrollbar-width\s*:/);
+    const content = getAllContent();
+    expect(content).toMatch(/scrollbar-width\s*:/);
   });
 
   test('Standard scrollbar-color property is used in CSS', async () => {
-    const html = fs.readFileSync(filePath, 'utf-8');
-    expect(html).toMatch(/scrollbar-color\s*:/);
+    const content = getAllContent();
+    expect(content).toMatch(/scrollbar-color\s*:/);
   });
 
   test('scrollbar-gutter: stable is used in CSS', async () => {
-    const html = fs.readFileSync(filePath, 'utf-8');
-    expect(html).toMatch(/scrollbar-gutter\s*:\s*stable/);
+    const content = getAllContent();
+    expect(content).toMatch(/scrollbar-gutter\s*:\s*stable/);
   });
 
   test('Legacy ::-webkit-scrollbar is wrapped in @supports not (scrollbar-color: auto)', async () => {
-    const html = fs.readFileSync(filePath, 'utf-8');
+    const content = getAllContent();
     // Check if @supports not (scrollbar-color: auto) exists and contains ::-webkit-scrollbar
-    const supportsMatch = html.match(/@supports\s+not\s*\(\s*scrollbar-color\s*:\s*auto\s*\)\s*{[^}]*::-webkit-scrollbar/s);
+    const supportsMatch = content.match(/@supports\s+not\s*\(\s*scrollbar-color\s*:\s*auto\s*\)\s*{[^}]*::-webkit-scrollbar/s);
     expect(supportsMatch).not.toBeNull();
   });
 
   test('Legacy ::-webkit-scrollbar has width or height defined for visibility', async () => {
-    const html = fs.readFileSync(filePath, 'utf-8');
+    const content = getAllContent();
     // We check for width or height inside the @supports block to ensure it's part of the correctly implemented fallback
-    const legacySizingMatch = html.match(/@supports\s+not\s*\(\s*scrollbar-color\s*:\s*auto\s*\)\s*{[^}]*::-webkit-scrollbar\s*{[^}]*(width|height)\s*:/s);
+    const legacySizingMatch = content.match(/@supports\s+not\s*\(\s*scrollbar-color\s*:\s*auto\s*\)\s*{[^}]*::-webkit-scrollbar\s*{[^}]*(width|height)\s*:/s);
     expect(legacySizingMatch).not.toBeNull();
   });
+
 
   // Setup browser testing
   test.beforeEach(async ({ page }) => {
