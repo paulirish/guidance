@@ -48,39 +48,4 @@ IMPORTANT: On macOS, the `scrollbar-color` (standard) and `::-webkit-scrollbar` 
 
 If the user's Baseline target (or Widely available, if unavailable) does not support any of the required features, the following fallback strategies MUST be used.
 
-Include the non-standard `::-webkit-scrollbar` pseudo-elements as fallbacks.
-
-To prevent conflicts between standard properties and legacy WebKit selectors in browsers that support both natively (like modern Chrome), you MUST wrap legacy WebKit fallbacks in an `@supports not (scrollbar-color: auto)` block.
-
-```css
-.scroller {
-  /* Apply standard properties natively */
-  scrollbar-color: hotpink blue;
-  scrollbar-width: thin;
-  /* Force the track background to be visible on macOS */
-  scrollbar-gutter: stable;
-}
-
-/* Legacy fallback for WebKit/Blink browsers */
-@supports not (scrollbar-color: auto) {
-  .scroller::-webkit-scrollbar {
-    /* Must define base size in WebKit for custom colors to be visual */
-    width: 12px;
-    height: 12px;
-  }
-  .scroller::-webkit-scrollbar-thumb {
-    /* Use background to color the thumb */
-    background: hotpink;
-    border-radius: 6px;
-  }
-  .scroller::-webkit-scrollbar-track {
-    /* Use background to color the track */
-    background: blue;
-  }
-  
-  .scroller-hidden::-webkit-scrollbar {
-    display: none;
-    width: 0;
-  }
-}
-```
+{{ FALLBACK("scrollbar-color") }}
