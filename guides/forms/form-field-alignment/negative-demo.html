@@ -15,7 +15,7 @@
             margin: 0 auto;
         }
 
-        .row {
+        .row, .form-row {
             display: flex;
             margin-bottom: 15px;
             align-items: center;
@@ -37,15 +37,15 @@
 <body>
 
     <div class="form-container">
-        <div class="row">
+        <div class="row form-row" data-testid="grid-item">
             <label for="f1">First Name</label>
             <input type="text" id="f1">
         </div>
-        <div class="row">
+        <div class="row form-row" data-testid="grid-item">
             <label for="f2">Last Name</label>
             <input type="text" id="f2">
         </div>
-        <div class="row">
+        <div class="row form-row" data-testid="grid-item">
             <label for="f3">Extremely Long Label That Might Break Layout</label>
             <input type="text" id="f3">
         </div>

@@ -35,7 +35,7 @@ I will create the `demo.html` file with the subgrid implementation to ensure it 
         }
 
         /* The Subgrid Element: Each wrapper div inherits the parent columns */
-        .test-form-row {
+        .test-form-row, .subgrid-row {
             display: grid;
             grid-column: 1 / -1; /* Spans across all parent columns */
             grid-template-columns: subgrid; /* Magic: Aligns children to parent's tracks */
@@ -67,7 +67,7 @@ I will create the `demo.html` file with the subgrid implementation to ensure it 
 
         /* Fallback for browsers without subgrid support */
         @supports not (grid-template-columns: subgrid) {
-            .test-form-row {
+            .test-form-row, .subgrid-row {
                 display: flex;
                 flex-direction: column;
                 align-items: flex-start;
@@ -101,25 +101,25 @@ I will create the `demo.html` file with the subgrid implementation to ensure it 
 
         <form class="test-form-container">
             <!-- Container 1 -->
-            <div class="test-form-row">
+            <div class="test-form-row subgrid-row" data-testid="grid-item">
                 <label for="username" class="test-label">Username</label>
                 <input type="text" id="username" class="test-input" placeholder="e.g. jdoe123">
             </div>
 
             <!-- Container 2 -->
-            <div class="test-form-row">
+            <div class="test-form-row subgrid-row" data-testid="grid-item">
                 <label for="email" class="test-label">Email Address</label>
                 <input type="email" id="email" class="test-input" placeholder="john@example.com">
             </div>
 
             <!-- Container 3: Longer label to demonstrate alignment -->
-            <div class="test-form-row">
+            <div class="test-form-row subgrid-row" data-testid="grid-item">
                 <label for="notifications" class="test-label">Preferred Notification Method</label>
                 <input type="text" id="notifications" class="test-input" placeholder="Email, SMS, etc.">
             </div>
 
             <!-- Container 4 -->
-            <div class="test-form-row">
+            <div class="test-form-row subgrid-row" data-testid="grid-item">
                 <label for="bio" class="test-label">Short Bio</label>
                 <input type="text" id="bio" class="test-input" placeholder="A bit about you...">
             </div>
