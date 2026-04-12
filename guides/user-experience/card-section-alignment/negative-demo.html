@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Layout</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+            padding: 40px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .card {
+            width: 300px;
+            background: white;
+            border: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            padding: 15px;
+            background: #eee;
+            height: 60px;
+            overflow: hidden;
+        }
+
+        .card-body {
+            padding: 15px;
+            flex-grow: 1;
+            min-height: 100px;
+        }
+
+        .card-footer {
+            padding: 10px;
+            background: #fafafa;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                Small Title
+            </div>
+            <div class="card-body">
+                This is some text for the body.
+            </div>
+            <div class="card-footer">
+                Footer
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                This is a much longer title that might wrap if there was more text here
+            </div>
+            <div class="card-body">
+                This body has significantly more content. It goes on and on to show how the layout handles different lengths of text without any synchronization between the sibling components.
+            </div>
+            <div class="card-footer">
+                Footer
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                Medium Title
+            </div>
+            <div class="card-body">
+                Another body section.
+            </div>
+            <div class="card-footer">
+                Footer
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

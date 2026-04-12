@@ -1,0 +1,130 @@
+I will create the `demo.html` file with the subgrid implementation to ensure it is saved in the workspace.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subgrid Form Alignment Demo</title>
+    <style>
+        :root {
+            --spacing: 1rem;
+            --border-radius: 4px;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 2rem;
+            line-height: 1.5;
+            background-color: #f4f4f9;
+        }
+
+        .demo-card {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* The Grid Parent: Defines the master column structure */
+        .test-form-container {
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: var(--spacing);
+        }
+
+        /* The Subgrid Element: Each wrapper div inherits the parent columns */
+        .test-form-row {
+            display: grid;
+            grid-column: 1 / -1; /* Spans across all parent columns */
+            grid-template-columns: subgrid; /* Magic: Aligns children to parent's tracks */
+            align-items: center;
+            padding: 0.5rem;
+            border: 1px dashed #eee; /* Visualizing the container element */
+            border-radius: var(--border-radius);
+        }
+
+        .test-label {
+            font-weight: 600;
+            padding-right: 1rem;
+            white-space: nowrap;
+        }
+
+        .test-input {
+            padding: 0.6rem;
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .test-input:focus {
+            outline: 2px solid #0056b3;
+            border-color: transparent;
+        }
+
+        /* Fallback for browsers without subgrid support */
+        @supports not (grid-template-columns: subgrid) {
+            .test-form-row {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .test-label {
+                margin-bottom: 0.25rem;
+            }
+            .unsupported-notice {
+                display: block;
+                background: #fff3cd;
+                color: #856404;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                border-radius: var(--border-radius);
+                font-size: 0.875rem;
+            }
+        }
+
+        .unsupported-notice {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="demo-card">
+        <h2>Registration Form</h2>
+        <div class="unsupported-notice">
+            Note: Your browser does not support CSS Subgrid. Falling back to a standard stack layout.
+        </div>
+
+        <form class="test-form-container">
+            <!-- Container 1 -->
+            <div class="test-form-row">
+                <label for="username" class="test-label">Username</label>
+                <input type="text" id="username" class="test-input" placeholder="e.g. jdoe123">
+            </div>
+
+            <!-- Container 2 -->
+            <div class="test-form-row">
+                <label for="email" class="test-label">Email Address</label>
+                <input type="email" id="email" class="test-input" placeholder="john@example.com">
+            </div>
+
+            <!-- Container 3: Longer label to demonstrate alignment -->
+            <div class="test-form-row">
+                <label for="notifications" class="test-label">Preferred Notification Method</label>
+                <input type="text" id="notifications" class="test-input" placeholder="Email, SMS, etc.">
+            </div>
+
+            <!-- Container 4 -->
+            <div class="test-form-row">
+                <label for="bio" class="test-label">Short Bio</label>
+                <input type="text" id="bio" class="test-input" placeholder="A bit about you...">
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

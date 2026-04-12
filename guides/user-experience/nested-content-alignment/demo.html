@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Subgrid: Unified Visual Structure</title>
+    <style>
+        :root {
+            --color-bg: #ffffff;
+            --color-text: #1a1a1b;
+            --color-grid-line: #edeff1;
+            --color-accent: #0079d3;
+            --color-subgrid-bg: #f6f7f8;
+            --color-fallback: #ff585b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #dae0e6;
+            color: var(--color-text);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .test-page-wrapper {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .test-fallback-notice {
+            display: none;
+            background: var(--color-fallback);
+            color: white;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* The Main Page Layout Grid */
+        .test-parent-grid {
+            display: grid;
+            /* Defining a 3-column layout for the entire page */
+            grid-template-columns: 150px 1fr 150px;
+            gap: 1px;
+            background-color: var(--color-grid-line);
+            border: 1px solid var(--color-grid-line);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .test-parent-grid > div, 
+        .test-parent-grid > header {
+            background-color: var(--color-bg);
+            padding: 1.25rem;
+        }
+
+        .test-grid-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #7c7c7c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--color-grid-line);
+        }
+
+        /* Nested Component that inherits parent grid tracks */
+        .test-nested-component {
+            grid-column: 1 / -1; /* Spans across all tracks of the parent */
+            display: grid;
+            grid-template-columns: subgrid; /* Align internal elements to parent columns */
+            background-color: var(--color-subgrid-bg) !important;
+            padding: 0 !important;
+        }
+
+        .test-subgrid-element {
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Highlight alignment within the nested component */
+        .test-nested-component .test-subgrid-element:nth-child(2) {
+            background-color: #e9f5fd;
+            border-left: 3px solid var(--color-accent);
+            font-style: italic;
+        }
+
+        /* Feature Detection & Fallback Logic */
+        @supports (grid-template-columns: subgrid) {
+            .test-status-indicator::after {
+                content: " ✓ Subgrid Active";
+                color: #00a38d;
+                font-weight: bold;
+            }
+        }
+
+        @supports not (grid-template-columns: subgrid) {
+            .test-fallback-notice {
+                display: block;
+            }
+            .test-status-indicator::after {
+                content: " ✗ Subgrid Unsupported (Using Fallback)";
+                color: var(--color-fallback);
+                font-weight: bold;
+            }
+            /* Fallback: Repeat the parent grid template manually */
+            .test-nested-component {
+                grid-template-columns: 150px 1fr 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-page-wrapper">
+        <div class="test-fallback-notice">
+            Your browser does not support CSS Subgrid. The layout is maintained using a manual template fallback.
+        </div>
+
+        <header style="margin-bottom: 1.5rem;">
+            <h1>Visual Alignment with Subgrid</h1>
+            <p class="test-status-indicator">Feature Status:</p>
+            <p>This demo shows how a nested component (the light-blue row) can align its internal content perfectly with the parent's column tracks.</p>
+        </header>
+
+        <main class="test-parent-grid">
+            <!-- Header Row -->
+            <div class="test-grid-label">Author</div>
+            <div class="test-grid-label">Message Body</div>
+            <div class="test-grid-label">Metadata</div>
+
+            <!-- Regular Grid Item -->
+            <div>@user_alpha</div>
+            <div>This is a standard row directly inside the parent grid.</div>
+            <div style="color: #7c7c7c; font-size: 0.85rem;">v1.2.0</div>
+
+            <!-- Nested Component using Subgrid -->
+            <section class="test-nested-component">
+                <div class="test-subgrid-element"><strong>@component</strong></div>
+                <div class="test-subgrid-element">
+                    I am inside a nested <code>&lt;section&gt;</code>, but my columns align with @user_alpha's above.
+                </div>
+                <div class="test-subgrid-element" style="color: var(--color-accent); font-size: 0.85rem;">Pinned</div>
+            </section>
+
+            <!-- Another Regular Grid Item -->
+            <div>@user_beta</div>
+            <div>Subgrid eliminates the need to replicate column widths in every component.</div>
+            <div style="color: #7c7c7c; font-size: 0.85rem;">v1.2.1</div>
+        </main>
+    </div>
+</body>
+</html>

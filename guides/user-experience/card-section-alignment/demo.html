@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Subgrid: Consistent Card Alignment</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --header-bg: #f1f5f9;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .demo-info {
+            max-width: 800px;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        /* 
+           The Container defines the row structure for the entire row of cards.
+           Row 1: Header (auto)
+           Row 2: Body (1fr - takes remaining space)
+           Row 3: Footer (auto)
+        */
+        .test-grid-container {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: auto 1fr auto;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        /* 
+           The Card spans all 3 rows of the parent.
+           grid-template-rows: subgrid tells the card to use the parent's row definitions.
+        */
+        .test-card {
+            display: grid;
+            grid-row: span 3;
+            grid-template-rows: subgrid;
+            
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .test-card-header {
+            padding: 1rem;
+            background-color: var(--header-bg);
+            font-weight: 700;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+        }
+
+        .test-card-body {
+            padding: 1rem;
+            line-height: 1.5;
+        }
+
+        .test-card-footer {
+            padding: 0.75rem 1rem;
+            background-color: #fafafa;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Support Detection UI */
+        .support-status {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        @supports (grid-template-rows: subgrid) {
+            .support-status {
+                background-color: #dcfce7;
+                color: #166534;
+            }
+            .support-status::before { content: "✓ Browser supports Subgrid"; }
+        }
+
+        @supports not (grid-template-rows: subgrid) {
+            .support-status {
+                background-color: #fee2e2;
+                color: #991b1b;
+            }
+            .support-status::before { content: "✕ Browser does not support Subgrid (Using Flex fallback)"; }
+            
+            /* Fallback: Headers/Footers won't align perfectly if content differs */
+            .test-card {
+                display: flex;
+                flex-direction: column;
+            }
+            .test-card-body {
+                flex: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .test-grid-container {
+                grid-template-columns: 1fr;
+                /* On stack, subgrid aligns within the card's own spanned rows */
+                grid-template-rows: repeat(3, auto 1fr auto);
+            }
+            .test-card {
+                grid-row: auto / span 3;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="demo-info">
+        <div class="support-status"></div>
+        <h1>Card Section Alignment with Subgrid</h1>
+        <p>This demo shows how <code>subgrid</code> allows headers, bodies, and footers to align perfectly across different cards, even when titles or content lengths vary.</p>
+    </div>
+
+    <main class="test-grid-container">
+        <!-- Card 1: Long Title, Short Body -->
+        <article class="test-card">
+            <header class="test-card-header">
+                A Very Long Card Title That Wraps to Two or More Lines
+            </header>
+            <div class="test-card-body">
+                Short body content.
+            </div>
+            <footer class="test-card-footer">
+                Footer text
+            </footer>
+        </article>
+
+        <!-- Card 2: Short Title, Long Body -->
+        <article class="test-card">
+            <header class="test-card-header">
+                Short Title
+            </header>
+            <div class="test-card-body">
+                This card has a much longer body section. In a standard flex or grid layout, the footers wouldn't align and the body start points would depend on the title height. With subgrid, the row heights are shared across the container.
+            </div>
+            <footer class="test-card-footer">
+                Footer text
+            </footer>
+        </article>
+
+        <!-- Card 3: Normal Title, Normal Body, Long Footer -->
+        <article class="test-card">
+            <header class="test-card-header">
+                Standard Title
+            </header>
+            <div class="test-card-body">
+                Moderate amount of content in the body section to fill space.
+            </div>
+            <footer class="test-card-footer">
+                A much longer footer that contains significantly more metadata than the others.
+            </footer>
+        </article>
+    </main>
+
+    <script>
+        // Optional: Log support to console for automated testing
+        const isSubgridSupported = CSS.supports('grid-template-rows', 'subgrid');
+        console.log('Subgrid supported:', isSubgridSupported);
+    </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Negative Demo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .row {
+            display: flex;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        label {
+            width: 200px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <div class="row">
+            <label for="f1">First Name</label>
+            <input type="text" id="f1">
+        </div>
+        <div class="row">
+            <label for="f2">Last Name</label>
+            <input type="text" id="f2">
+        </div>
+        <div class="row">
+            <label for="f3">Extremely Long Label That Might Break Layout</label>
+            <input type="text" id="f3">
+        </div>
+    </div>
+
+</body>
+</html>

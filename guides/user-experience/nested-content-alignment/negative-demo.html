@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Example</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+            margin: 20px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 200px 1fr 100px;
+            gap: 10px;
+            background-color: #ccc;
+            padding: 10px;
+        }
+
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            font-weight: bold;
+        }
+
+        .row-item {
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .nested-box {
+            grid-column: 1 / 4;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            background-color: #e0e0ff;
+            padding: 10px;
+            border: 2px solid blue;
+        }
+
+        .nested-box div {
+            padding: 5px;
+        }
+
+        .manual-alignment-component {
+            grid-column: 1 / 4;
+            display: grid;
+            grid-template-columns: 180px 1fr 120px;
+            gap: 5px;
+            background-color: #ffe0e0;
+            padding: 10px;
+            border: 2px solid red;
+        }
+
+        .manual-alignment-component div {
+            background-color: white;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Layout Demonstration</h1>
+    
+    <div class="container">
+        <div class="header">Category</div>
+        <div class="header">Description</div>
+        <div class="header">Status</div>
+
+        <div class="row-item">Standard</div>
+        <div class="row-item">This is a normal grid item.</div>
+        <div class="row-item">OK</div>
+
+        <div class="nested-box">
+            <div>Nested Flex Label</div>
+            <div>This component uses flexbox instead of inheriting the grid structure.</div>
+            <div>Inconsistent</div>
+        </div>
+
+        <div class="row-item">Standard</div>
+        <div class="row-item">Another normal grid item.</div>
+        <div class="row-item">OK</div>
+
+        <div class="manual-alignment-component">
+            <div>Manual Label</div>
+            <div>This component defines its own grid tracks that almost match but actually deviate.</div>
+            <div>Mismatched</div>
+        </div>
+    </div>
+</body>
+</html>
