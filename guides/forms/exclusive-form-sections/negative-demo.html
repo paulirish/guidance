@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Setup</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            line-height: 1.6;
+        }
+        details {
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            padding: 0.5em 0.5em 0;
+            margin-bottom: 10px;
+        }
+        summary {
+            font-weight: bold;
+            margin: -0.5em -0.5em 0;
+            padding: 0.5em;
+            cursor: pointer;
+        }
+        details[open] {
+            padding: 0.5em;
+        }
+        details[open] summary {
+            border-bottom: 1px solid #aaa;
+            margin-bottom: 0.5em;
+        }
+        .field {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Create Your Account</h1>
+
+    <div name="step-group">
+        <details id="step1" open>
+            <summary>Step 1: Contact</summary>
+            <div class="field">
+                <label>Email</label>
+                <input type="email">
+            </div>
+            <div class="field">
+                <label>Phone</label>
+                <input type="tel">
+            </div>
+        </details>
+
+        <details id="step2">
+            <summary>Step 2: Profile</summary>
+            <div class="field">
+                <label>Display Name</label>
+                <input type="text">
+            </div>
+            <div class="field">
+                <label>Bio</label>
+                <input type="text">
+            </div>
+        </details>
+
+        <details id="step3">
+            <summary>Step 3: Security</summary>
+            <div class="field">
+                <label>Password</label>
+                <input type="password">
+            </div>
+            <div class="field">
+                <label>Confirm Password</label>
+                <input type="password">
+            </div>
+        </details>
+    </div>
+
+    <button type="button">Save Account</button>
+
+    <script>
+        const allDetails = document.querySelectorAll('details');
+
+        allDetails.forEach((target) => {
+            target.addEventListener('toggle', () => {
+                if (target.open) {
+                    allDetails.forEach((other) => {
+                        if (other !== target) {
+                            other.open = false;
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutually Exclusive Details Form Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: #f4f4f9;
+        }
+        .test-form {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-details-group {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .test-details-group[open] {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0,123,255,0.2);
+        }
+        .test-summary {
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-summary::-webkit-details-marker {
+            display: none;
+        }
+        .test-summary::after {
+            content: '+';
+            font-size: 1.2rem;
+        }
+        .test-details-group[open] > .test-summary::after {
+            content: '−';
+        }
+        .content {
+            padding: 0 1rem 1rem;
+            border-top: 1px solid #eee;
+        }
+        .form-group {
+            margin-top: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .support-warning {
+            padding: 1rem;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+        .test-submit {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .test-submit:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Checkout Process</h1>
+    <p>This demo uses the <code>name</code> attribute on <code>&lt;details&gt;</code> elements to ensure only one section is open at a time.</p>
+
+    <div id="support-notice" class="support-warning">
+        Your browser does not natively support mutually exclusive <code>&lt;details&gt;</code> elements. A JavaScript fallback has been applied.
+    </div>
+
+    <form class="test-form" onsubmit="event.preventDefault(); alert('Form submitted!');">
+        <!-- Section 1 -->
+        <details name="checkout-step" class="test-details-group" open>
+            <summary class="test-summary">1. Personal Information</summary>
+            <div class="content">
+                <div class="form-group">
+                    <label for="full-name">Full Name</label>
+                    <input type="text" id="full-name" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="john@example.com" required>
+                </div>
+            </div>
+        </details>
+
+        <!-- Section 2 -->
+        <details name="checkout-step" class="test-details-group">
+            <summary class="test-summary">2. Shipping Address</summary>
+            <div class="content">
+                <div class="form-group">
+                    <label for="address">Street Address</label>
+                    <input type="text" id="address" placeholder="123 Main St" required>
+                </div>
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" placeholder="New York" required>
+                </div>
+            </div>
+        </details>
+
+        <!-- Section 3 -->
+        <details name="checkout-step" class="test-details-group">
+            <summary class="test-summary">3. Payment Details</summary>
+            <div class="content">
+                <div class="form-group">
+                    <label for="card">Card Number</label>
+                    <input type="text" id="card" placeholder="xxxx-xxxx-xxxx-xxxx" required>
+                </div>
+                <div class="form-group">
+                    <label for="expiry">Expiry Date</label>
+                    <input type="text" id="expiry" placeholder="MM/YY" required>
+                </div>
+            </div>
+        </details>
+
+        <button type="submit" class="test-submit">Complete Purchase</button>
+    </form>
+
+    <script>
+        // Feature Detection
+        const supportsDetailsName = 'name' in document.createElement('details');
+
+        if (!supportsDetailsName) {
+            document.getElementById('support-notice').style.display = 'block';
+
+            // Polyfill for mutually exclusive details
+            document.addEventListener('toggle', (event) => {
+                if (event.target.tagName === 'DETAILS' && event.target.open) {
+                    const groupName = event.target.getAttribute('name');
+                    if (groupName) {
+                        const allDetailsInGroup = document.querySelectorAll(`details[name="${groupName}"]`);
+                        allDetailsInGroup.forEach((details) => {
+                            if (details !== event.target && details.open) {
+                                details.open = false;
+                            }
+                        });
+                    }
+                }
+            }, true); // Use capture phase because 'toggle' doesn't bubble
+        }
+    </script>
+</body>
+</html>

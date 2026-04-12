@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Documentation Accordion</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+        .accordion-item {
+            margin-bottom: 5px;
+        }
+        summary {
+            background: #eee;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .content {
+            padding: 10px;
+            border: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="accordion">
+        <details class="accordion-item">
+            <summary>First Section</summary>
+            <div class="content">Content for the first section.</div>
+        </details>
+        <details class="accordion-item">
+            <summary>Second Section</summary>
+            <div class="content">Content for the second section.</div>
+        </details>
+        <details class="accordion-item">
+            <summary>Third Section</summary>
+            <div class="content">Content for the third section.</div>
+        </details>
+    </div>
+
+    <script>
+        const items = document.querySelectorAll('.accordion-item');
+        items.forEach(item => {
+            item.addEventListener('click', (e) => {
+                if (e.target.tagName === 'SUMMARY') {
+                    const isOpen = item.hasAttribute('open');
+                    if (!isOpen) {
+                        items.forEach(otherItem => {
+                            if (otherItem !== item) {
+                                otherItem.removeAttribute('open');
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

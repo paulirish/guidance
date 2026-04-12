@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitor</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+        .accordion-header {
+            background-color: #eee;
+            color: #444;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+            border-bottom: 1px solid #ccc;
+        }
+        .active, .accordion-header:hover {
+            background-color: #ccc;
+        }
+        .panel {
+            padding: 0 18px;
+            display: none;
+            background-color: white;
+            overflow: hidden;
+        }
+        .log-line {
+            padding: 5px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>System Monitor</h1>
+
+    <div class="accordion-container">
+        <button class="accordion-header" onclick="toggleAccordion(this)">Server Logs</button>
+        <div class="panel">
+            <div class="log-line">Initializing boot sequence...</div>
+            <div class="log-line">Kernel version 5.15.0-generic</div>
+            <div class="log-line">Loading drivers...</div>
+            <div class="log-line">Network interface eth0 up</div>
+            <div class="log-line">Starting web service on port 80</div>
+            <div class="log-line">Waiting for incoming connections...</div>
+        </div>
+
+        <button class="accordion-header" onclick="toggleAccordion(this)">Database Stats</button>
+        <div class="panel">
+            <div class="log-line">Connected to PostgreSQL 14.5</div>
+            <div class="log-line">Active connections: 42</div>
+            <div class="log-line">Idle connections: 15</div>
+            <div class="log-line">Disk usage: 78%</div>
+            <div class="log-line">Memory usage: 1.2GB</div>
+            <div class="log-line">Last vacuum: 2026-04-11 23:00:00</div>
+        </div>
+
+        <button class="accordion-header" onclick="toggleAccordion(this)">Security Alerts</button>
+        <div class="panel">
+            <div class="log-line">Unauthorized login attempt from 192.168.1.105</div>
+            <div class="log-line">SSH key rotation recommended</div>
+            <div class="log-line">Firewall rule updated: Deny all on port 23</div>
+            <div class="log-line">Malware scan completed: 0 threats found</div>
+        </div>
+    </div>
+
+    <script>
+        function toggleAccordion(element) {
+            element.classList.toggle("active");
+            var panel = element.nextElementSibling;
+            if (panel.style.display === "block") {
+                panel.style.display = "none";
+            } else {
+                panel.style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>

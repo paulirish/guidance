@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutually Exclusive Details Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            line-height: 1.5;
+            color: #333;
+        }
+        .test-log-container {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        details.test-log-stream {
+            border-bottom: 1px solid #e0e0e0;
+        }
+        details.test-log-stream:last-child {
+            border-bottom: none;
+        }
+        summary {
+            padding: 1rem;
+            cursor: pointer;
+            background: #f8f9fa;
+            font-weight: 600;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        summary::after {
+            content: '↓';
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        details[open] summary {
+            background: #fff;
+            border-bottom: 1px solid #eee;
+        }
+        details[open] summary::after {
+            transform: rotate(180deg);
+        }
+        .log-content {
+            padding: 1rem;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .support-warning {
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+        .no-support .support-warning {
+            display: block;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            background: #4caf50;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>System Diagnostics</h1>
+    <p>Using the <code>name</code> attribute to ensure only one log stream is expanded at a time.</p>
+
+    <div id="support-check" class="support-warning">
+        <strong>Note:</strong> Your browser does not natively support the <code>name</code> attribute on <code>&lt;details&gt;</code>. A JavaScript fallback has been enabled to demonstrate the intended mutually exclusive behavior.
+    </div>
+
+    <div class="test-log-container">
+        <!-- The 'name' attribute makes these details mutually exclusive -->
+        <details class="test-log-stream" name="logs" open>
+            <summary><span><span class="status-dot"></span>Web Server</span></summary>
+            <div class="log-content">[10:45:01] GET /index.html 200 - 12ms
+[10:45:05] GET /style.css 200 - 5ms
+[10:45:10] POST /api/login 201 - 145ms
+[10:45:12] GET /dashboard 200 - 42ms</div>
+        </details>
+
+        <details class="test-log-stream" name="logs">
+            <summary><span><span class="status-dot"></span>Database Cluster</span></summary>
+            <div class="log-content">[10:45:00] Connection pool initialized (size: 20)
+[10:45:10] Query: SELECT * FROM users WHERE id = ?
+[10:45:10] Slow Query Warning: 120ms execution
+[10:45:15] Backup routine started...</div>
+        </details>
+
+        <details class="test-log-stream" name="logs">
+            <summary><span><span class="status-dot"></span>Redis Cache</span></summary>
+            <div class="log-content">[10:44:55] Cache hit ratio: 94.2%
+[10:45:02] Evicting key: sess_7721
+[10:45:12] SET user:992 -> [object JSON]
+[10:45:20] Memory usage: 128MB / 512MB</div>
+        </details>
+
+        <details class="test-log-stream" name="logs">
+            <summary><span><span class="status-dot"></span>Worker Queue</span></summary>
+            <div class="log-content">[10:40:00] Worker #1 processing: send_welcome_email
+[10:40:05] Worker #2 idle
+[10:41:12] Job completed: image_resize_large
+[10:43:00] 0 jobs in pending queue</div>
+        </details>
+    </div>
+
+    <script>
+        // Feature detection for 'name' attribute on HTMLDetailsElement
+        const isSupported = 'name' in HTMLDetailsElement.prototype;
+
+        if (!isSupported) {
+            document.body.classList.add('no-support');
+
+            // Realistic fallback: Manual exclusion logic
+            const detailsElements = document.querySelectorAll('details[name="logs"]');
+            detailsElements.forEach((el) => {
+                el.addEventListener('toggle', (event) => {
+                    if (el.open) {
+                        detailsElements.forEach((other) => {
+                            if (other !== el && other.open) {
+                                other.open = false;
+                            }
+                        });
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

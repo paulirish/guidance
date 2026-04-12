@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mutually Exclusive Details Demo</title>
+    <style>
+        :root {
+            --border-color: #d1d5db;
+            --bg-hover: #f3f4f6;
+            --accent-color: #2563eb;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            color: #1f2937;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .test-accordion-container {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .test-accordion-item {
+            border-bottom: 1px solid var(--border-color);
+        }
+        .test-accordion-item:last-child {
+            border-bottom: none;
+        }
+        .test-accordion-item summary {
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            background-color: #fff;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        .test-accordion-item summary:hover {
+            background-color: var(--bg-hover);
+        }
+        .test-accordion-item summary::-webkit-details-marker {
+            display: none;
+        }
+        /* Visual indicator for open/closed state */
+        .test-accordion-item summary::after {
+            content: '+';
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            transition: transform 0.3s;
+        }
+        .test-accordion-item[open] summary::after {
+            content: '−';
+            transform: rotate(180deg);
+        }
+        .test-accordion-content {
+            padding: 1rem;
+            background-color: #fafafa;
+            border-top: 1px solid var(--border-color);
+        }
+        .support-warning {
+            padding: 0.75rem;
+            background-color: #fef2f2;
+            border: 1px solid #fee2e2;
+            color: #991b1b;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Project Documentation</h1>
+    <p>This demo uses the <code>name</code> attribute on <code>&lt;details&gt;</code> to ensure only one section is open at a time.</p>
+
+    <div id="support-notice" class="support-warning">
+        Your browser doesn't natively support mutually exclusive &lt;details&gt;. A JavaScript fallback has been applied.
+    </div>
+
+    <div class="test-accordion-container">
+        <details name="docs" class="test-accordion-item" open>
+            <summary>System Requirements</summary>
+            <div class="test-accordion-content">
+                <p>Ensure your environment meets the following criteria:</p>
+                <ul>
+                    <li>Node.js v18 or higher</li>
+                    <li>At least 4GB of available RAM</li>
+                    <li>Modern web browser with ESM support</li>
+                </ul>
+            </div>
+        </details>
+
+        <details name="docs" class="test-accordion-item">
+            <summary>Installation Guide</summary>
+            <div class="test-accordion-content">
+                <p>Run the following command in your terminal to get started:</p>
+                <code>npm install @example/core-package</code>
+            </div>
+        </details>
+
+        <details name="docs" class="test-accordion-item">
+            <summary>Configuration</summary>
+            <div class="test-accordion-content">
+                <p>Create a <code>config.json</code> file in your root directory to customize the behavior of the application.</p>
+            </div>
+        </details>
+
+        <details name="docs" class="test-accordion-item">
+            <summary>Troubleshooting</summary>
+            <div class="test-accordion-content">
+                <p>If you encounter any issues, check the system logs or visit our community forum for assistance.</p>
+            </div>
+        </details>
+    </div>
+
+    <script>
+        /**
+         * Feature Detection and Polyfill
+         * The 'name' attribute on HTMLDetailsElement is a newer feature (details-name).
+         * If the browser doesn't support it, we implement the behavior manually.
+         */
+        const isNameSupported = 'name' in HTMLDetailsElement.prototype;
+
+        if (!isNameSupported) {
+            document.getElementById('support-notice').style.display = 'block';
+
+            const detailsElements = document.querySelectorAll('details[name]');
+            
+            detailsElements.forEach(details => {
+                details.addEventListener('toggle', (event) => {
+                    // Only react when an element is opened
+                    if (details.open) {
+                        const groupName = details.getAttribute('name');
+                        detailsElements.forEach(other => {
+                            if (other !== details && other.getAttribute('name') === groupName && other.open) {
+                                other.open = false;
+                            }
+                        });
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>
