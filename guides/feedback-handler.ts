@@ -60,6 +60,51 @@ async function runGemini(prompt: string, cwd?: string): Promise<string> {
   return stdoutData.trim();
 }
 
+// ─── Helper to handle Git updates ───────────────────────────────────────────
+
+async function handleGitUpdates(guideDir: string, branch: string) {
+  console.log('Pushing changes...');
+  if (!guideDir) {
+    console.log('No guide directory identified, skipping push.');
+    return;
+  }
+
+  await runCommand('git', ['add', guideDir]);
+  const stagedFiles = await runCommand('git', ['diff', '--cached', '--name-only']);
+  if (!stagedFiles.trim()) {
+    console.log('No changes to commit.');
+    return;
+  }
+
+  await runCommand('git', ['commit', '-m', 'chore: apply feedback and regenerate artifacts']);
+  
+  const token = process.env.APP_TOKEN || process.env.GH_TOKEN;
+  const repo = process.env.GITHUB_REPOSITORY;
+  const pushUrl = token && repo ? `https://x-access-token:${token}@github.com/${repo}.git` : 'origin';
+  
+  try {
+    console.log('Stashing any unstaged changes...');
+    await runCommand('git', ['stash', '-u']);
+    
+    console.log('Pulling latest changes...');
+    await runCommand('git', ['pull', '--rebase', pushUrl, branch]);
+    console.log('✅ Pulled latest changes');
+    
+    console.log('Restoring stashed changes...');
+    try {
+      await runCommand('git', ['stash', 'pop']);
+      console.log('✅ Stash restored');
+    } catch (popErr) {
+      console.warn(`⚠️ Failed to restore stash: ${(popErr as Error).message}`);
+    }
+  } catch (err) {
+    console.warn(`⚠️ Failed to pull latest changes: ${(err as Error).message}`);
+  }
+
+  await runCommand('git', ['push', pushUrl, `HEAD:${branch}`]);
+  console.log(`✅ Changes pushed to ${branch}`);
+}
+
 // ─── Main logic ─────────────────────────────────────────────────────────────
 
 async function main() {
@@ -153,44 +198,10 @@ Use your file editing tools to make the changes.
   }
 
   // 5. Push changes
-  console.log('Pushing changes...');
-  if (guideDir) {
-    await runCommand('git', ['add', guideDir]);
-    const stagedFiles = await runCommand('git', ['diff', '--cached', '--name-only']);
-    if (stagedFiles.trim()) {
-      await runCommand('git', ['commit', '-m', 'chore: apply feedback and regenerate artifacts']);
-      
-      const token = process.env.APP_TOKEN || process.env.GH_TOKEN;
-      const repo = process.env.GITHUB_REPOSITORY;
-      const pushUrl = token && repo ? `https://x-access-token:${token}@github.com/${repo}.git` : 'origin';
-      const branch = prData.headRefName;
-      
-      try {
-        console.log('Stashing any unstaged changes...');
-        await runCommand('git', ['stash', '-u']);
-        
-        console.log('Pulling latest changes...');
-        await runCommand('git', ['pull', '--rebase', pushUrl, branch]);
-        console.log('✅ Pulled latest changes');
-        
-        console.log('Restoring stashed changes...');
-        try {
-          await runCommand('git', ['stash', 'pop']);
-          console.log('✅ Stash restored');
-        } catch (popErr) {
-          console.warn(`⚠️ Failed to restore stash: ${(popErr as Error).message}`);
-        }
-      } catch (err) {
-        console.warn(`⚠️ Failed to pull latest changes: ${(err as Error).message}`);
-      }
-
-      await runCommand('git', ['push', pushUrl, `HEAD:${branch}`]);
-      console.log(`✅ Changes pushed to ${branch}`);
-    } else {
-      console.log('No changes to commit.');
-    }
+  if (process.env.GITHUB_ACTIONS) {
+    await handleGitUpdates(guideDir, prData.headRefName);
   } else {
-    console.log('No guide directory identified, skipping push.');
+    console.log('Skipping Git push (not running in GitHub Actions).');
   }
 }
 
