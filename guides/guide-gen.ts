@@ -15,7 +15,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { features } from 'web-features';
 
-import { guidesDir } from '../lib/paths.ts';
+import { guidesDir, rootDir } from '../lib/paths.ts';
 import config from '../harness/config.ts';
 import {
   createIsolatedHome,
@@ -371,24 +371,30 @@ export async function generateUseCases(featureId: string, reviewer: string = 'pa
   const feature = lookupFeature(featureId);
   console.log(`Found: ${feature.name}`);
 
+  // Step 1: Check for research report or generate it
+  const researchPath = path.join(guidesDir, '.research', `${featureId}.md`);
+  if (!fs.existsSync(researchPath)) {
+    console.log(`Research report not found at ${researchPath}. Running deep research...`);
+    const scriptPath = path.join(rootDir, '.agents/skills/project-use-cases-research/scripts/deep_research.js');
+    // Ensure directory exists
+    fs.mkdirSync(path.dirname(researchPath), { recursive: true });
+    await runCommand('node', [scriptPath, '--feature-id', featureId]);
+  } else {
+    console.log(`Found existing research report at ${researchPath}`);
+  }
+  
+  const researchContent = fs.readFileSync(researchPath, 'utf8');
+
   const workDir = setupIsolatedWorkDir();
-  const prompt = buildUseCasesPrompt(feature);
+  const prompt = buildUseCasesPrompt(feature, researchContent);
 
-  console.log(`Asking Gemini to identify use cases...`);
-  const response = await runGemini(prompt, workDir);
-
+  console.log(`Asking Gemini to identify use cases via API...`);
+  
   let useCases: { slug: string; description: string; category: string }[];
   try {
-    // Find the first '[' and last ']' to extract JSON array
-    const match = response.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if (!match) {
-      throw new Error("Could not find JSON array in response");
-    }
-    const jsonStr = match[0];
-    useCases = JSON.parse(jsonStr);
-
+    useCases = await generateUseCasesWithAPI(prompt);
   } catch (err) {
-    console.error(`Failed to parse JSON response from Gemini. Raw response:\n${response}`);
+    console.error(`Failed to generate use cases via API.`);
     throw err;
   }
 
