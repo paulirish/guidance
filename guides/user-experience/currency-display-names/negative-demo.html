@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Localizer</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            margin: auto;
+        }
+        select, .result {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+        }
+        .result {
+            background: #eee;
+            border: 1px solid #ccc;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Currency Finder</h1>
+        <label>Select Locale:</label>
+        <select id="lang">
+            <option value="en-US">English</option>
+            <option value="de-DE">German</option>
+            <option value="fr-FR">French</option>
+        </select>
+        <br><br>
+        <label>Select Currency:</label>
+        <select id="curr">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="JPY">JPY</option>
+        </select>
+        <div class="result" id="out"></div>
+    </div>
+
+    <script>
+        const data = {
+            "en-US": {
+                "USD": "US Dollar",
+                "EUR": "Euro",
+                "JPY": "Japanese Yen"
+            },
+            "de-DE": {
+                "USD": "US-Dollar",
+                "EUR": "Euro",
+                "JPY": "Japanischer Yen"
+            }
+        };
+
+        const l = document.getElementById('lang');
+        const c = document.getElementById('curr');
+        const o = document.getElementById('out');
+
+        function update() {
+            const lang = l.value;
+            const curr = c.value;
+
+            if (data[lang] && data[lang][curr]) {
+                o.innerText = data[lang][curr];
+            } else {
+                const formatter = new Intl.NumberFormat(lang, {
+                    style: 'currency',
+                    currency: curr,
+                    currencyDisplay: 'name'
+                });
+                const parts = formatter.formatToParts(1);
+                const namePart = parts.find(p => p.type === 'currency');
+                o.innerText = namePart ? namePart.value : curr;
+            }
+        }
+
+        l.addEventListener('change', update);
+        c.addEventListener('change', update);
+        update();
+    </script>
+</body>
+</html>

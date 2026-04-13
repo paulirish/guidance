@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intl.DisplayNames Currency Demo</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --text: #0f172a;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        .demo-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: var(--text);
+        }
+        p {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .field-group {
+            margin-bottom: 1.25rem;
+        }
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        select {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background-color: white;
+            cursor: pointer;
+        }
+        select:focus {
+            outline: 2px solid var(--primary);
+            border-color: transparent;
+        }
+        .output-box {
+            margin-top: 2rem;
+            padding: 1.25rem;
+            background-color: #f1f5f9;
+            border-radius: 0.5rem;
+            text-align: center;
+            border: 1px dashed #cbd5e1;
+        }
+        .output-label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+        .test-target-element {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            min-height: 1.5rem;
+        }
+        .error-message {
+            display: none;
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            text-align: center;
+            padding: 0.5rem;
+            background: #fee2e2;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <main class="demo-container">
+        <h1>Currency Localizer</h1>
+        <p>Using <code>Intl.DisplayNames</code> to resolve human-readable currency names.</p>
+        
+        <div class="field-group">
+            <label for="locale-select">Target Locale</label>
+            <select id="locale-select" class="test-locale-selector">
+                <option value="en-US">English (United States)</option>
+                <option value="de-DE">German (Germany)</option>
+                <option value="fr-FR">French (France)</option>
+                <option value="zh-CN">Chinese (Simplified, China)</option>
+                <option value="ja-JP">Japanese (Japan)</option>
+                <option value="es-ES">Spanish (Spain)</option>
+                <option value="ar-SA">Arabic (Saudi Arabia)</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label for="currency-select">Currency Code</label>
+            <select id="currency-select" class="test-currency-selector">
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="JPY">JPY - Japanese Yen</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="CHF">CHF - Swiss Franc</option>
+                <option value="BRL">BRL - Brazilian Real</option>
+                <option value="INR">INR - Indian Rupee</option>
+            </select>
+        </div>
+
+        <section class="output-box" aria-live="polite">
+            <span class="output-label">Localized Name</span>
+            <div id="display-name" class="test-target-element"></div>
+        </section>
+
+        <div id="error" class="error-message">
+            The <code>Intl.DisplayNames</code> API is not supported in this browser.
+        </div>
+    </main>
+
+    <script>
+        (function() {
+            const localeSelect = document.querySelector('.test-locale-selector');
+            const currencySelect = document.querySelector('.test-currency-selector');
+            const output = document.querySelector('.test-target-element');
+            const errorDiv = document.getElementById('error');
+
+            function updateDisplay() {
+                const locale = localeSelect.value;
+                const currency = currencySelect.value;
+
+                // Feature Detection
+                if (!window.Intl || !window.Intl.DisplayNames) {
+                    errorDiv.style.display = 'block';
+                    output.textContent = currency; // Fallback: show code if API missing
+                    return;
+                }
+
+                try {
+                    // Initialize Intl.DisplayNames for the 'currency' type
+                    const resolver = new Intl.DisplayNames([locale], { 
+                        type: 'currency',
+                        fallback: 'code' 
+                    });
+                    
+                    // Resolve the localized name for the currency code
+                    const result = resolver.of(currency);
+                    
+                    output.textContent = result || currency;
+                    errorDiv.style.display = 'none';
+                } catch (e) {
+                    console.error('Localization error:', e);
+                    output.textContent = currency;
+                }
+            }
+
+            // Handle selection changes
+            localeSelect.addEventListener('change', updateDisplay);
+            currencySelect.addEventListener('change', updateDisplay);
+
+            // Initial render
+            updateDisplay();
+        })();
+    </script>
+</body>
+</html>

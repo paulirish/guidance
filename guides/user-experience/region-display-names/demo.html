@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intl.DisplayNames Demo - Localized Regions</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 2rem;
+            background: #f4f4f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+        h1 {
+            margin: 0 0 1rem 0;
+            font-size: 1.25rem;
+            color: #1a1a1a;
+        }
+        .test-feature-support {
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border: 1px solid transparent;
+        }
+        .supported {
+            background: #ecfdf5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+        .unsupported {
+            background: #fef2f2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+        .form-field {
+            margin-bottom: 1.25rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+        select {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: #fff;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        select:focus {
+            outline: 2px solid #3b82f6;
+            border-color: transparent;
+        }
+        .test-display-name {
+            font-weight: bold;
+            color: #2563eb;
+        }
+        .result-area {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Region Name Localizer</h1>
+        
+        <div id="status" class="test-feature-support">Checking browser compatibility...</div>
+
+        <div class="form-field">
+            <label for="locale-select">Choose Language</label>
+            <select id="locale-select" class="test-locale-selector">
+                <option value="en-US">English (US)</option>
+                <option value="es-ES">Español (España)</option>
+                <option value="fr-FR">Français (France)</option>
+                <option value="de-DE">Deutsch (Deutschland)</option>
+                <option value="zh-CN">中文 (中国)</option>
+                <option value="ja-JP">日本語 (日本)</option>
+                <option value="ar-EG">العربية (Egypt)</option>
+            </select>
+        </div>
+
+        <div class="form-field">
+            <label for="region-select">Select Region</label>
+            <select id="region-select" class="test-region-selector">
+                <option value="US">US</option>
+                <option value="GB">GB</option>
+                <option value="CA">CA</option>
+                <option value="FR">FR</option>
+                <option value="DE">DE</option>
+                <option value="JP">JP</option>
+                <option value="BR">BR</option>
+                <option value="AU">AU</option>
+                <option value="EG">EG</option>
+            </select>
+        </div>
+
+        <div class="result-area">
+            Selected region in target language: <span class="test-display-name">...</span>
+        </div>
+    </div>
+
+    <script>
+        const localeEl = document.querySelector('.test-locale-selector');
+        const regionEl = document.querySelector('.test-region-selector');
+        const displayEl = document.querySelector('.test-display-name');
+        const statusEl = document.getElementById('status');
+
+        /**
+         * Feature detection for Intl.DisplayNames
+         */
+        const isSupported = typeof Intl !== 'undefined' && !!Intl.DisplayNames;
+
+        /**
+         * Updates the text labels of the region selector and the result display
+         * based on the selected locale.
+         */
+        function updateLabels() {
+            const locale = localeEl.value;
+            const selectedRegionCode = regionEl.value;
+
+            if (isSupported) {
+                try {
+                    // Create an instance for region names
+                    const regionNames = new Intl.DisplayNames([locale], { type: 'region' });
+                    
+                    // Update all options in the region selector to their localized names
+                    Array.from(regionEl.options).forEach(opt => {
+                        opt.text = regionNames.of(opt.value);
+                    });
+
+                    // Update the specific display highlight
+                    displayEl.textContent = regionNames.of(selectedRegionCode);
+                } catch (err) {
+                    console.error('Localization error:', err);
+                    applyFallback();
+                }
+            } else {
+                applyFallback();
+            }
+        }
+
+        /**
+         * Realistic fallback: Show the ISO codes if the API is unavailable.
+         */
+        function applyFallback() {
+            Array.from(regionEl.options).forEach(opt => {
+                opt.text = opt.value;
+            });
+            displayEl.textContent = regionEl.value;
+        }
+
+        // Initialize status message
+        if (isSupported) {
+            statusEl.textContent = '✓ Intl.DisplayNames API is available';
+            statusEl.classList.add('supported');
+        } else {
+            statusEl.textContent = '✕ Intl.DisplayNames API not supported (using codes)';
+            statusEl.classList.add('unsupported');
+        }
+
+        // Event listeners
+        localeEl.addEventListener('change', updateLabels);
+        regionEl.addEventListener('change', updateLabels);
+
+        // Initial render
+        updateLabels();
+    </script>
+</body>
+</html>
