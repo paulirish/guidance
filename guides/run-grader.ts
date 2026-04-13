@@ -275,7 +275,26 @@ export async function testGrader(targetDirRaw: string, options: { crossApp?: boo
   // Any spurious passes indicate the grader is checking app-generic structure,
   // not feature-specific outcomes. Advisory only: does not affect result.success.
   if (result.success && options.crossApp) {
-    const crossAppName = 'cards-app';
+    // Find all available base apps
+    const allBaseApps = fs.readdirSync(baseAppsDir).filter(f => {
+      return fs.statSync(path.join(baseAppsDir, f)).isDirectory() && fs.existsSync(path.join(baseAppsDir, f, 'index.html'));
+    });
+
+    // Try to find the target base app from task.md to exclude it
+    let targetBaseApp = '';
+    const taskPath = path.join(targetDirAbs, 'tasks', 'task.md');
+    if (fs.existsSync(taskPath)) {
+      const taskContent = fs.readFileSync(taskPath, 'utf8');
+      const match = taskContent.match(/base_app:\s*(\S+)/);
+      if (match) {
+        targetBaseApp = match[1];
+      }
+    }
+
+    const candidateApps = allBaseApps.filter(app => app !== targetBaseApp);
+    const crossAppName = candidateApps.length > 0 
+      ? candidateApps[Math.floor(Math.random() * candidateApps.length)] 
+      : 'cards-app';
     const crossAppIndex = path.join(baseAppsDir, crossAppName, 'index.html');
 
     if (!fs.existsSync(crossAppIndex)) {
