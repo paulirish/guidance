@@ -125,6 +125,10 @@ async function main() {
   
   console.log(`PR Branch: ${prData.headRefName}`);
   console.log(`Found ${prData.reviews.length} reviews and ${prData.comments.length} comments.`);
+  console.log(`PR Files count: ${prData.files ? prData.files.length : 'undefined'}`);
+  if (prData.files) {
+    console.log('Files listed in PR:', prData.files.map((f: any) => f.path));
+  }
 
   // Find affected guide directory (ignore .research directory)
   const guideFile = prData.files.find((f: any) => f.path.startsWith('guides/') && !f.path.startsWith('guides/.research/'));
