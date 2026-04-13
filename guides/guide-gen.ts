@@ -97,7 +97,7 @@ function getSkillContent(skillName: string): string {
 
 // ─── Prompt construction ─────────────────────────────────────────────────────
 
-function buildUseCasesPrompt(feature: FeatureInfo): string {
+function buildUseCasesPrompt(feature: FeatureInfo, researchContent: string): string {
 
   const sourcesList = [
     ...feature.mdnUrls.map(u => `- MDN: ${u}`),
@@ -105,29 +105,28 @@ function buildUseCasesPrompt(feature: FeatureInfo): string {
   ].join('\n');
 
   const useCasesSkill = getSkillContent('project-use-cases');
-  const researchSkill = getSkillContent('project-use-cases-research');
 
   return `
 You are researching the web platform feature "${feature.name}" (ID: ${feature.id}).
 Your task is to identify 2-5 distinct developer use cases for this feature.
 
-Follow the guidelines in these skill files:
+Follow the guidelines in this skill file:
 
 === project-use-cases ===
 ${useCasesSkill}
 
-=== project-use-cases-research ===
-${researchSkill}
+Here is the research report generated for this feature:
+=== Research Report ===
+${researchContent}
 
 Source URLs to read:
 ${sourcesList || '(No source URLs available — use your knowledge of this feature)'}
 
-Output your response as a JSON array of objects, with NO other text or markdown formatting blocks. Just the raw JSON array.
+Output your response as a JSON array of objects.
 Each object must have:
 - slug: short kebab-case name of the use case (do NOT prefix with action verbs like create-, build-, add-).
 - description: A single short sentence describing the task.
 - category: one of 'performance', 'accessibility', 'user-experience', 'security', or 'forms'.
-
 
 Example output:
 [
@@ -138,6 +137,55 @@ Example output:
   }
 ]
 `.trim();
+}
+
+async function generateUseCasesWithAPI(prompt: string): Promise<any[]> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY environment variable is missing.");
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "ARRAY",
+          items: {
+            type: "OBJECT",
+            properties: {
+              slug: { type: "STRING" },
+              description: { type: "STRING" },
+              category: { type: "STRING" }
+            },
+            required: ["slug", "description", "category"]
+          }
+        }
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Gemini API Error: ${response.status} ${errorText}`);
+  }
+
+  const data = await response.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  
+  if (!rawText) {
+    throw new Error("Failed to parse response text from Gemini API.");
+  }
+
+  return JSON.parse(rawText);
 }
 
 function buildExpectationsPrompt(feature: FeatureInfo, useCase: { slug: string; description: string }): string {
