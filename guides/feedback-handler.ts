@@ -130,17 +130,18 @@ async function main() {
     console.log('Files listed in PR:', prData.files.map((f: any) => f.path));
   }
 
-  // Find affected guide directory (ignore .research directory)
-  const guideFile = prData.files.find((f: any) => f.path.startsWith('guides/') && !f.path.startsWith('guides/.research/'));
+  // Find affected guide directory (ignore .research and files not in a use case directory)
+  const guideFile = prData.files.find((f: any) => {
+    const parts = f.path.split('/');
+    return f.path.startsWith('guides/') && !f.path.startsWith('guides/.research/') && parts.length >= 3;
+  });
   let guideDir = '';
   if (guideFile) {
     const parts = guideFile.path.split('/');
-    if (parts.length >= 3) {
-      guideDir = path.join(parts[0], parts[1], parts[2]);
-      console.log(`Affected guide directory: ${guideDir}`);
-    }
+    guideDir = path.join(parts[0], parts[1], parts[2]);
+    console.log(`Affected guide directory: ${guideDir}`);
   } else {
-    console.log('No guide directory found in PR files (ignoring .research).');
+    console.log('No valid guide directory found in PR files.');
   }
 
   // 2. Synthesize feedback and create TODO list
