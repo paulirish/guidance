@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Localized Calendar & Fields</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #fafafa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .label {
+            color: #666;
+        }
+        .value {
+            font-weight: bold;
+        }
+        select {
+            margin-bottom: 20px;
+            padding: 5px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Localized Calendar & Fields</h1>
+        
+        <select id="lang-picker">
+            <option value="en">English</option>
+            <option value="fr">French</option>
+            <option value="es">Spanish</option>
+        </select>
+
+        <div id="content"></div>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                gregory: "Gregorian Calendar",
+                islamic: "Islamic Calendar",
+                hebrew: "Hebrew Calendar",
+                chinese: "Chinese Calendar",
+                year: "Year",
+                month: "Month",
+                day: "Day",
+                hour: "Hour"
+            },
+            fr: {
+                gregory: "Calendrier grégorien",
+                islamic: "Calendrier hégirien",
+                hebrew: "Calendrier hébraïque",
+                chinese: "Calendrier chinois",
+                year: "Année",
+                month: "Mois",
+                day: "Jour",
+                hour: "Heure"
+            },
+            es: {
+                gregory: "Calendario gregoriano",
+                islamic: "Calendario islámico",
+                hebrew: "Calendario hebreo",
+                chinese: "Calendario chino",
+                year: "Año",
+                month: "Mes",
+                day: "Día",
+                hour: "Hora"
+            }
+        };
+
+        function getFieldLabel(field, lang) {
+            switch(field) {
+                case 'weekday':
+                    if (lang === 'fr') return 'Jour de la semaine';
+                    if (lang === 'es') return 'Día de la semana';
+                    return 'Weekday';
+                case 'minute':
+                    return lang === 'fr' ? 'Minute' : (lang === 'es' ? 'Minuto' : 'Minute');
+                default:
+                    return translations[lang][field] || field;
+            }
+        }
+
+        function getCalendarName(cal, lang) {
+            return translations[lang][cal] || cal;
+        }
+
+        function extractPart(locale, type) {
+            const date = new Date(2023, 11, 25);
+            const parts = new Intl.DateTimeFormat(locale, { [type]: 'long' }).formatToParts(date);
+            const part = parts.find(p => p.type === type);
+            return part ? part.value : '';
+        }
+
+        function update() {
+            const lang = document.getElementById('lang-picker').value;
+            const content = document.getElementById('content');
+            
+            const calendars = ['gregory', 'islamic', 'hebrew', 'chinese'];
+            const fields = ['year', 'month', 'day', 'hour', 'weekday', 'minute'];
+
+            let html = '<h3>Calendars</h3>';
+            calendars.forEach(c => {
+                html += `<div class="row"><span class="label">${c}</span><span class="value">${getCalendarName(c, lang)}</span></div>`;
+            });
+
+            html += '<h3>Fields</h3>';
+            fields.forEach(f => {
+                html += `<div class="row"><span class="label">${f}</span><span class="value">${getFieldLabel(f, lang)}</span></div>`;
+            });
+
+            content.innerHTML = html;
+        }
+
+        document.getElementById('lang-picker').addEventListener('change', update);
+        update();
+    </script>
+</body>
+</html>

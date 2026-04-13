@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Region Localizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #eee;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            width: 300px;
+        }
+        select {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <label>Language:</label>
+        <select id="lang">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+        </select>
+
+        <label>Region:</label>
+        <select id="region">
+            <option value="US">US</option>
+            <option value="GB">GB</option>
+            <option value="FR">FR</option>
+            <option value="DE">DE</option>
+        </select>
+
+        <div>Result: <span id="result"></span></div>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                US: "United States",
+                GB: "United Kingdom",
+                FR: "France",
+                DE: "Germany"
+            },
+            es: {
+                US: "Estados Unidos",
+                GB: "Reino Unido",
+                FR: "Francia",
+                DE: "Alemania"
+            },
+            fr: {
+                US: "États-Unis",
+                GB: "Royaume-Uni",
+                FR: "France",
+                DE: "Allemagne"
+            }
+        };
+
+        const langSelect = document.getElementById('lang');
+        const regionSelect = document.getElementById('region');
+        const resultDisplay = document.getElementById('result');
+
+        function update() {
+            const lang = langSelect.value;
+            const region = regionSelect.value;
+            
+            const name = translations[lang][region];
+            
+            const options = regionSelect.options;
+            for (let i = 0; i < options.length; i++) {
+                options[i].text = translations[lang][options[i].value];
+            }
+            
+            resultDisplay.textContent = name;
+        }
+
+        langSelect.addEventListener('change', update);
+        regionSelect.addEventListener('change', update);
+
+        update();
+    </script>
+</body>
+</html>

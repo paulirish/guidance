@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intl.DisplayNames Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 2rem;
+            background: #f4f4f9;
+            color: #333;
+            line-height: 1.5;
+        }
+        .test-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 1.25rem;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+        select {
+            width: 100%;
+            padding: 0.6rem;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            background-color: #fff;
+        }
+        .section {
+            margin-bottom: 1.5rem;
+        }
+        h2 {
+            font-size: 1rem;
+            color: #444;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        h2::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #eee;
+            margin-left: 10px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #fafafa;
+        }
+        .id-label {
+            color: #888;
+            font-size: 0.8rem;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+        .test-calendar-name, .test-field-name {
+            font-weight: 500;
+            color: #000;
+        }
+        .test-feature-status {
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .supported {
+            background: #e6fffa;
+            color: #2c7a7b;
+        }
+        .not-supported {
+            background: #fff5f5;
+            color: #c53030;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Localized Calendar & Fields</h1>
+        
+        <div id="status" class="test-feature-status">Checking feature support...</div>
+
+        <div id="demo-content" class="hidden">
+            <div class="control-group">
+                <label for="locale-select">Choose Language</label>
+                <select id="locale-select" class="test-locale-selector">
+                    <option value="en-US">English (US)</option>
+                    <option value="fr-FR">French</option>
+                    <option value="zh-CN">Chinese (Simplified)</option>
+                    <option value="ar-EG">Arabic (Egypt)</option>
+                    <option value="hi-IN">Hindi</option>
+                    <option value="es-ES">Spanish</option>
+                </select>
+            </div>
+
+            <div class="section">
+                <h2>Calendar Systems</h2>
+                <div id="calendar-results" class="test-calendar-display">
+                    <!-- Results injected here -->
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Date & Time Fields</h2>
+                <div id="field-results" class="test-field-display">
+                    <!-- Results injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const demoContent = document.getElementById('demo-content');
+        const calendarEl = document.getElementById('calendar-results');
+        const fieldEl = document.getElementById('field-results');
+        const localeSelect = document.getElementById('locale-select');
+
+        /**
+         * Checks if the browser supports the Intl.DisplayNames API
+         * and the specific types required for this demo.
+         */
+        function checkSupport() {
+            const hasAPI = typeof Intl !== 'undefined' && !!Intl.DisplayNames;
+            let hasTypes = false;
+            
+            if (hasAPI) {
+                try {
+                    // Check for specific type support which was added later in some browsers
+                    new Intl.DisplayNames(['en'], { type: 'calendar' });
+                    new Intl.DisplayNames(['en'], { type: 'dateTimeField' });
+                    hasTypes = true;
+                } catch (e) {
+                    hasTypes = false;
+                }
+            }
+
+            if (hasAPI && hasTypes) {
+                statusEl.textContent = '✓ Intl.DisplayNames (Calendar & Fields) Supported';
+                statusEl.className = 'test-feature-status supported';
+                demoContent.classList.remove('hidden');
+                return true;
+            } else {
+                statusEl.textContent = '✗ Intl.DisplayNames types not fully supported in this browser';
+                statusEl.className = 'test-feature-status not-supported';
+                return false;
+            }
+        }
+
+        /**
+         * Updates the UI with localized names based on the selected locale.
+         */
+        function updateDisplay() {
+            const locale = localeSelect.value;
+            const calendars = ['gregory', 'islamic', 'hebrew', 'chinese', 'japanese', 'persian'];
+            const fields = ['year', 'month', 'day', 'weekday', 'hour', 'minute', 'second', 'dayPeriod'];
+
+            try {
+                // Initialize the display name formatters
+                const calendarNames = new Intl.DisplayNames([locale], { type: 'calendar' });
+                const fieldNames = new Intl.DisplayNames([locale], { type: 'dateTimeField' });
+
+                // Render Calendar Names
+                calendarEl.innerHTML = calendars.map(id => `
+                    <div class="result-item">
+                        <span class="id-label">${id}</span>
+                        <span class="test-calendar-name" data-id="${id}">${calendarNames.of(id)}</span>
+                    </div>
+                `).join('');
+
+                // Render Field Names
+                fieldEl.innerHTML = fields.map(id => `
+                    <div class="result-item">
+                        <span class="id-label">${id}</span>
+                        <span class="test-field-name" data-id="${id}">${fieldNames.of(id)}</span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Localization Error:', e);
+                calendarEl.innerHTML = '<div class="not-supported">Error processing locale data.</div>';
+            }
+        }
+
+        // Initialize demo if supported
+        if (checkSupport()) {
+            localeSelect.addEventListener('change', updateDisplay);
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>

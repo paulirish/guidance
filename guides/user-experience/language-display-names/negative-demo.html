@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Language Display</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .language-list {
+            list-style: none;
+            padding: 0;
+        }
+        .language-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Language Viewer</h1>
+        <select id="locale-select">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+        </select>
+        <ul id="languages" class="language-list"></ul>
+    </div>
+
+    <script>
+        (function() {
+            const data = {
+                'en': {
+                    'en': 'English',
+                    'fr': 'French',
+                    'es': 'Spanish',
+                    'de': 'German'
+                },
+                'es': {
+                    'en': 'Inglés',
+                    'fr': 'Francés',
+                    'es': 'Español',
+                    'de': 'Alemán'
+                }
+            };
+
+            const codes = ['en', 'fr', 'es', 'de', 'it', 'jp'];
+            const select = document.getElementById('locale-select');
+            const list = document.getElementById('languages');
+
+            function render() {
+                const current = select.value;
+                list.innerHTML = '';
+
+                codes.forEach(code => {
+                    const li = document.createElement('li');
+                    li.className = 'language-item';
+                    
+                    let name = '';
+                    if (data[current] && data[current][code]) {
+                        name = data[current][code];
+                    } else {
+                        const capitalized = code.charAt(0).toUpperCase() + code.slice(1);
+                        name = capitalized.replace(/[^a-zA-Z]/g, '');
+                    }
+
+                    li.innerHTML = `<span>${code}</span><span>${name}</span>`;
+                    list.appendChild(li);
+                });
+            }
+
+            select.addEventListener('change', render);
+            render();
+        })();
+    </script>
+</body>
+</html>
