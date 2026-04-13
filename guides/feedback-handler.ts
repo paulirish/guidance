@@ -126,8 +126,8 @@ async function main() {
   console.log(`PR Branch: ${prData.headRefName}`);
   console.log(`Found ${prData.reviews.length} reviews and ${prData.comments.length} comments.`);
 
-  // Find affected guide directory
-  const guideFile = prData.files.find((f: any) => f.path.startsWith('guides/'));
+  // Find affected guide directory (ignore .research directory)
+  const guideFile = prData.files.find((f: any) => f.path.startsWith('guides/') && !f.path.startsWith('guides/.research/'));
   let guideDir = '';
   if (guideFile) {
     const parts = guideFile.path.split('/');
@@ -135,6 +135,8 @@ async function main() {
       guideDir = path.join(parts[0], parts[1], parts[2]);
       console.log(`Affected guide directory: ${guideDir}`);
     }
+  } else {
+    console.log('No guide directory found in PR files (ignoring .research).');
   }
 
   // 2. Synthesize feedback and create TODO list
