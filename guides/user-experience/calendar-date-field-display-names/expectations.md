@@ -2,6 +2,8 @@
 - The implementation must use `Intl.DisplayNames` to retrieve localized names for calendar systems and date/time fields.
 - The `Intl.DisplayNames` constructor must be called with `type: 'calendar'` to resolve calendar system names (e.g., "gregory", "islamic", "hebrew").
 - The `Intl.DisplayNames` constructor must be called with `type: 'dateTimeField'` to resolve field names (e.g., "era", "year", "month", "day", "weekday").
+- The `Intl.DisplayNames` constructor must be called with `type: 'region'` to resolve region names.
+- The `Intl.DisplayNames` constructor must be called with `type: 'language'` to resolve language names.
 - The output names must be dynamic based on the locale provided to the `Intl.DisplayNames` instance.
 
 ## Must fail

@@ -49,6 +49,15 @@ const monthLabel = fieldFormatter.of('month');
 
 const hourLabel = fieldFormatter.of('hour');
 // Result: "h" (for fr-FR with style: 'short')
+
+// Localizing Region and Language Names
+const regionFormatter = new Intl.DisplayNames([locale], { type: 'region' });
+const regionName = regionFormatter.of('US');
+// Result: "États-Unis" (for fr-FR)
+
+const languageFormatter = new Intl.DisplayNames([locale], { type: 'language' });
+const languageName = languageFormatter.of('en');
+// Result: "anglais" (for fr-FR)
 ```
 
 ### Handle unexpected identifiers
@@ -74,7 +83,7 @@ While `Intl.DisplayNames` is widely supported in modern browsers, applications t
 Check for `DisplayNames` in the global `Intl` object. If missing, use a simplified mapping object for your primary supported languages.
 
 ```javascript
-function getFieldLabel(fieldKey, locale = 'en') {
+export function getFieldLabel(fieldKey, locale = 'en') {
   // Always check for the API on the Intl object
   if (typeof Intl !== 'undefined' && 'DisplayNames' in Intl) {
     try {
@@ -100,4 +109,14 @@ function getFieldLabel(fieldKey, locale = 'en') {
 If the API is unavailable, the application should degrade gracefully by:
 1.  **Using Hardcoded Defaults**: Provide English or base-language strings for the most common fields (Year, Month, Day).
 2.  **Displaying Raw Keys**: In developer-facing tools or settings, showing the raw identifier (e.g., "gregory") is a functional, if unpolished, fallback.
-3.  **Conditional Polyfills**: If full support is required, conditionally load a polyfill (like `@formatjs/intl-displaynames`) only for browsers where `Intl.DisplayNames` is undefined.
+3.  **Conditional Polyfills**: If full support is required, conditionally load a polyfill (like `@formatjs/intl-displaynames`) using dynamic imports only for browsers where `Intl.DisplayNames` is undefined.
+
+```javascript
+// Example of conditional polyfill loading
+export async function initializeLocalization() {
+  if (typeof Intl === 'undefined' || !('DisplayNames' in Intl)) {
+    await import('@formatjs/intl-displaynames/polyfill');
+    await import('@formatjs/intl-displaynames/locale-data/en');
+  }
+}
+```

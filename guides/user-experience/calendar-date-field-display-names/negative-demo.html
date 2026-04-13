@@ -49,7 +49,7 @@
         <div id="content"></div>
     </div>
 
-    <script>
+    <script type="module">
         const translations = {
             en: {
                 gregory: "Gregorian Calendar",
@@ -59,7 +59,9 @@
                 year: "Year",
                 month: "Month",
                 day: "Day",
-                hour: "Hour"
+                hour: "Hour",
+                US: "United States",
+                FR: "France"
             },
             fr: {
                 gregory: "Calendrier grégorien",
@@ -69,7 +71,9 @@
                 year: "Année",
                 month: "Mois",
                 day: "Jour",
-                hour: "Heure"
+                hour: "Heure",
+                US: "États-Unis",
+                FR: "France"
             },
             es: {
                 gregory: "Calendario gregoriano",
@@ -79,11 +83,13 @@
                 year: "Año",
                 month: "Mes",
                 day: "Día",
-                hour: "Hora"
+                hour: "Hora",
+                US: "Estados Unidos",
+                FR: "Francia"
             }
         };
 
-        function getFieldLabel(field, lang) {
+        export function getFieldLabel(field, lang) {
             switch(field) {
                 case 'weekday':
                     if (lang === 'fr') return 'Jour de la semaine';
@@ -92,27 +98,32 @@
                 case 'minute':
                     return lang === 'fr' ? 'Minute' : (lang === 'es' ? 'Minuto' : 'Minute');
                 default:
-                    return translations[lang][field] || field;
+                    return translations[lang]?.[field] || field;
             }
         }
 
-        function getCalendarName(cal, lang) {
-            return translations[lang][cal] || cal;
+        export function getCalendarName(cal, lang) {
+            return translations[lang]?.[cal] || cal;
         }
 
-        function extractPart(locale, type) {
+        export function getRegionName(region, lang) {
+            return translations[lang]?.[region] || region;
+        }
+
+        export function extractPart(locale, type) {
             const date = new Date(2023, 11, 25);
             const parts = new Intl.DateTimeFormat(locale, { [type]: 'long' }).formatToParts(date);
             const part = parts.find(p => p.type === type);
             return part ? part.value : '';
         }
 
-        function update() {
+        export function update() {
             const lang = document.getElementById('lang-picker').value;
             const content = document.getElementById('content');
             
             const calendars = ['gregory', 'islamic', 'hebrew', 'chinese'];
             const fields = ['year', 'month', 'day', 'hour', 'weekday', 'minute'];
+            const regions = ['US', 'FR'];
 
             let html = '<h3>Calendars</h3>';
             calendars.forEach(c => {
@@ -122,6 +133,11 @@
             html += '<h3>Fields</h3>';
             fields.forEach(f => {
                 html += `<div class="row"><span class="label">${f}</span><span class="value">${getFieldLabel(f, lang)}</span></div>`;
+            });
+
+            html += '<h3>Regions</h3>';
+            regions.forEach(r => {
+                html += `<div class="row"><span class="label">${r}</span><span class="value">${getRegionName(r, lang)}</span></div>`;
             });
 
             content.innerHTML = html;

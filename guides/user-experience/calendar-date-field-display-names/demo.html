@@ -129,21 +129,29 @@
                     <!-- Results injected here -->
                 </div>
             </div>
+
+            <div class="section">
+                <h2>Region & Language Names</h2>
+                <div id="region-results" class="test-region-display">
+                    <!-- Results injected here -->
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
+    <script type="module">
         const statusEl = document.getElementById('status');
         const demoContent = document.getElementById('demo-content');
         const calendarEl = document.getElementById('calendar-results');
         const fieldEl = document.getElementById('field-results');
+        const regionEl = document.getElementById('region-results');
         const localeSelect = document.getElementById('locale-select');
 
         /**
          * Checks if the browser supports the Intl.DisplayNames API
          * and the specific types required for this demo.
          */
-        function checkSupport() {
+        export function checkSupport() {
             const hasAPI = typeof Intl !== 'undefined' && !!Intl.DisplayNames;
             let hasTypes = false;
             
@@ -152,6 +160,8 @@
                     // Check for specific type support which was added later in some browsers
                     new Intl.DisplayNames(['en'], { type: 'calendar' });
                     new Intl.DisplayNames(['en'], { type: 'dateTimeField' });
+                    new Intl.DisplayNames(['en'], { type: 'region' });
+                    new Intl.DisplayNames(['en'], { type: 'language' });
                     hasTypes = true;
                 } catch (e) {
                     hasTypes = false;
@@ -173,15 +183,19 @@
         /**
          * Updates the UI with localized names based on the selected locale.
          */
-        function updateDisplay() {
+        export function updateDisplay() {
             const locale = localeSelect.value;
             const calendars = ['gregory', 'islamic', 'hebrew', 'chinese', 'japanese', 'persian'];
             const fields = ['year', 'month', 'day', 'weekday', 'hour', 'minute', 'second', 'dayPeriod'];
+            const regions = ['US', 'GB', 'FR', 'CN', 'EG', 'IN', 'ES'];
+            const languages = ['en', 'fr', 'zh', 'ar', 'hi', 'es'];
 
             try {
                 // Initialize the display name formatters
                 const calendarNames = new Intl.DisplayNames([locale], { type: 'calendar' });
                 const fieldNames = new Intl.DisplayNames([locale], { type: 'dateTimeField' });
+                const regionNames = new Intl.DisplayNames([locale], { type: 'region' });
+                const languageNames = new Intl.DisplayNames([locale], { type: 'language' });
 
                 // Render Calendar Names
                 calendarEl.innerHTML = calendars.map(id => `
@@ -196,6 +210,19 @@
                     <div class="result-item">
                         <span class="id-label">${id}</span>
                         <span class="test-field-name" data-id="${id}">${fieldNames.of(id)}</span>
+                    </div>
+                `).join('');
+
+                // Render Region & Language Names
+                regionEl.innerHTML = regions.map(id => `
+                    <div class="result-item">
+                        <span class="id-label">${id} (Region)</span>
+                        <span class="test-region-name" data-id="${id}">${regionNames.of(id)}</span>
+                    </div>
+                `).join('') + languages.map(id => `
+                    <div class="result-item">
+                        <span class="id-label">${id} (Language)</span>
+                        <span class="test-language-name" data-id="${id}">${languageNames.of(id)}</span>
                     </div>
                 `).join('');
             } catch (e) {

@@ -91,6 +91,18 @@ test.describe(`Intl.DisplayNames Expectations: ${demoName}`, () => {
     expect(hasFieldCall).toBe(true);
   });
 
+  test('The implementation must use Intl.DisplayNames for region names', async ({ page }) => {
+    const calls = await page.evaluate(() => (window as any).__intlCalls.displayNames);
+    const hasRegionCall = calls.some((c: any) => c.options?.type === 'region');
+    expect(hasRegionCall).toBe(true);
+  });
+
+  test('The implementation must use Intl.DisplayNames for language names', async ({ page }) => {
+    const calls = await page.evaluate(() => (window as any).__intlCalls.displayNames);
+    const hasLanguageCall = calls.some((c: any) => c.options?.type === 'language');
+    expect(hasLanguageCall).toBe(true);
+  });
+
   test('The output labels must be dynamic and derived from Intl.DisplayNames', async ({ page }) => {
     // If the page uses Intl.DisplayNames.of(), our poisoned "MOCKED_" prefix will appear.
     // If it uses hardcoded values, the prefix will be missing.
