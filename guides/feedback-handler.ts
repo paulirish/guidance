@@ -37,12 +37,13 @@ async function runCommand(command: string, args: string[]): Promise<string> {
 
 // ─── Helper to run Gemini ───────────────────────────────────────────────────
 
-async function runGemini(prompt: string): Promise<string> {
+async function runGemini(prompt: string, cwd?: string): Promise<string> {
   const command = config.environment.geminiCliBin;
   const commandArgs = ['-p', prompt, '--yolo'];
 
   const child = spawn(command, commandArgs, {
     stdio: ['ignore', 'pipe', 'pipe'],
+    cwd,
   });
 
   let stdoutData = '';
@@ -122,17 +123,19 @@ Output your response as a clear markdown summary and TODO list.
   console.log('Applying fixes to source files...');
   if (guideDir) {
     const applyPrompt = `
-You are an AI coding agent. Your task is to apply the following fixes to the files in the guide directory \`${guideDir}\` to address PR feedback.
+You are an AI coding agent. Your task is to apply the following fixes to the files in the current directory to address PR feedback.
+
+First, read the existing files in the current directory to understand their current state.
+Then, update them (e.g., \`demo.html\`, \`guide.md\`) to implement the requested changes.
 
 Synthesized Plan:
 ${synthesis}
 
-Please read the files in \`${guideDir}\` and update them (e.g., \`demo.html\`, \`guide.md\`) to implement the requested changes.
 Focus on the source files. Do not run \`gd dev\` or try to calibrate the grader, that will be done in a separate step.
 Use your file editing tools to make the changes.
 `;
     try {
-      await runGemini(applyPrompt);
+      await runGemini(applyPrompt, guideDir);
       console.log('✅ Fixes applied to source files');
     } catch (err) {
       console.error(`❌ Failed to apply fixes: ${(err as Error).message}`);
