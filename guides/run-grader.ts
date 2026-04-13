@@ -198,14 +198,20 @@ export async function testGrader(targetDirRaw: string, options: { crossApp?: boo
   const negativeOutDir = path.join(targetDirAbs, 'grade-report', 'negative');
 
   // 1. Test against demo.html — all tests should pass
-  console.log(cYellow(`\nRunning against demo.html... (Expecting 100% pass)`));
+  console.log(cYellow(`\nRunning against demo.html and negative-demo.html in parallel...`));
 
-  const demoResults = await runPlaywright(demoPath, graderPath, demoOutDir, 'inherit')
-    .catch(err => {
+  const [demoResults, negativeResults] = await Promise.all([
+    runPlaywright(demoPath, graderPath, demoOutDir, 'inherit').catch(err => {
       console.error(cRed(`Failed to test demo.html: ${err.message}`));
       return null;
-    });
+    }),
+    runPlaywright(negativePath, graderPath, negativeOutDir, 'ignore').catch(err => {
+      console.error(cRed(`Failed to test negative-demo.html: ${err.message}`));
+      return null;
+    })
+  ]);
 
+  // Process demo results
   if (!demoResults) {
     demoFailed = true;
   } else {
@@ -215,52 +221,40 @@ export async function testGrader(targetDirRaw: string, options: { crossApp?: boo
     result.demo.failed = unexpected;
 
     if (expected === 0 && unexpected === 0) {
-      console.log(cYellow(`\u26a0\ufe0f  Warning: No tests were run for demo.html`));
+      console.log(cYellow(`⚠️  Warning: No tests were run for demo.html`));
       demoFailed = true;
     } else if (unexpected > 0) {
       result.demo.failingTests = demoResults.suites?.flatMap((s: PlaywrightSuite) => collectSpecs(s, false)) || [];
-      console.log(cRed(`\u274c demo.html failed ${unexpected} tests!`));
+      console.log(cRed(`❌ demo.html failed ${unexpected} tests!`));
       demoResults.suites?.forEach((suite: PlaywrightSuite) => printFailingSpecs(suite));
       demoFailed = true;
     } else {
-      console.log(cGreen(`\u2705 demo.html passed all ${expected} tests.`));
+      console.log(cGreen(`✅ demo.html passed all ${expected} tests.`));
     }
   }
 
   console.log('');
 
-  if (demoFailed) {
-    console.log(cYellow(`Skipping negative-demo.html run due to failures in demo.html`));
-    return result;
-  }
-
-  // 2. Test against negative-demo.html — all tests should fail
-  console.log(cYellow(`Running against negative-demo.html... (Expecting 100% fail)`));
-
-  const negativeResults = await runPlaywright(negativePath, graderPath, negativeOutDir, 'ignore')
-    .catch(err => {
-      console.error(cRed(`Failed to test negative-demo.html: ${err.message}`));
-      return null;
-    });
-
+  // Process negative results
   if (!negativeResults) {
     // Failed to run — result.success stays false
   } else {
-    // In Playwright stats: "expected" = passed, "unexpected" = failed
     const passed = negativeResults.stats?.expected || 0;
     const failed = negativeResults.stats?.unexpected || 0;
     result.negative.passed = passed;
     result.negative.failed = failed;
 
     if (passed === 0 && failed === 0) {
-      console.log(cYellow(`\u26a0\ufe0f  Warning: No tests were run for negative-demo.html`));
+      console.log(cYellow(`⚠️  Warning: No tests were run for negative-demo.html`));
     } else if (passed > 0) {
       result.negative.passingTests = negativeResults.suites?.flatMap((s: PlaywrightSuite) => collectSpecs(s, true)) || [];
-      console.log(cRed(`\u274c negative-demo.html incorrectly passed ${passed} tests!`));
+      console.log(cRed(`❌ negative-demo.html incorrectly passed ${passed} tests!`));
       negativeResults.suites?.forEach((suite: PlaywrightSuite) => printPassingSpecs(suite));
     } else {
-      console.log(cGreen(`\u2705 negative-demo.html failed all ${failed} tests correctly.`));
-      result.success = true;
+      console.log(cGreen(`✅ negative-demo.html failed all ${failed} tests correctly.`));
+      if (!demoFailed) {
+        result.success = true;
+      }
     }
   }
 
