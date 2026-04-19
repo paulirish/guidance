@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #000;
+            padding: 10px;
+        }
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Process Runner</h1>
+        <button id="runBtn">Execute</button>
+        <div id="status">Ready</div>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const runBtn = document.getElementById('runBtn');
+        const status = document.getElementById('status');
+        const log = document.getElementById('log');
+
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function heavyWork() {
+            log.innerHTML += '<div>Processing part 1...</div>';
+            await delay(1500);
+            log.innerHTML += '<div>Processing part 2...</div>';
+            await delay(1500);
+            return 'Success';
+        }
+
+        function timeout(ms) {
+            return new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error('Manual Timeout reached'));
+                }, ms);
+            });
+        }
+
+        runBtn.addEventListener('click', async () => {
+            runBtn.disabled = true;
+            status.innerText = 'Running';
+            log.innerHTML = '';
+
+            const controller = new AbortController();
+            
+            setTimeout(() => {
+                controller.abort();
+            }, 2000);
+
+            try {
+                const result = await Promise.race([
+                    heavyWork(),
+                    timeout(2000)
+                ]);
+                status.innerText = 'Result: ' + result;
+            } catch (e) {
+                status.innerText = 'Error: ' + e.message;
+            } finally {
+                runBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

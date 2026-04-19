@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Async Task Runner</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+        .box {
+            border: 2px solid black;
+            padding: 20px;
+        }
+        button {
+            margin-right: 10px;
+        }
+        #msg {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task Management</h1>
+    <div class="box">
+        <button id="run">Run</button>
+        <button id="stop">Stop</button>
+        <div id="msg">Status: Idle</div>
+    </div>
+
+    <script>
+        const runBtn = document.getElementById('run');
+        const stopBtn = document.getElementById('stop');
+        const msg = document.getElementById('msg');
+
+        let controller;
+        let timer;
+
+        function doWork(time, signal) {
+            return new Promise((resolve, reject) => {
+                const innerTimer = setTimeout(() => {
+                    resolve("Done");
+                }, time);
+
+                signal.addEventListener('abort', () => {
+                    clearTimeout(innerTimer);
+                    reject(new Error("Operation stopped"));
+                });
+            });
+        }
+
+        runBtn.onclick = function() {
+            msg.innerText = "Status: Working...";
+            controller = new AbortController();
+            
+            timer = setTimeout(() => {
+                controller.abort();
+            }, 3000);
+
+            doWork(10000, controller.signal)
+                .then(res => {
+                    clearTimeout(timer);
+                    msg.innerText = "Status: Success";
+                })
+                .catch(err => {
+                    msg.innerText = "Status: Error occurred";
+                });
+        };
+
+        stopBtn.onclick = function() {
+            if (controller) {
+                clearTimeout(timer);
+                controller.abort();
+            }
+        };
+    </script>
+</body>
+</html>

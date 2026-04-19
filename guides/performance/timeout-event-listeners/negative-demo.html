@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Cleanup Demo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #eee;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+        }
+        .info {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Manual Timer</h2>
+        <p>This button works for 5 seconds.</p>
+
+        <button id="trigger">Start 5s Window</button>
+        <button id="target">Interactive Button</button>
+
+        <div id="log" class="info">Status: Waiting</div>
+    </div>
+
+    <script>
+        const trigger = document.getElementById('trigger');
+        const target = document.getElementById('target');
+        const log = document.getElementById('log');
+
+        function clickHandler() {
+            alert('Click detected via manual listener');
+        }
+
+        trigger.addEventListener('click', () => {
+            trigger.disabled = true;
+            log.textContent = 'Status: Active (Manual Timer)';
+
+            target.addEventListener('click', clickHandler);
+
+            setTimeout(() => {
+                target.removeEventListener('click', clickHandler);
+                log.textContent = 'Status: Expired (Manual remove)';
+                trigger.disabled = false;
+            }, 5000);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AbortSignal.timeout() Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            color: #333;
+        }
+        .controls {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f4f4f9;
+            border-radius: 8px;
+        }
+        button {
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        .test-status {
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+        .test-output {
+            margin-top: 0.5rem;
+            padding: 1rem;
+            background: #272822;
+            color: #f8f8f2;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            min-height: 100px;
+        }
+        .test-error-message {
+            color: #d9534f;
+            display: none;
+        }
+        .support-warning {
+            padding: 1rem;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Task Timeout Demo</h1>
+    
+    <div id="support-warning" class="support-warning">
+        <strong>Warning:</strong> <code>AbortSignal.timeout()</code> is not supported in this browser.
+    </div>
+
+    <p>This demo simulates a multi-step asynchronous task with a <strong>2-second time budget</strong>. The task itself is designed to take 3 seconds total.</p>
+
+    <div class="controls">
+        <button class="test-start-btn">Start 3s Task</button>
+        <div class="test-status">Status: Idle</div>
+    </div>
+
+    <div class="test-error-message"></div>
+    <div class="test-output">Waiting for task...</div>
+
+    <script>
+        const startBtn = document.querySelector('.test-start-btn');
+        const statusEl = document.querySelector('.test-status');
+        const outputEl = document.querySelector('.test-output');
+        const errorEl = document.querySelector('.test-error-message');
+        const warningEl = document.getElementById('support-warning');
+
+        // Feature Detection
+        const isSupported = typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal;
+        if (!isSupported) {
+            warningEl.style.display = 'block';
+        }
+
+        function log(message) {
+            outputEl.textContent += `\n[${new Date().toLocaleTimeString()}] ${message}`;
+        }
+
+        /**
+         * Simulates a part of a complex task that respects an AbortSignal
+         */
+        function simulateWorkStep(name, duration, signal) {
+            return new Promise((resolve, reject) => {
+                log(`Starting ${name}...`);
+                
+                const timer = setTimeout(() => {
+                    log(`Completed ${name}`);
+                    resolve();
+                }, duration);
+
+                // Wire up the signal
+                signal.addEventListener('abort', () => {
+                    clearTimeout(timer);
+                    reject(signal.reason);
+                }, { once: true });
+
+                // Check if already aborted
+                if (signal.aborted) {
+                    clearTimeout(timer);
+                    reject(signal.reason);
+                }
+            });
+        }
+
+        async function runComplexTask() {
+            startBtn.disabled = true;
+            errorEl.style.display = 'none';
+            outputEl.textContent = 'Initializing task...';
+            statusEl.textContent = 'Status: Running...';
+
+            try {
+                // Set a timeout signal for 2000ms
+                // This is the core feature: AbortSignal.timeout()
+                const signal = AbortSignal.timeout(2000);
+
+                log('Timeout set to 2000ms.');
+
+                // Step 1: 1000ms
+                await simulateWorkStep('Data Fetching', 1000, signal);
+                
+                // Step 2: 2000ms (This should trigger the timeout)
+                await simulateWorkStep('Heavy Processing', 2000, signal);
+
+                statusEl.textContent = 'Status: Success!';
+                log('Task finished successfully.');
+            } catch (err) {
+                if (err.name === 'TimeoutError') {
+                    statusEl.textContent = 'Status: Timed Out';
+                    errorEl.textContent = 'Error: The task exceeded the 2s time budget and was cancelled.';
+                    errorEl.style.display = 'block';
+                    log('TIMEOUT: AbortSignal triggered cancellation.');
+                } else {
+                    statusEl.textContent = 'Status: Failed';
+                    errorEl.textContent = `Error: ${err.message}`;
+                    errorEl.style.display = 'block';
+                    log(`FAILED: ${err.message}`);
+                }
+            } finally {
+                startBtn.disabled = false;
+            }
+        }
+
+        startBtn.addEventListener('click', runComplexTask);
+    </script>
+</body>
+</html>

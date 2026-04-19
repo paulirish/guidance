@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AbortSignal.timeout() Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f9fafb;
+            color: #111827;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            max-width: 350px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+        p { font-size: 0.875rem; color: #4b5563; margin-bottom: 1.5rem; }
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            background: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 0.75rem;
+        }
+        .btn:hover:not(:disabled) { background: #f3f4f6; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .test-target-btn {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+            color: #1e40af;
+        }
+        .test-target-btn:active:not(:disabled) { background: #dbeafe; }
+        .test-status {
+            font-size: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            margin-top: 1rem;
+            font-family: monospace;
+        }
+        .status-idle { background: #f3f4f6; color: #6b7280; }
+        .status-active { background: #dcfce7; color: #166534; font-weight: bold; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <main class="card">
+        <h1>Temporary Listener</h1>
+        <p>The target button will only be reactive for 4 seconds after activation.</p>
+
+        <button class="btn test-start-btn">Activate Listener (4s)</button>
+        <button class="btn test-target-btn">Target Element</button>
+
+        <div class="test-status status-idle">
+            STATE: IDLE
+        </div>
+    </main>
+
+    <script>
+        const startBtn = document.querySelector('.test-start-btn');
+        const targetBtn = document.querySelector('.test-target-btn');
+        const statusEl = document.querySelector('.test-status');
+
+        const updateUI = (text, type) => {
+            statusEl.textContent = `STATE: ${text.toUpperCase()}`;
+            statusEl.className = `test-status status-${type}`;
+        };
+
+        // Feature Detection for AbortSignal.timeout()
+        if (typeof AbortSignal.timeout !== 'function') {
+            updateUI('Feature Not Supported', 'error');
+            startBtn.disabled = true;
+        } else {
+            startBtn.addEventListener('click', () => {
+                const DURATION_MS = 4000;
+                
+                // 1. Create a signal that automatically aborts after the specified duration.
+                const timeoutSignal = AbortSignal.timeout(DURATION_MS);
+
+                startBtn.disabled = true;
+                updateUI('Listening...', 'active');
+
+                // 2. Attach the listener with the 'signal' option.
+                // The browser will automatically remove this listener when the signal aborts.
+                targetBtn.addEventListener('click', () => {
+                    alert('Action captured while the temporary listener was active!');
+                }, { signal: timeoutSignal });
+
+                // 3. Optional: React to the 'abort' event to update the UI when the window closes.
+                timeoutSignal.addEventListener('abort', () => {
+                    updateUI('Deactivated (Timeout)', 'idle');
+                    startBtn.disabled = false;
+                });
+            });
+        }
+    </script>
+
+</body>
+</html>

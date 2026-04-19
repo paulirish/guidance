@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AbortSignal.timeout() Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            color: #1a1a1a;
+        }
+        .container {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            background: #f8fafc;
+        }
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        button {
+            padding: 0.6rem 1.2rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        button:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .test-start-btn {
+            background: #2563eb;
+            color: white;
+            border-color: #1d4ed8;
+        }
+        .test-start-btn:hover:not(:disabled) {
+            background: #1d4ed8;
+        }
+        .test-status {
+            padding: 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            min-height: 1.5em;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+        }
+        .status-running { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+        .status-success { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .status-error { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+        
+        h1 { font-size: 1.5rem; margin-top: 0; }
+        p { color: #475569; margin-bottom: 1.5rem; }
+        code { background: #e2e8f0; padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <h1>AbortSignal.timeout()</h1>
+    <p>
+        Demonstrates cancelling a long-running operation (10s) using either a 
+        <strong>5-second automatic timeout</strong> or a <strong>manual user cancel</strong>.
+    </p>
+
+    <div class="container">
+        <div class="controls">
+            <button class="test-start-btn">Start Task (10s)</button>
+            <button class="test-cancel-btn" disabled>Cancel Task Manually</button>
+        </div>
+
+        <div class="test-status">
+            Ready to start.
+        </div>
+    </div>
+
+    <script>
+        const startBtn = document.querySelector('.test-start-btn');
+        const cancelBtn = document.querySelector('.test-cancel-btn');
+        const statusEl = document.querySelector('.test-status');
+
+        let userController = null;
+
+        /**
+         * Main logic demonstrating AbortSignal.timeout() and AbortSignal.any()
+         */
+        async function runTask() {
+            // Reset UI state
+            statusEl.textContent = 'Task running... (Timeout in 5s)';
+            statusEl.className = 'test-status status-running';
+            startBtn.disabled = true;
+            cancelBtn.disabled = false;
+
+            // 1. Create a controller for manual cancellation
+            userController = new AbortController();
+
+            try {
+                // 2. Create a signal that aborts automatically after 5000ms
+                const timeoutSignal = AbortSignal.timeout(5000);
+
+                // 3. Combine both signals. The combined signal aborts if EITHER aborts.
+                // Note: AbortSignal.any() is the modern way to compose signals.
+                const combinedSignal = AbortSignal.any([
+                    userController.signal,
+                    timeoutSignal
+                ]);
+
+                // 4. Pass the combined signal to the asynchronous operation
+                // We simulate a 10s operation that respects the abort signal
+                await simulateAsyncWork(10000, combinedSignal);
+
+                statusEl.textContent = 'Success: Task completed!';
+                statusEl.className = 'test-status status-success';
+            } catch (err) {
+                // 5. Detect why the operation was aborted
+                if (err.name === 'TimeoutError') {
+                    statusEl.textContent = 'Aborted: Operation timed out after 5 seconds.';
+                } else if (err.name === 'AbortError') {
+                    statusEl.textContent = 'Aborted: User cancelled the operation.';
+                } else {
+                    statusEl.textContent = `Error: ${err.message}`;
+                }
+                statusEl.className = 'test-status status-error';
+            } finally {
+                startBtn.disabled = false;
+                cancelBtn.disabled = true;
+                userController = null;
+            }
+        }
+
+        /**
+         * Simulates a task that respects an AbortSignal
+         */
+        function simulateAsyncWork(ms, signal) {
+            return new Promise((resolve, reject) => {
+                if (signal.aborted) {
+                    return reject(signal.reason);
+                }
+
+                const timer = setTimeout(() => {
+                    resolve();
+                }, ms);
+
+                // If signal aborts, clear timer and reject
+                signal.addEventListener('abort', () => {
+                    clearTimeout(timer);
+                    reject(signal.reason);
+                }, { once: true });
+            });
+        }
+
+        // Feature detection
+        const isSupported = typeof AbortSignal.timeout === 'function' && typeof AbortSignal.any === 'function';
+        
+        if (isSupported) {
+            startBtn.addEventListener('click', runTask);
+            cancelBtn.addEventListener('click', () => {
+                if (userController) userController.abort();
+            });
+        } else {
+            statusEl.textContent = 'Error: Your browser does not support AbortSignal.timeout() or AbortSignal.any().';
+            statusEl.className = 'test-status status-error';
+            startBtn.disabled = true;
+        }
+    </script>
+</body>
+</html>
