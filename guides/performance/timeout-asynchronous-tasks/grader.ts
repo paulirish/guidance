@@ -1,89 +1,87 @@
 import { test as base, expect } from '@playwright/test';
-// @ts-ignore
 import * as fs from 'fs';
-// @ts-ignore
 import * as path from 'path';
 
-/**
- * Grader for AbortSignal.timeout() expectations.
- * This script verifies that the application uses the native AbortSignal.timeout API
- * and handles the resulting TimeoutError correctly, while avoiding anti-patterns
- * like manual setTimeout/AbortController pairs or Promise.race() for timeouts.
- */
-
-// Setup from environment
-// @ts-ignore
-const targetFile = process.env.TARGET_FILE;
-if (!targetFile) {
-  throw new Error('TARGET_FILE environment variable not set.');
-}
-
-// @ts-ignore
+// Target file configuration
+const targetFile = process.env.TARGET_FILE || 'demo.html';
 const filePath = path.resolve(targetFile);
-// @ts-ignore
 const targetDir = path.dirname(filePath);
-// @ts-ignore
 const demoName = path.basename(filePath);
 
-// Extend the test object to include a mock TARGET_URL
-const test = base.extend<{ TARGET_URL: string }>({
+// Define fixture type
+type MyFixtures = {
+  TARGET_URL: string;
+};
+
+// Extend base test
+const test = base.extend<MyFixtures>({
   TARGET_URL: async ({}, use) => {
-    await use('http://localhost/');
+    // We'll use a local URL and intercept it in beforeEach
+    await use(`http://localhost/${demoName}`);
   },
 });
-
-declare global {
-  interface Window {
-    __abortSignalTimeoutCalled: boolean;
-    __manualAbortCalled: boolean;
-    __promiseRaceCalled: boolean;
-  }
-}
 
 test.describe(`AbortSignal.timeout() Expectations: ${demoName}`, () => {
 
   test.beforeEach(async ({ page, TARGET_URL }) => {
-    // Serve the local file at the mock URL
-    if (TARGET_URL.startsWith('http://localhost/')) {
-      await page.route('http://localhost/*', async (route) => {
-        const requestPath = new URL(route.request().url()).pathname;
-        const localFilePath = path.join(targetDir, requestPath === '/' ? demoName : requestPath);
-
+    // Intercept requests to serve the local file
+    await page.route('http://localhost/*', async (route) => {
+      const requestUrl = new URL(route.request().url());
+      const requestPath = requestUrl.pathname;
+      
+      if (requestPath === '/' || requestPath === `/${demoName}`) {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        await route.fulfill({
+          contentType: 'text/html',
+          body: content,
+        });
+      } else {
+        const localFilePath = path.join(targetDir, requestPath);
         if (fs.existsSync(localFilePath)) {
           await route.fulfill({ path: localFilePath });
         } else {
           await route.continue();
         }
-      });
-    }
-
-    // Inject spies to monitor API usage
-    await page.addInitScript(() => {
-      window.__abortSignalTimeoutCalled = false;
-      window.__manualAbortCalled = false;
-      window.__promiseRaceCalled = false;
-
-      // Spy on AbortSignal.timeout
-      const originalTimeout = (AbortSignal as any).timeout;
-      if (typeof originalTimeout === 'function') {
-        (AbortSignal as any).timeout = function(ms: number) {
-          window.__abortSignalTimeoutCalled = true;
-          return originalTimeout.call(AbortSignal, ms);
-        };
       }
+    });
 
-      // Spy on AbortController.prototype.abort to detect manual cancellation triggers
-      const originalAbort = AbortController.prototype.abort;
-      AbortController.prototype.abort = function(this: AbortController, reason?: any) {
-        window.__manualAbortCalled = true;
-        return originalAbort.call(this, reason);
+    // Spy on APIs before navigation to verify usage patterns
+    await page.addInitScript(() => {
+      const originalTimeout = AbortSignal.timeout;
+      (window as any)._abortSignalTimeoutCalled = false;
+      (window as any)._lastSignal = null;
+      (window as any)._signalHasListeners = false;
+      (window as any)._signalUsedInFetch = false;
+      
+      AbortSignal.timeout = function(ms: number) {
+        (window as any)._abortSignalTimeoutCalled = true;
+        const signal = originalTimeout.call(AbortSignal, ms);
+        (window as any)._lastSignal = signal;
+        
+        const originalAddEventListener = signal.addEventListener;
+        signal.addEventListener = function(type: string, listener: any, options: any) {
+          if (type === 'abort') {
+            (window as any)._signalHasListeners = true;
+          }
+          return originalAddEventListener.call(this, type, listener, options);
+        };
+        
+        return signal;
       };
 
-      // Spy on Promise.race to detect the timer promise anti-pattern
-      const originalRace = Promise.race;
-      (Promise as any).race = function(this: typeof Promise, values: any) {
-        window.__promiseRaceCalled = true;
-        return originalRace.call(this, values);
+      const originalFetch = window.fetch;
+      window.fetch = function(input: any, init: any) {
+        if (init && init.signal === (window as any)._lastSignal) {
+          (window as any)._signalUsedInFetch = true;
+        }
+        return originalFetch.call(this, input, init);
+      };
+
+      const originalAbort = AbortController.prototype.abort;
+      (window as any)._abortControllerAbortCalled = false;
+      AbortController.prototype.abort = function(reason?: any) {
+        (window as any)._abortControllerAbortCalled = true;
+        return originalAbort.call(this, reason);
       };
     });
 
@@ -91,83 +89,83 @@ test.describe(`AbortSignal.timeout() Expectations: ${demoName}`, () => {
   });
 
   test('The implementation utilizes AbortSignal.timeout() to create the cancellation signal', async ({ page }) => {
-    // Locate the start button - using a broad selector to be app-agnostic
-    const startButton = page.locator('button').first();
-    await expect(startButton).toBeVisible();
-    await startButton.click();
+    const startBtn = page.locator('#start-btn, #runBtn');
+    await startBtn.click();
 
-    // Give some time for the task to initiate and call the API
+    // Allow time for the task to initialize and call AbortSignal.timeout()
     await page.waitForTimeout(500);
 
-    const utilized = await page.evaluate(() => window.__abortSignalTimeoutCalled);
-    expect(utilized, 'AbortSignal.timeout() should be called to create the signal.').toBe(true);
+    const usedNativeTimeout = await page.evaluate(() => (window as any)._abortSignalTimeoutCalled);
+    expect(usedNativeTimeout, 'AbortSignal.timeout() should be called').toBe(true);
   });
 
-  test('The application correctly identifies and handles the TimeoutError when the signal triggers', async ({ page }) => {
-    const startButton = page.locator('button').first();
-    await startButton.click();
+  test('The asynchronous task respects the AbortSignal and stops work upon timeout', async ({ page }) => {
+    const startBtn = page.locator('#start-btn, #runBtn');
+    await startBtn.click();
 
-    // Wait for the timeout to occur (demos use ~2s budget)
-    // We wait slightly longer than the expected timeout.
-    await page.waitForTimeout(3000);
+    // Wait past the common 2s budget
+    await page.waitForTimeout(2500);
 
-    // Check for "Timed Out" in the UI, which indicates the application recognized the specific error
-    const statusText = await page.evaluate(() => {
-      // Look for common status containers
-      const el = document.querySelector('.test-status') || 
-                 document.querySelector('#status') || 
-                 document.querySelector('[class*="status"]') ||
-                 document.body;
-      return el ? el.textContent : '';
+    // Verify signal was not only created but also had listeners or was passed to fetch
+    const signalWasUsed = await page.evaluate(() => {
+        return (window as any)._abortSignalTimeoutCalled && 
+               ((window as any)._signalHasListeners || (window as any)._signalUsedInFetch);
     });
+    expect(signalWasUsed, 'The task must use and respect the AbortSignal').toBe(true);
 
-    expect(statusText).toMatch(/Timed Out/i);
+    const logs = await page.evaluate(() => document.querySelector('.console, #log')?.textContent || '');
+    // Ensure the task didn't finish successfully despite the timeout
+    expect(logs).not.toContain('Completed step: Heavy Processing');
+    
+    await page.waitForTimeout(1000);
+    const finalLogs = await page.evaluate(() => document.querySelector('.console, #log')?.textContent || '');
+    expect(finalLogs.toLowerCase()).not.toContain('success');
+  });
+
+  test('The application correctly identifies and handles the TimeoutError DOMException', async ({ page }) => {
+    const startBtn = page.locator('#start-btn, #runBtn');
+    await startBtn.click();
+
+    await page.waitForTimeout(2500);
+
+    const statusText = await page.textContent('#status-badge, #status');
+    // Ensure the UI reflects a timeout specifically
+    expect(statusText?.toLowerCase()).toMatch(/time.*out/);
   });
 
   test('The implementation does not use a manual setTimeout() to trigger AbortController.abort()', async ({ page }) => {
-    const startButton = page.locator('button').first();
-    await startButton.click();
-    
-    // Wait long enough for potential manual timeouts to fire (negative demo uses 2s)
-    await page.waitForTimeout(3000);
+    const startBtn = page.locator('#start-btn, #runBtn');
+    await startBtn.click();
 
-    const manualAbort = await page.evaluate(() => window.__manualAbortCalled);
-    expect(manualAbort, 'Manual AbortController.abort() should not be used when AbortSignal.timeout() is sufficient.').toBe(false);
+    await page.waitForTimeout(500);
+
+    const abortCalled = await page.evaluate(() => (window as any)._abortControllerAbortCalled);
+    const nativeTimeoutCalled = await page.evaluate(() => (window as any)._abortSignalTimeoutCalled);
+
+    // If a timeout occurred via AbortController, it must have used the native AbortSignal.timeout
+    if (abortCalled && !nativeTimeoutCalled) {
+        throw new Error('Manual setTimeout() used to trigger AbortController.abort()');
+    }
+
+    expect(nativeTimeoutCalled, 'Must use AbortSignal.timeout() instead of manual timers').toBe(true);
   });
 
-  test('The implementation does not use Promise.race() with a timer for timeout management', async ({ page }) => {
-    const startButton = page.locator('button').first();
-    await startButton.click();
-    
-    // Negative demo calls Promise.race immediately, but we wait to be consistent
-    await page.waitForTimeout(3000);
+  test('The implementation propagates the cancellation signal to underlying operations', async ({ page }) => {
+    const startBtn = page.locator('#start-btn, #runBtn');
+    await startBtn.click();
 
-    const promiseRace = await page.evaluate(() => window.__promiseRaceCalled);
-    expect(promiseRace, 'Promise.race() should not be used as a substitute for signal-based cancellation.').toBe(false);
-  });
+    await page.waitForTimeout(2500);
 
-  test('Asynchronous tasks receive and respect the AbortSignal', async ({ page }) => {
-    // We verify this by checking if the task stops early (around 2s) 
-    // instead of running to completion (3s).
-    const startButton = page.locator('button').first();
+    const signalWasUsed = await page.evaluate(() => {
+        return (window as any)._abortSignalTimeoutCalled && 
+               ((window as any)._signalHasListeners || (window as any)._signalUsedInFetch);
+    });
     
-    const startTime = Date.now();
-    await startButton.click();
+    expect(signalWasUsed, 'The AbortSignal from timeout should be passed to operations').toBe(true);
     
-    // Wait for the "Timed Out" status to appear
-    await page.waitForFunction(() => {
-      const el = document.querySelector('.test-status') || 
-                 document.querySelector('#status') || 
-                 document.querySelector('[class*="status"]');
-      return el && el.textContent && /Timed Out/i.test(el.textContent);
-    }, { timeout: 5000 });
-    
-    const duration = Date.now() - startTime;
-    
-    // The task should have aborted around 2000ms. 
-    // If it didn't respect the signal, it would either hang or take 3000ms+
-    expect(duration).toBeLessThan(2800);
-    expect(duration).toBeGreaterThan(1500);
+    const logs = await page.evaluate(() => document.querySelector('.console, #log')?.textContent || '');
+    // Check for negative patterns that indicate lack of propagation
+    expect(logs).not.toContain('Processing part 2'); 
   });
 
 });

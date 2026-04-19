@@ -3,28 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager</title>
+    <title>Legacy Timeout Implementation</title>
     <style>
+        :root {
+            --primary: #64748b;
+            --primary-hover: #475569;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --error: #ef4444;
+            --console-bg: #1e293b;
+            --console-text: #f8fafc;
+        }
+
         body {
-            font-family: sans-serif;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: var(--bg);
+            color: var(--text-main);
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
         }
-        .container {
-            border: 1px solid #000;
-            padding: 10px;
+
+        .header {
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
         }
-        #status {
-            margin-top: 10px;
-            font-weight: bold;
+
+        .header h1 {
+            font-size: 1.75rem;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.25rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .status {
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .console {
+            background: var(--console-bg);
+            color: var(--console-text);
+            padding: 1rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            min-height: 150px;
+            overflow-y: auto;
+        }
+
+        .warning-box {
+            background: #fff1f2;
+            border: 1px solid #fecdd3;
+            color: #9f1239;
+            padding: 1rem;
+            border-radius: 0.25rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Process Runner</h1>
-        <button id="runBtn">Execute</button>
-        <div id="status">Ready</div>
-        <div id="log"></div>
+
+    <div class="header">
+        <h1>Legacy Process Runner</h1>
+        <p style="color: var(--text-muted); margin-top: 0.5rem;">Manual Timeout Implementation (Pre-AbortSignal.timeout)</p>
+    </div>
+
+    <div class="card">
+        <div class="controls">
+            <button id="runBtn">Execute Process</button>
+            <div id="status">Status: Ready</div>
+        </div>
+
+        <div class="console" id="log">
+            <div>System initialized. Waiting for command...</div>
+        </div>
+
+        <div class="warning-box">
+            <strong>Note:</strong> This implementation uses <code>Promise.race()</code> and a manual <code>setTimeout</code>. 
+            While it stops the UI from waiting, it doesn't always stop the underlying work as effectively as <code>AbortSignal</code>.
+        </div>
     </div>
 
     <script>
@@ -32,19 +132,26 @@
         const status = document.getElementById('status');
         const log = document.getElementById('log');
 
+        function appendLog(msg) {
+            const div = document.createElement('div');
+            div.textContent = `> ${msg}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
         function delay(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
         async function heavyWork() {
-            log.innerHTML += '<div>Processing part 1...</div>';
+            appendLog('Processing part 1 (1.5s)...');
             await delay(1500);
-            log.innerHTML += '<div>Processing part 2...</div>';
+            appendLog('Processing part 2 (1.5s)...');
             await delay(1500);
             return 'Success';
         }
 
-        function timeout(ms) {
+        function manualTimeout(ms) {
             return new Promise((_, reject) => {
                 setTimeout(() => {
                     reject(new Error('Manual Timeout reached'));
@@ -54,23 +161,23 @@
 
         runBtn.addEventListener('click', async () => {
             runBtn.disabled = true;
-            status.innerText = 'Running';
+            status.innerText = 'Status: RUNNING';
             log.innerHTML = '';
-
-            const controller = new AbortController();
-            
-            setTimeout(() => {
-                controller.abort();
-            }, 2000);
+            appendLog('Starting process with manual 2s timeout...');
 
             try {
+                // The "Negative" pattern: using Promise.race for timeouts
+                // instead of passing an AbortSignal down the chain.
                 const result = await Promise.race([
                     heavyWork(),
-                    timeout(2000)
+                    manualTimeout(2000)
                 ]);
-                status.innerText = 'Result: ' + result;
+                status.innerText = 'Status: ' + result;
+                status.style.color = 'var(--primary)';
             } catch (e) {
-                status.innerText = 'Error: ' + e.message;
+                status.innerText = 'Status: FAILED';
+                status.style.color = 'var(--error)';
+                appendLog('ERROR: ' + e.message);
             } finally {
                 runBtn.disabled = false;
             }

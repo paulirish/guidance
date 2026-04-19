@@ -5,93 +5,290 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AbortSignal.timeout() Demo</title>
     <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --error: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --console-bg: #0f172a;
+            --console-text: #e2e8f0;
+        }
+
         body {
-            font-family: system-ui, -apple-system, sans-serif;
-            line-height: 1.5;
-            max-width: 600px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            color: #333;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            background-color: var(--bg);
+            color: var(--text-main);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
         }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
         .controls {
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: #f4f4f9;
-            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            align-items: center;
         }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
         button {
-            padding: 0.6rem 1.2rem;
-            font-size: 1rem;
-            cursor: pointer;
-            background-color: #007bff;
+            background-color: var(--primary);
             color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
             border: none;
-            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
         }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
         button:disabled {
-            background-color: #ccc;
+            background-color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.7;
         }
-        .test-status {
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            transition: all 0.3s;
+        }
+
+        .status-badge.running {
+            background: #e0e7ff;
+            color: var(--primary);
+        }
+
+        .status-badge.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.timeout {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 0.75rem;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .budget-marker {
+            position: absolute;
+            top: 0;
+            left: 66.6%; /* 2s out of 3s total planned work */
+            width: 2px;
+            height: 100%;
+            background: var(--error);
+            z-index: 10;
+        }
+
+        .budget-label {
+            position: absolute;
+            top: -1.5rem;
+            left: 66.6%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
             font-weight: bold;
-            margin-top: 1rem;
+            color: var(--error);
+            text-transform: uppercase;
         }
-        .test-output {
-            margin-top: 0.5rem;
-            padding: 1rem;
-            background: #272822;
-            color: #f8f8f2;
-            border-radius: 4px;
-            font-family: monospace;
-            white-space: pre-wrap;
-            min-height: 100px;
+
+        .console {
+            background: var(--console-bg);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.9rem;
+            color: var(--console-text);
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
         }
-        .test-error-message {
-            color: #d9534f;
-            display: none;
+
+        .console-line {
+            margin-bottom: 0.25rem;
+            border-left: 2px solid transparent;
+            padding-left: 0.5rem;
         }
+
+        .console-line.info { border-left-color: var(--primary); }
+        .console-line.success { border-left-color: var(--success); }
+        .console-line.error { border-left-color: var(--error); }
+        .console-line.timestamp { color: var(--text-muted); font-size: 0.8rem; }
+
         .support-warning {
             padding: 1rem;
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            margin-bottom: 1rem;
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-radius: 0.5rem;
+            color: #92400e;
+            margin-bottom: 1.5rem;
             display: none;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .explanation {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1rem;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            color: var(--primary);
         }
     </style>
 </head>
 <body>
 
-    <h1>Task Timeout Demo</h1>
-    
-    <div id="support-warning" class="support-warning">
-        <strong>Warning:</strong> <code>AbortSignal.timeout()</code> is not supported in this browser.
+    <div class="header">
+        <h1>Task Timeout Budget</h1>
+        <p>Managing asynchronous operations with <code>AbortSignal.timeout()</code></p>
     </div>
 
-    <p>This demo simulates a multi-step asynchronous task with a <strong>2-second time budget</strong>. The task itself is designed to take 3 seconds total.</p>
-
-    <div class="controls">
-        <button class="test-start-btn">Start 3s Task</button>
-        <div class="test-status">Status: Idle</div>
+    <div id="support-warning" class="support-warning" style="display: none;">
+        <span>⚠️</span>
+        <span><strong>Compatibility:</strong> <code>AbortSignal.timeout()</code> is not supported in this browser.</span>
     </div>
 
-    <div class="test-error-message"></div>
-    <div class="test-output">Waiting for task...</div>
+    <div class="card">
+        <div class="controls">
+            <div class="button-group">
+                <button id="start-btn">Execute 3s Task</button>
+                <div id="status-badge" class="status-badge">Status: Idle</div>
+            </div>
+
+            <div style="width: 100%; margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 500;">
+                    <span>Task Progress</span>
+                    <span id="timer-display">0.0s / 3.0s</span>
+                </div>
+                <div class="progress-container">
+                    <div class="budget-label">2s Budget</div>
+                    <div class="budget-marker"></div>
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="explanation">
+            This demo simulates a multi-step task that takes <strong>3 seconds</strong> to complete. 
+            However, we've set a <strong>2-second timeout budget</strong> using <code>AbortSignal.timeout(2000)</code>.
+            Watch the task be automatically cancelled when it hits the red budget line.
+        </div>
+    </div>
+
+    <div class="console" id="console">
+        <div class="console-line">Ready to begin...</div>
+    </div>
 
     <script>
-        const startBtn = document.querySelector('.test-start-btn');
-        const statusEl = document.querySelector('.test-status');
-        const outputEl = document.querySelector('.test-output');
-        const errorEl = document.querySelector('.test-error-message');
+        const startBtn = document.getElementById('start-btn');
+        const statusBadge = document.getElementById('status-badge');
+        const progressBar = document.getElementById('progress-bar');
+        const timerDisplay = document.getElementById('timer-display');
+        const consoleEl = document.getElementById('console');
         const warningEl = document.getElementById('support-warning');
 
         // Feature Detection
         const isSupported = typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal;
         if (!isSupported) {
-            warningEl.style.display = 'block';
+            warningEl.style.display = 'flex';
         }
 
-        function log(message) {
-            outputEl.textContent += `\n[${new Date().toLocaleTimeString()}] ${message}`;
+        function log(message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            const ts = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            line.innerHTML = `<span class="timestamp">[${ts}]</span> ${message}`;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function updateProgress(ms) {
+            const total = 3000;
+            const percent = Math.min((ms / total) * 100, 100);
+            progressBar.style.width = `${percent}%`;
+            timerDisplay.textContent = `${(ms / 1000).toFixed(1)}s / 3.0s`;
         }
 
         /**
@@ -99,10 +296,10 @@
          */
         function simulateWorkStep(name, duration, signal) {
             return new Promise((resolve, reject) => {
-                log(`Starting ${name}...`);
+                log(`Starting step: ${name}...`);
                 
                 const timer = setTimeout(() => {
-                    log(`Completed ${name}`);
+                    log(`Completed step: ${name}`, 'success');
                     resolve();
                 }, duration);
 
@@ -122,38 +319,47 @@
 
         async function runComplexTask() {
             startBtn.disabled = true;
-            errorEl.style.display = 'none';
-            outputEl.textContent = 'Initializing task...';
-            statusEl.textContent = 'Status: Running...';
+            consoleEl.innerHTML = '';
+            log('Initializing task with 2000ms budget...');
+            
+            statusBadge.textContent = 'Status: Running';
+            statusBadge.className = 'status-badge running';
+            
+            let elapsed = 0;
+            const startTime = performance.now();
+            const progressInterval = setInterval(() => {
+                elapsed = performance.now() - startTime;
+                updateProgress(elapsed);
+            }, 50);
 
             try {
-                // Set a timeout signal for 2000ms
-                // This is the core feature: AbortSignal.timeout()
+                // CORE FEATURE: AbortSignal.timeout()
+                // This creates a signal that aborts automatically after 2000ms
                 const signal = AbortSignal.timeout(2000);
-
-                log('Timeout set to 2000ms.');
 
                 // Step 1: 1000ms
                 await simulateWorkStep('Data Fetching', 1000, signal);
                 
-                // Step 2: 2000ms (This should trigger the timeout)
+                // Step 2: 2000ms (Total 3000ms, will exceed 2000ms budget)
                 await simulateWorkStep('Heavy Processing', 2000, signal);
 
-                statusEl.textContent = 'Status: Success!';
-                log('Task finished successfully.');
+                statusBadge.textContent = 'Status: Success';
+                statusBadge.className = 'status-badge success';
+                log('Task finished successfully.', 'success');
             } catch (err) {
+                clearInterval(progressInterval);
                 if (err.name === 'TimeoutError') {
-                    statusEl.textContent = 'Status: Timed Out';
-                    errorEl.textContent = 'Error: The task exceeded the 2s time budget and was cancelled.';
-                    errorEl.style.display = 'block';
-                    log('TIMEOUT: AbortSignal triggered cancellation.');
+                    statusBadge.textContent = 'Status: Timed Out';
+                    statusBadge.className = 'status-badge timeout';
+                    log('TIMEOUT: The 2000ms budget was exceeded.', 'error');
+                    log(`Reason: ${err.message}`, 'error');
                 } else {
-                    statusEl.textContent = 'Status: Failed';
-                    errorEl.textContent = `Error: ${err.message}`;
-                    errorEl.style.display = 'block';
-                    log(`FAILED: ${err.message}`);
+                    statusBadge.textContent = 'Status: Failed';
+                    statusBadge.className = 'status-badge timeout';
+                    log(`FAILED: ${err.message}`, 'error');
                 }
             } finally {
+                clearInterval(progressInterval);
                 startBtn.disabled = false;
             }
         }
