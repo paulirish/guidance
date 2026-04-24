@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>structuredClone Demo: Audit vs. Transformation</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: #f4f4f9;
+        }
+        section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        .success-badge {
+            display: inline-block;
+            background: #d4edda;
+            color: #155724;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Data Integrity with <code>structuredClone()</code></h1>
+        <p>This demo shows how to keep a pristine, deep-cloned copy of incoming data for security audits while performing destructive operations on the working copy.</p>
+    </header>
+
+    <main>
+        <section>
+            <button class="test-process-trigger" onclick="processData()">Simulate Incoming Data & Process</button>
+            <div id="status" class="test-status"></div>
+        </section>
+
+        <div class="grid">
+            <section>
+                <span class="label">Pristine Audit Snapshot (Cloned)</span>
+                <pre id="audit-log" class="test-audit-log">Waiting for data...</pre>
+                <small>This remains unchanged even if the original is mutated.</small>
+            </section>
+
+            <section>
+                <span class="label">UI Display (Transformed)</span>
+                <pre id="ui-display" class="test-ui-display">Waiting for data...</pre>
+                <small>Sensitive fields (SSN, IP) have been deleted here.</small>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        /**
+         * Feature detection for structuredClone
+         */
+        function isStructuredCloneSupported() {
+            return typeof structuredClone === 'function';
+        }
+
+        function processData() {
+            // 1. Mock incoming sensitive data
+            const incomingData = {
+                id: "TXN-98765",
+                user: {
+                    name: "Jane Smith",
+                    ssn: "000-12-3456", // Sensitive
+                    roles: ["editor"]
+                },
+                metadata: {
+                    ip: "192.168.0.42", // Sensitive
+                    timestamp: new Date().toISOString()
+                }
+            };
+
+            if (!isStructuredCloneSupported()) {
+                alert("structuredClone is not supported in this browser.");
+                return;
+            }
+
+            // 2. CREATE PRISTINE SNAPSHOT
+            // structuredClone creates a deep copy, ensuring nested objects like 'user' 
+            // and 'metadata' are decoupled from the original.
+            const auditSnapshot = structuredClone(incomingData);
+
+            // 3. PERFORM DESTRUCTIVE TRANSFORMATION
+            // We strip sensitive data from the original object to prepare it for 
+            // general UI consumption or lower-security logging.
+            delete incomingData.user.ssn;
+            delete incomingData.metadata.ip;
+            incomingData.transformed = true;
+
+            // 4. UPDATE UI
+            document.getElementById('audit-log').textContent = JSON.stringify(auditSnapshot, null, 2);
+            document.getElementById('ui-display').textContent = JSON.stringify(incomingData, null, 2);
+            
+            const status = document.getElementById('status');
+            status.innerHTML = '<span class="success-badge">Data processed! Audit snapshot preserved.</span>';
+        }
+    </script>
+
+</body>
+</html>

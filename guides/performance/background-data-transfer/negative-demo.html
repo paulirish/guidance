@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Processor</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .box { width: 50px; height: 50px; background: red; margin-bottom: 10px; animation: move 1s infinite alternate; }
+        @keyframes move { from { margin-left: 0; } to { margin-left: 200px; } }
+        button { padding: 10px; margin-right: 10px; }
+        pre { background: #eee; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Data Processing Application</h1>
+    <div class="box"></div>
+    <button onclick="runTask()">Run Heavy Task</button>
+    <button onclick="resetData()">Reset</button>
+    <pre id="display">Results will appear here...</pre>
+
+    <script>
+        let myData = {
+            id: 1,
+            name: "Test Data",
+            timestamp: new Date(),
+            settings: new Map([["theme", "dark"]]),
+            items: [1, 2, 3]
+        };
+        myData.self = myData;
+
+        function runTask() {
+            document.getElementById('display').innerText = "Processing...";
+            
+            let cloned;
+            try {
+                cloned = JSON.parse(JSON.stringify(myData));
+            } catch (e) {
+                document.getElementById('display').innerText = "Error: " + e.message;
+                
+                cloned = myData;
+            }
+
+            const start = Date.now();
+            while (Date.now() - start < 3000) {
+                for (let i = 0; i < 1000000; i++) {
+                    Math.sqrt(i) * Math.random();
+                }
+            }
+
+            if (cloned.items) {
+                cloned.items.push(4);
+                cloned.processed = true;
+            }
+
+            let output = "Original items: " + myData.items.join(", ") + "\n";
+            output += "Clone items: " + (cloned.items ? cloned.items.join(", ") : "N/A") + "\n";
+            output += "Type check (Date): " + (cloned.timestamp instanceof Date) + "\n";
+            output += "Type check (Map): " + (cloned.settings instanceof Map) + "\n";
+            
+            document.getElementById('display').innerText = output;
+        }
+
+        function resetData() {
+            myData.items = [1, 2, 3];
+            delete myData.processed;
+            document.getElementById('display').innerText = "Data reset.";
+        }
+    </script>
+</body>
+</html>

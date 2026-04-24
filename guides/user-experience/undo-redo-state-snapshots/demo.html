@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undo/Redo with structuredClone()</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            color: #333;
+        }
+        section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #f0f0f0;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .info {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .item-list {
+            list-style: none;
+            padding: 0;
+        }
+        .item-list li {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #fff;
+            border: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <main>
+        <h1>State Undo/Redo Demo</h1>
+        <p>This demo uses <code>structuredClone()</code> to capture deep snapshots of a complex application state, enabling reliable undo and redo functionality.</p>
+
+        <section>
+            <div class="controls">
+                <button class="test-add-task-btn">Add Random Task</button>
+                <button class="test-undo-btn" disabled>Undo</button>
+                <button class="test-redo-btn" disabled>Redo</button>
+            </div>
+            <div class="info test-history-info">
+                History: 0 | Redo Stack: 0
+            </div>
+        </section>
+
+        <section>
+            <h2>Current State View</h2>
+            <ul class="item-list test-task-list">
+                <!-- Tasks will be rendered here -->
+            </ul>
+        </section>
+
+        <section>
+            <h2>Raw State Snapshot</h2>
+            <pre class="test-state-display"></pre>
+        </section>
+    </main>
+
+    <script>
+        // Initial complex state
+        let state = {
+            metadata: {
+                lastUpdated: new Date().toISOString(),
+                version: 1
+            },
+            tasks: [
+                { id: 1, text: "Initial Task", completed: false, tags: ["demo", "start"] }
+            ]
+        };
+
+        const undoStack = [];
+        const redoStack = [];
+
+        const taskListEl = document.querySelector('.test-task-list');
+        const stateDisplayEl = document.querySelector('.test-state-display');
+        const historyInfoEl = document.querySelector('.test-history-info');
+        const undoBtn = document.querySelector('.test-undo-btn');
+        const redoBtn = document.querySelector('.test-redo-btn');
+        const addTaskBtn = document.querySelector('.test-add-task-btn');
+
+        /**
+         * Capture a deep snapshot of the current state using structuredClone.
+         * This ensures that subsequent mutations to the active 'state' object
+         * do not affect the stored snapshots in the history.
+         */
+        function saveSnapshot() {
+            try {
+                undoStack.push(structuredClone(state));
+                // Clear redo stack when a new action is performed
+                redoStack.length = 0;
+                updateUI();
+            } catch (e) {
+                console.error("structuredClone failed", e);
+                // Fallback for older browsers (simplified)
+                undoStack.push(JSON.parse(JSON.stringify(state)));
+            }
+        }
+
+        function undo() {
+            if (undoStack.length === 0) return;
+            
+            // Save current state to redo stack before moving back
+            redoStack.push(structuredClone(state));
+            
+            // Restore state from undo stack
+            state = undoStack.pop();
+            updateUI();
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+            
+            // Save current state to undo stack before moving forward
+            undoStack.push(structuredClone(state));
+            
+            // Restore state from redo stack
+            state = redoStack.pop();
+            updateUI();
+        }
+
+        function addTask() {
+            saveSnapshot();
+            
+            const id = Date.now();
+            state.tasks.push({
+                id: id,
+                text: `Task ${state.tasks.length + 1}`,
+                completed: false,
+                tags: ["user-added"]
+            });
+            state.metadata.lastUpdated = new Date().toISOString();
+            
+            updateUI();
+        }
+
+        function toggleTask(id) {
+            saveSnapshot();
+            const task = state.tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                state.metadata.lastUpdated = new Date().toISOString();
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            // Update raw display
+            stateDisplayEl.textContent = JSON.stringify(state, null, 2);
+            
+            // Update history info
+            historyInfoEl.textContent = `History (Undo steps): ${undoStack.length} | Redo Stack: ${redoStack.length}`;
+            
+            // Update buttons
+            undoBtn.disabled = undoStack.length === 0;
+            redoBtn.disabled = redoStack.length === 0;
+            
+            // Update task list
+            taskListEl.innerHTML = '';
+            state.tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span style="${task.completed ? 'text-decoration: line-through' : ''}">
+                        ${task.text} <small>(${task.tags.join(', ')})</small>
+                    </span>
+                    <button onclick="toggleTask(${task.id})">${task.completed ? 'Undo Finish' : 'Finish'}</button>
+                `;
+                taskListEl.appendChild(li);
+            });
+        }
+
+        // Global exposure for the inline onclick handler
+        window.toggleTask = toggleTask;
+
+        undoBtn.addEventListener('click', undo);
+        redoBtn.addEventListener('click', redo);
+        addTaskBtn.addEventListener('click', addTask);
+
+        // Initial render
+        updateUI();
+    </script>
+</body>
+</html>

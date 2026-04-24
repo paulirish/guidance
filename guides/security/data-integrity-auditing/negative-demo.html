@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data Processing Demo</title>
+</head>
+<body>
+
+    <button onclick="handleData()">Process Data</button>
+
+    <div class="results">
+        <div>
+            <h3>Log</h3>
+            <pre id="log-output"></pre>
+        </div>
+        <div>
+            <h3>Current Data</h3>
+            <pre id="current-output"></pre>
+        </div>
+    </div>
+
+    <script>
+        function handleData() {
+            const rawInput = {
+                id: 101,
+                info: {
+                    secret: "PRIVATE_KEY_123",
+                    tags: new Set(["admin", "internal"])
+                },
+                created: new Date()
+            };
+
+            const logEntry = JSON.parse(JSON.stringify(rawInput));
+
+            const workingCopy = { ...rawInput };
+
+            workingCopy.info.secret = "[REDACTED]";
+            workingCopy.processed = true;
+
+            document.getElementById('log-output').textContent = JSON.stringify(logEntry, null, 2);
+            document.getElementById('current-output').textContent = JSON.stringify(workingCopy, null, 2);
+        }
+    </script>
+
+</body>
+</html>

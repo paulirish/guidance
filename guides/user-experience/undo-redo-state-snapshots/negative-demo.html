@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Application State Manager</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .box { border: 1px solid #000; padding: 10px; margin-bottom: 10px; }
+        button { margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>System Dashboard</h1>
+        <div class="box">
+            <button id="add-btn">Add Record</button>
+            <button id="undo-btn">Undo Action</button>
+            <button id="redo-btn">Redo Action</button>
+        </div>
+        <div class="box">
+            <h3>Current Records</h3>
+            <ul id="list"></ul>
+        </div>
+        <div class="box">
+            <h3>Debug Info</h3>
+            <pre id="debug"></pre>
+        </div>
+    </div>
+
+    <script>
+        let state = {
+            sessionStarted: new Date(),
+            items: [
+                { id: 1, info: { label: "System Boot" } }
+            ],
+            settings: new Set(['autosave'])
+        };
+
+        const undoStack = [];
+        const redoStack = [];
+
+        function render() {
+            const list = document.getElementById('list');
+            list.innerHTML = '';
+            state.items.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item.info.label;
+                list.appendChild(li);
+            });
+
+            document.getElementById('debug').textContent = JSON.stringify({
+                sessionStarted: state.sessionStarted,
+                typeOfDate: typeof state.sessionStarted,
+                isDateObject: state.sessionStarted instanceof Date,
+                items: state.items,
+                settings: state.settings,
+                isSetObject: state.settings instanceof Set
+            }, null, 2);
+        }
+
+        document.getElementById('add-btn').addEventListener('click', () => {
+            undoStack.push(JSON.parse(JSON.stringify(state)));
+            redoStack.length = 0;
+
+            const newId = state.items.length + 1;
+            state.items.push({
+                id: newId,
+                info: { label: "Event " + newId }
+            });
+            
+            render();
+        });
+
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            if (undoStack.length === 0) return;
+            
+            redoStack.push({...state});
+            state = undoStack.pop();
+            
+            render();
+        });
+
+        document.getElementById('redo-btn').addEventListener('click', () => {
+            if (redoStack.length === 0) return;
+            
+            undoStack.push({...state});
+            state = redoStack.pop();
+            
+            render();
+        });
+
+        render();
+    </script>
+</body>
+</html>
