@@ -56,11 +56,11 @@ window.__featuresMapping = {
     "fetchlater",
     "aborting"
   ],
+  "break-up-long-tasks": [
+    "scheduler"
+  ],
   "calculate-total-foreground-time": [
     "page-visibility-state"
-  ],
-  "complex-computations-and-loops": [
-    "scheduler"
   ],
   "conditional-async-dependencies": [
     "top-level-await"
@@ -98,12 +98,6 @@ window.__featuresMapping = {
   "improve-next-page-load-performance": [
     "speculation-rules"
   ],
-  "incorrect-theme-flash": [
-    "color-scheme"
-  ],
-  "inject-sharp-pseudo-element-icons": [
-    "image-set"
-  ],
   "interaction-latency-attribution": [
     "event-timing"
   ],
@@ -123,10 +117,10 @@ window.__featuresMapping = {
   "optimize-scroll-stability": [
     "contain-intrinsic-size"
   ],
-  "prioritized-continuation-after-yielding": [
-    "scheduler"
+  "resolution-optimized-pseudo-elements": [
+    "image-set"
   ],
-  "prioritized-preloading": [
+  "schedule-tasks-by-priority": [
     "scheduler"
   ],
   "sequence-distributed-events": [
@@ -140,9 +134,6 @@ window.__featuresMapping = {
     "scrollbar-color",
     "color-scheme",
     "prefers-color-scheme"
-  ],
-  "anchor-annotations-to-target-element": [
-    "anchor-positioning"
   ],
   "anchor-positioning-tab-underline": [
     "anchor-positioning",
@@ -165,18 +156,20 @@ window.__featuresMapping = {
     "interpolate-size"
   ],
   "browser-ui-color-theme": [
-    "color-scheme"
+    "color-scheme",
+    "prefers-color-scheme"
   ],
   "calculate-event-differentials": [
     "temporal"
   ],
   "calculate-with-intrinsic-sizes": [
-    "calc-size"
+    "calc-size",
+    "interpolate-size"
   ],
   "capture-location-agnostic-data": [
     "temporal"
   ],
-  "carousel-item-effects": [
+  "carousel-slide-effects": [
     "scroll-driven-animations",
     "scroll-snap"
   ],
@@ -212,7 +205,8 @@ window.__featuresMapping = {
   ],
   "cross-document-transitions": [
     "view-transitions",
-    "cross-document-view-transitions"
+    "cross-document-view-transitions",
+    "navigation"
   ],
   "customize-scrollbar-color-and-thickness": [
     "scrollbar-color",
@@ -225,6 +219,12 @@ window.__featuresMapping = {
     "invoker-commands",
     "popover",
     "dialog"
+  ],
+  "deliver-optimized-decorative-images": [
+    "image-set"
+  ],
+  "serve-alternative-image-formats": [
+    "image-set"
   ],
   "design-token-reactivity": [
     "container-style-queries"
@@ -247,7 +247,8 @@ window.__featuresMapping = {
     "container-queries"
   ],
   "format-human-readable-durations": [
-    "temporal"
+    "temporal",
+    "intl-duration-format"
   ],
   "group-element-transitions": [
     "view-transitions",
@@ -265,7 +266,8 @@ window.__featuresMapping = {
     "individual-transforms"
   ],
   "interactive-content-reveal": [
-    "masks"
+    "masks",
+    "registered-custom-properties"
   ],
   "interest-triggered-action-previews": [
     "interest-invokers"
@@ -276,20 +278,17 @@ window.__featuresMapping = {
     "popover-hint",
     "anchor-positioning"
   ],
-  "keep-preceding-text-static-when-editing": [
-    "text-wrap"
-  ],
   "light-dark-theme-semantic-color-palettes": [
     "color-scheme",
     "light-dark"
+  ],
+  "light-dismiss-a-dialog": [
+    "dialog-closedby"
   ],
   "light-dismiss-content-overlay": [
     "popover",
     "scroll-snap",
     "inert"
-  ],
-  "light-dismiss-dialog": [
-    "dialog-closedby"
   ],
   "manage-recurring-intervals": [
     "temporal"
@@ -317,7 +316,7 @@ window.__featuresMapping = {
     "sibling-count",
     "transition-behavior"
   ],
-  "persistent-top-layer": [
+  "persistent-top-layer-ui": [
     "move-before"
   ],
   "physics-based-easing": [
@@ -377,16 +376,13 @@ window.__featuresMapping = {
     "details-name",
     "hidden-until-found"
   ],
-  "serve-alternative-image-formats": [
-    "image-set"
-  ],
   "shared-element-transitions": [
     "view-transitions"
   ],
   "shrinking-header-on-scroll": [
     "scroll-driven-animations"
   ],
-  "size-aware-adaptations": [
+  "size-aware-styling": [
     "container-queries"
   ],
   "soft-edge-content-fade": [
@@ -394,9 +390,6 @@ window.__featuresMapping = {
   ],
   "stabilize-reactive-state": [
     "temporal"
-  ],
-  "state-driven-component-variations": [
-    "container-style-queries"
   ],
   "stencil-cutouts": [
     "masks"
@@ -409,6 +402,9 @@ window.__featuresMapping = {
   ],
   "theme-within-theme": [
     "color-scheme"
+  ],
+  "usage-aware-component-variations": [
+    "container-style-queries"
   ],
   "visually-stable-font-fallbacks": [
     "font-size-adjust"
