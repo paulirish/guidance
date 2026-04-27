@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subgrid Alignment Demo</title>
+    <style>
+        :root {
+            --font-family: system-ui, -apple-system, sans-serif;
+            --spacing: 1rem;
+            --primary-color: #2563eb;
+        }
+
+        body {
+            font-family: var(--font-family);
+            padding: var(--spacing);
+            line-height: 1.5;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            color: #666;
+        }
+
+        /* 
+           The parent grid defines the track sizes for the entire form.
+           The first column is sized by the longest label across ALL rows.
+        */
+        .test-grid-container {
+            display: grid;
+            grid-template-columns: minmax(max-content, 150px) 1fr;
+            gap: 12px;
+            padding: var(--spacing);
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background-color: #ffffff;
+        }
+
+        /* 
+           Each row is a separate structural wrapper. 
+           Without subgrid, the label and input inside would only align within their own row.
+           With subgrid, they participate in the parent's grid layout.
+        */
+        .test-row-wrapper {
+            grid-column: 1 / -1; /* Span all columns of the parent grid */
+            display: grid;
+            grid-template-columns: subgrid; /* Inherit column definitions from .test-grid-container */
+            align-items: center;
+            padding: 0.75rem;
+            background-color: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #f3f4f6;
+        }
+
+        .test-label {
+            font-weight: 600;
+            padding-right: 1rem;
+            color: #374151;
+        }
+
+        .test-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .test-input:focus {
+            outline: 2px solid var(--primary-color);
+            border-color: transparent;
+        }
+
+        /* Feature Detection UI */
+        .status-badge {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .no-subgrid {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .has-subgrid {
+            display: none;
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        @supports (grid-template-columns: subgrid) {
+            .no-subgrid { display: none; }
+            .has-subgrid { display: block; }
+        }
+
+        /* Realistic Fallback for browsers without Subgrid support */
+        @supports not (grid-template-columns: subgrid) {
+            .test-row-wrapper {
+                /* Fallback to a fixed-width grid if subgrid is unavailable */
+                grid-template-columns: 150px 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Subgrid: Cross-Wrapper Alignment</h1>
+    <p>
+        This demo shows how <code>grid-template-columns: subgrid</code> allows elements inside separate 
+        structural wrappers (the gray boxes) to align their columns perfectly with one another by 
+        sharing the parent grid's tracks.
+    </p>
+
+    <div class="test-grid-container">
+        <!-- Row 1 -->
+        <div class="test-row-wrapper">
+            <label for="field-1" class="test-label">Full Name</label>
+            <input type="text" id="field-1" class="test-input" placeholder="e.g. Jane Doe">
+        </div>
+
+        <!-- Row 2 -->
+        <div class="test-row-wrapper">
+            <label for="field-2" class="test-label">Email</label>
+            <input type="email" id="field-2" class="test-input" placeholder="jane@example.com">
+        </div>
+
+        <!-- Row 3 -->
+        <div class="test-row-wrapper">
+            <label for="field-3" class="test-label">Preferred Contact Method</label>
+            <input type="text" id="field-3" class="test-input" placeholder="e.g. Phone, Email">
+        </div>
+    </div>
+
+    <!-- Feature Detection Feedback -->
+    <div class="status-badge no-subgrid">
+        ℹ️ Your browser does NOT support CSS Subgrid. Using a fixed-width fallback.
+    </div>
+    <div class="status-badge has-subgrid">
+        ✅ Your browser supports CSS Subgrid. Columns are dynamically synchronized across wrappers.
+    </div>
+
+    <script>
+        // Optional: Log support for debugging/grading
+        const isSubgridSupported = CSS.supports('grid-template-columns', 'subgrid');
+        console.log('CSS Subgrid supported:', isSubgridSupported);
+    </script>
+</body>
+</html>

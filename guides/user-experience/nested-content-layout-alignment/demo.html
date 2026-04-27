@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subgrid: Deep Alignment Demo</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #059669;
+            --neutral-100: #f3f4f6;
+            --neutral-800: #1f2937;
+            --notice-bg: #fee2e2;
+            --notice-text: #991b1b;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            background-color: var(--neutral-100);
+            color: var(--neutral-800);
+            line-height: 1.5;
+            
+            /* 1. Define Global Page Grid on the root container */
+            display: grid;
+            grid-template-columns: 
+                [page-full-start] 1fr 
+                [page-content-start] min(65ch, 100% - 3rem) 
+                [page-content-end] 1fr 
+                [page-full-end];
+        }
+
+        .test-global-header, .test-global-footer {
+            grid-column: page-content-start / page-content-end;
+            padding: 3rem 0;
+        }
+
+        /* 2. Propagate the grid down through the hierarchy using subgrid */
+        .test-main-layout {
+            grid-column: page-full-start / page-full-end;
+            display: grid;
+            grid-template-columns: subgrid;
+        }
+
+        /* 3. Deeply nested article container */
+        .test-article-container {
+            grid-column: page-full-start / page-full-end;
+            display: grid;
+            grid-template-columns: subgrid;
+            padding: 4rem 0;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* 4. Even more deeply nested section */
+        .test-inner-section {
+            grid-column: page-full-start / page-full-end;
+            display: grid;
+            grid-template-columns: subgrid;
+        }
+
+        /* 5. Target elements aligning to the global grid lines */
+        .test-target-content {
+            grid-column: page-content-start / page-content-end;
+            background: var(--primary);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .test-target-full-bleed {
+            grid-column: page-full-start / page-full-end;
+            background: var(--neutral-800);
+            color: white;
+            padding: 4rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Feature Detection & Fallback */
+        .test-no-support-msg {
+            grid-column: page-content-start / page-content-end;
+            background: var(--notice-bg);
+            color: var(--notice-text);
+            padding: 1.5rem;
+            border: 1px solid #f87171;
+            margin-bottom: 2rem;
+            border-radius: 0.5rem;
+        }
+
+        @supports (grid-template-columns: subgrid) {
+            .test-no-support-msg {
+                display: none;
+            }
+        }
+
+        /* Basic styles for placeholder content */
+        h1, h2 { margin-top: 0; }
+        p { margin-bottom: 0; }
+        code { background: rgba(0,0,0,0.1); padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
+    </style>
+</head>
+<body>
+
+    <header class="test-global-header">
+        <h1>Global Grid Alignment</h1>
+        <p>This demo uses <strong>CSS Subgrid</strong> to allow deeply nested elements to align perfectly with a parent page grid, supporting complex layouts like full-bleed sections without manual margin calculations.</p>
+    </header>
+
+    <div class="test-no-support-msg">
+        <strong>Subgrid Not Supported:</strong> Your browser does not support <code>grid-template-columns: subgrid</code>. The layout below will fallback to standard grid behavior, which may cause nested items to lose alignment with the global page columns.
+    </div>
+
+    <main class="test-main-layout">
+        <!-- article is nested in main -->
+        <article class="test-article-container">
+            <!-- section is nested in article -->
+            <section class="test-inner-section">
+                
+                <!-- div is nested in section (4 levels deep from body) -->
+                <div class="test-target-content">
+                    <h2>Aligned to Content Column</h2>
+                    <p>Despite being nested 4 levels deep (Body &rarr; Main &rarr; Article &rarr; Section &rarr; Div), I am perfectly aligned to the <code>page-content</code> track of the global grid. This is achieved by setting <code>grid-template-columns: subgrid</code> on every parent container in the hierarchy.</p>
+                </div>
+
+                <div class="test-target-full-bleed">
+                    <h2>Full-Bleed Layout</h2>
+                    <p>I span from <code>page-full-start</code> to <code>page-full-end</code>. Subgrid allows me to break out of my parents' logical boundaries to touch the edges of the viewport while remaining part of the same coordinate system.</p>
+                </div>
+
+                <div class="test-target-content" style="background-color: var(--success);">
+                    <h2>Consistent Vertical Rhythm</h2>
+                    <p>Because I inherit the parent's grid definition, I don't need to know the specific widths or paddings of the containers above me. I simply reference the named lines of the root grid.</p>
+                </div>
+
+            </section>
+        </article>
+    </main>
+
+    <footer class="test-global-footer">
+        <p>&copy; 2026 CSS Subgrid Reference Implementation. Built for modern layout consistency.</p>
+    </footer>
+
+    <script>
+        // Runtime check for Subgrid support
+        (function() {
+            if (!CSS.supports('grid-template-columns', 'subgrid')) {
+                console.warn('CSS Subgrid is not supported in this environment.');
+                document.body.classList.add('no-subgrid');
+            } else {
+                console.log('CSS Subgrid is supported and active.');
+            }
+        })();
+    </script>
+</body>
+</html>

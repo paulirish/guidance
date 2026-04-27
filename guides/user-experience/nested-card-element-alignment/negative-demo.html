@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Negative Example - Independent Card Layouts</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #eee;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .card {
+            width: 250px;
+            background: white;
+            border: 2px solid black;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        .header {
+            background-color: #ddd;
+            min-height: 50px;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        .body {
+            flex: 1;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        .footer {
+            background-color: #ddd;
+            height: 40px;
+            padding: 5px;
+        }
+        .card-alt {
+            width: 250px;
+            background: white;
+            border: 2px solid red;
+            display: block;
+            margin-bottom: 20px;
+        }
+        .header-alt {
+            height: 85px;
+            background: #ffcccc;
+        }
+        .body-alt {
+            height: 120px;
+            overflow: scroll;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">Short Title</div>
+            <div class="body">This is some content. It is quite short.</div>
+            <div class="footer">Footer 1</div>
+        </div>
+
+        <div class="card">
+            <div class="header">A Much Longer Title That Will Definitely Wrap Around To Multiple Lines</div>
+            <div class="body">This card has significantly more content. Because it uses flexbox without subgrid, the internal sections will not align with the card next to it. Each card calculates its own height based on its specific content.</div>
+            <div class="footer">Footer 2</div>
+        </div>
+
+        <div class="card-alt">
+            <div class="header-alt">Fixed Height Header</div>
+            <div class="body-alt">
+                This section uses a fixed height of 120px and overflow scroll. This is a brittle way to attempt layout consistency and ignores the dynamic nature of content.
+                <br><br>
+                More text to force scrolling...
+                More text to force scrolling...
+                More text to force scrolling...
+            </div>
+            <div class="footer">No Footer Here</div>
+        </div>
+    </div>
+
+    <script>
+        function syncHeights() {
+            const headers = document.querySelectorAll('.header');
+            let maxHeight = 0;
+            headers.forEach(h => {
+                h.style.height = 'auto';
+                if (h.offsetHeight > maxHeight) maxHeight = h.offsetHeight;
+            });
+            headers.forEach(h => h.style.height = maxHeight + 'px');
+        }
+        window.onload = syncHeights;
+        window.onresize = syncHeights;
+    </script>
+</body>
+</html>

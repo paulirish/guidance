@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Layout Alignment</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #059669;
+            --neutral-100: #f3f4f6;
+            --neutral-800: #1f2937;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            background-color: var(--neutral-100);
+            color: var(--neutral-800);
+            line-height: 1.5;
+        }
+
+        .header-container, .footer-container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 3rem 0;
+        }
+
+        .main-wrapper {
+            width: 100%;
+            display: block;
+        }
+
+        .article-box {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 4rem 0;
+            width: 100%;
+        }
+
+        .section-inner {
+            display: contents;
+        }
+
+        .content-card {
+            width: calc(80% - 4rem);
+            margin: 0 auto 2rem auto;
+            background: var(--primary);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 0.75rem;
+        }
+
+        .full-width-strip {
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            width: 100vw;
+            background: var(--neutral-800);
+            color: white;
+            padding: 4rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .success-card {
+            width: 80%;
+            margin-left: 10%;
+            background-color: var(--success);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+            box-sizing: border-box;
+        }
+
+        h1, h2 { margin-top: 0; }
+        p { margin-bottom: 0; }
+    </style>
+</head>
+<body>
+
+    <header class="header-container">
+        <h1>Global Grid Alignment</h1>
+        <p>This demo uses nested containers to organize complex layouts like full-bleed sections and consistent content columns.</p>
+    </header>
+
+    <main class="main-wrapper">
+        <article class="article-box">
+            <section class="section-inner">
+                
+                <div class="content-card">
+                    <h2>Aligned to Content Column</h2>
+                    <p>Despite being nested deep within the hierarchy, I am positioned using calculated widths and margins to stay centered relative to the viewport.</p>
+                </div>
+
+                <div class="full-width-strip">
+                    <h2>Full-Bleed Layout</h2>
+                    <p>I use relative positioning and negative viewport-width margins to break out of the parent container and touch the edges of the screen.</p>
+                </div>
+
+                <div class="success-card">
+                    <h2>Consistent Vertical Rhythm</h2>
+                    <p>I rely on percentage-based widths and manual left margins to approximate the alignment of the elements above me in the layout.</p>
+                </div>
+
+            </section>
+        </article>
+    </main>
+
+    <footer class="footer-container">
+        <p>&copy; 2026 Layout Implementation. Built for visual consistency.</p>
+    </footer>
+
+</body>
+</html>
