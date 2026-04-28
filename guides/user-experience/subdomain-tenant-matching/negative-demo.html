@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            margin: auto;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .info {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>Tenant Identifier</h1>
+    <input type="text" id="url-src" value="https://dev-acme.internal.com/dashboard">
+    <button id="check-btn">Extract Data</button>
+
+    <div class="info">
+        <p>Tenant: <span id="t-out"></span></p>
+        <p>Environment: <span id="e-out"></span></p>
+    </div>
+</div>
+
+<script>
+    const btn = document.getElementById('check-btn');
+    
+    btn.onclick = function() {
+        const val = document.getElementById('url-src').value;
+        const host = val.split('//')[1].split('/')[0];
+        
+        const regex = /^([a-zA-Z0-9]+)-?([a-zA-Z0-9]+)?\./;
+        const match = host.match(regex);
+
+        if (match) {
+            if (match[2]) {
+                document.getElementById('e-out').innerText = match[1];
+                document.getElementById('t-out').innerText = match[2];
+            } else {
+                document.getElementById('e-out').innerText = 'prod';
+                document.getElementById('t-out').innerText = match[1];
+            }
+        } else {
+            const firstPart = host.substring(0, host.indexOf('.'));
+            document.getElementById('t-out').innerText = firstPart;
+            document.getElementById('e-out').innerText = 'unknown';
+        }
+    };
+</script>
+
+</body>
+</html>

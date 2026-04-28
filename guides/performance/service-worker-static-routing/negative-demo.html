@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Management System</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 400px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 4px;
+            background: #4a90e2;
+            color: white;
+            cursor: pointer;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #eee;
+            border-radius: 4px;
+            min-height: 50px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Data Fetcher</h2>
+    <button onclick="fetchData('/api/v1/telemetry')">Fetch Telemetry</button>
+    <button onclick="fetchData('/assets/video.mp4')">Fetch Video Asset</button>
+    <button onclick="fetchData('/user/profile')">Fetch User Profile</button>
+    <div id="output">Results will appear here...</div>
+</div>
+
+<script>
+    const output = document.getElementById('output');
+
+    async function initialize() {
+        const script = `
+            self.addEventListener('install', (event) => {
+                self.skipWaiting();
+            });
+
+            self.addEventListener('activate', (event) => {
+                event.waitUntil(clients.claim());
+            });
+
+            self.addEventListener('fetch', (event) => {
+                const url = event.request.url;
+
+                if (url.indexOf('/api/v1/telemetry') !== -1 || 
+                    url.endsWith('.mp4') || 
+                    url.includes('/assets/')) {
+                    return;
+                }
+
+                if (url.includes('/user/')) {
+                    event.respondWith(
+                        new Response(JSON.stringify({ status: 'intercepted', data: 'Service Worker Content' }), {
+                            headers: { 'Content-Type': 'application/json', 'X-Handler': 'SW' }
+                        })
+                    );
+                }
+            });
+        `;
+
+        const blob = new Blob([script], { type: 'text/javascript' });
+        const url = URL.createObjectURL(blob);
+        await navigator.serviceWorker.register(url);
+    }
+
+    async function fetchData(path) {
+        output.textContent = 'Fetching...';
+        try {
+            const response = await fetch(path + '?nocache=' + Date.now());
+            const isSW = response.headers.get('X-Handler') === 'SW';
+            output.textContent = (isSW ? '[SW] ' : '[Network] ') + 'Status: ' + response.status;
+        } catch (e) {
+            output.textContent = 'Error: ' + e.message;
+        }
+    }
+
+    initialize();
+</script>
+
+</body>
+</html>

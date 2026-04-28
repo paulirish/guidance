@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URLPattern: Service Worker Bypass Demo</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg: #f1f5f9;
+            --text: #0f172a;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .test-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            width: 90%;
+        }
+        h1 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+        p {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+        .test-status {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        .status-supported { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .status-unsupported { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        
+        .test-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        button {
+            border: none;
+            padding: 0.8rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-trigger-bypass { background: var(--warning); }
+        .test-trigger-handle { background: var(--primary); }
+        button:hover { filter: brightness(90%); transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        
+        .test-log {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.75rem;
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #334155;
+        }
+        .log-line { margin-bottom: 0.4rem; border-bottom: 1px solid #334155; padding-bottom: 0.2rem; }
+        .badge {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem;
+            margin-right: 0.5rem;
+            color: white;
+        }
+        .badge-network { background: var(--warning); }
+        .badge-sw { background: var(--success); }
+    </style>
+</head>
+<body>
+
+<div class="test-container">
+    <h1>URLPattern SW Bypass</h1>
+    <p>This demo uses the <strong>URLPattern API</strong> within a Service Worker to identify and bypass specific resource paths (<code>/bypass/*</code>), optimizing load times for static assets.</p>
+
+    <div id="status" class="test-status">Checking API support...</div>
+
+    <div class="test-actions">
+        <button class="test-trigger-bypass" onclick="runTest('/bypass/static/image.png')">
+            <span>Fetch Bypassed Path</span>
+            <small>→ Network Only</small>
+        </button>
+        <button class="test-trigger-handle" onclick="runTest('/api/data/resource')">
+            <span>Fetch Handled Path</span>
+            <small>→ SW Intercepted</small>
+        </button>
+    </div>
+
+    <div id="log" class="test-log"></div>
+</div>
+
+<script>
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+
+    function log(msg, source) {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        const badge = source === 'network' ? '<span class="badge badge-network">NETWORK</span>' : 
+                      source === 'sw' ? '<span class="badge badge-sw">SW_CORE</span>' : '';
+        line.innerHTML = `${badge}${msg}`;
+        logEl.appendChild(line);
+        logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // 1. Feature Detection
+    const isSupported = 'URLPattern' in window && 'serviceWorker' in navigator;
+
+    if (isSupported) {
+        statusEl.textContent = '✅ URLPattern & Service Worker Supported';
+        statusEl.classList.add('status-supported');
+        setupWorker();
+    } else {
+        statusEl.textContent = '❌ URLPattern/SW Not Supported';
+        statusEl.classList.add('status-unsupported');
+    }
+
+    // 2. Service Worker Setup with URLPattern for efficient routing
+    async function setupWorker() {
+        const swScript = `
+            // Define the bypass pattern once for reuse
+            const bypassPattern = new URLPattern({ pathname: '/bypass/*' });
+
+            self.addEventListener('install', (event) => {
+                self.skipWaiting();
+                // Static Routing API (Experimental) - further optimization
+                if (event.addRoutes) {
+                    event.addRoutes([{
+                        condition: { urlPattern: "/bypass/*" },
+                        source: "network"
+                    }]);
+                }
+            });
+
+            self.addEventListener('activate', (event) => {
+                event.waitUntil(clients.claim());
+            });
+
+            self.addEventListener('fetch', (event) => {
+                const url = new URL(event.request.url);
+                
+                // Efficiently check if path matches bypass pattern
+                if (bypassPattern.test(url)) {
+                    // Return nothing to let the browser handle the request via network
+                    return;
+                }
+
+                // Handle other dynamic/cached paths
+                event.respondWith(
+                    new Response(JSON.stringify({ source: 'Service Worker Interception' }), {
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Response-By': 'Service-Worker'
+                        }
+                    })
+                );
+            });
+        `;
+
+        const blob = new Blob([swScript], { type: 'text/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+
+        try {
+            await navigator.serviceWorker.register(swUrl);
+            log('Service Worker active with URLPattern bypass rules.');
+        } catch (err) {
+            log('SW Registration failed: ' + err.message);
+        }
+    }
+
+    // 3. Test Execution
+    async function runTest(path) {
+        log(`Fetching: ${path}...`);
+        
+        try {
+            // Append timestamp to bypass browser cache for the test
+            const requestUrl = `${window.location.origin}${path}?t=${Date.now()}`;
+            const response = await fetch(requestUrl);
+            
+            const handledBySW = response.headers.get('X-Response-By') === 'Service-Worker';
+            
+            if (handledBySW) {
+                log(`Handled by Service Worker (HTTP ${response.status})`, 'sw');
+            } else {
+                // A 404 from the network is expected as the file doesn't exist, 
+                // but the absence of the 'X-Response-By' header confirms the SW was bypassed.
+                log(`Bypassed SW -> Direct Network (HTTP ${response.status})`, 'network');
+            }
+        } catch (err) {
+            log('Fetch Error: ' + err.message);
+        }
+    }
+</script>
+
+</body>
+</html>

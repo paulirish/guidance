@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Router</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 50px;
+        }
+        .nav-bar {
+            background: #fff;
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .nav-bar a {
+            text-decoration: none;
+            color: #007bff;
+            margin: 0 15px;
+            font-weight: bold;
+        }
+        .container {
+            background: #fff;
+            width: 80%;
+            max-width: 600px;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .output-label {
+            font-size: 0.9rem;
+            color: #65676b;
+            margin-bottom: 5px;
+        }
+        .output-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav-bar">
+        <a href="/" data-nav>Home</a>
+        <a href="/user/admin/profile" data-nav>Admin Profile</a>
+        <a href="/posts/hello-world" data-nav>Latest Post</a>
+    </div>
+
+    <div class="container">
+        <div class="output-label">Current View</div>
+        <div id="view-name" class="output-value"></div>
+
+        <div class="output-label">Parameters</div>
+        <div id="params-list" class="output-value"></div>
+    </div>
+
+    <script>
+        const links = document.querySelectorAll('[data-nav]');
+        links.forEach(link => {
+            link.onclick = function(e) {
+                e.preventDefault();
+                const path = this.getAttribute('href');
+                window.history.pushState(null, '', path);
+                sync();
+            };
+        });
+
+        function sync() {
+            const path = window.location.pathname;
+            const view = document.getElementById('view-name');
+            const params = document.getElementById('params-list');
+
+            if (path === '/') {
+                view.innerText = 'Home Dashboard';
+                params.innerText = 'None';
+            } else if (path.substring(0, 6) === '/user/') {
+                const segments = path.split('/');
+                const username = segments[2];
+                const action = segments[3];
+                view.innerText = 'User Management';
+                params.innerText = 'User: ' + username + ', Action: ' + action;
+            } else {
+                const postRegex = /^\/posts\/([a-z0-9-]+)$/;
+                const match = path.match(postRegex);
+                
+                if (match) {
+                    view.innerText = 'Blog Post';
+                    params.innerText = 'Slug: ' + match[1];
+                } else {
+                    view.innerText = 'Not Found';
+                    params.innerText = 'N/A';
+                }
+            }
+        }
+
+        window.onpopstate = sync;
+        sync();
+    </script>
+</body>
+</html>
