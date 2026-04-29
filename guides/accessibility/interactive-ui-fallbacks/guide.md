@@ -96,6 +96,31 @@ MANDATORY: Structure your HTML so that the core functionality is available via s
 </script>
 ```
 
+### Integration with component libraries (e.g., Headless UI, Radix)
+When using "headless" or unstyled component libraries, the components often rely on JavaScript to manage state and accessibility attributes (like `aria-expanded`). Using the `scripting` media query ensures that these components are only visible once the environment is capable of supporting them, preventing "dead" UI that appears interactive but doesn't respond to user input.
+
+```css
+/* 
+   Hide the library-managed component by default to prevent 
+   users from interacting with it before JS is ready.
+*/
+.radix-popover-content,
+.headless-ui-menu-items {
+  display: none;
+}
+
+@media (scripting: enabled) {
+  /* 
+     Show the component once we know scripting is available. 
+     The library will then take over the actual toggle logic.
+  */
+  .radix-popover-content,
+  .headless-ui-menu-items {
+    display: block;
+  }
+}
+```
+
 ## Fallback strategies
 
 {{ BASELINE_STATUS("scripting") }}

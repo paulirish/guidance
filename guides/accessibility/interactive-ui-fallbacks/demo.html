@@ -113,6 +113,32 @@
         <p><strong>Note:</strong> Please select and copy the text above manually. Interactive features are disabled because your browser does not support scripting or it is currently turned off.</p>
       </div>
     </section>
+
+    <!-- Simulated Library Component (e.g., Headless UI / Radix) -->
+    <section class="test-component-container" style="margin-top: 2rem;">
+      <h3>Advanced Component (Simulated Library)</h3>
+      <p>This component simulates a library-managed widget that requires JS for accessibility and interaction.</p>
+      
+      <div class="library-component-wrapper">
+        <!-- 
+           The 'scripting' media query ensures this isn't visible 
+           as a "broken" button if JS isn't available to manage its state.
+        -->
+        <div class="test-scripting-enabled-ui">
+          <button class="test-interactive-action" style="background-color: #6366f1;">
+            Open Library Menu
+          </button>
+        </div>
+
+        <div class="test-scripting-none-ui">
+          <ul style="list-style: none; padding: 0; border: 1px solid #ddd; border-radius: 4px;">
+            <li style="padding: 0.5rem; border-bottom: 1px solid #eee;">Static Menu Option 1</li>
+            <li style="padding: 0.5rem; border-bottom: 1px solid #eee;">Static Menu Option 2</li>
+            <li style="padding: 0.5rem;">Static Menu Option 3</li>
+          </ul>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script>
