@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scripting Media Query Demo</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #333;
+    }
+
+    .test-component-container {
+      border: 2px solid #eee;
+      border-radius: 12px;
+      padding: 2rem;
+      background-color: #fff;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+
+    .test-data-display {
+      background: #f4f4f9;
+      padding: 1rem;
+      border-radius: 6px;
+      font-family: monospace;
+      margin-bottom: 1.5rem;
+      border: 1px solid #ddd;
+      word-break: break-all;
+    }
+
+    /* 
+       The 'scripting' media query allows us to target users 
+       based on JS availability directly in CSS.
+    */
+
+    /* 1. Define the Scripting Enabled Interface (Hidden by default) */
+    .test-scripting-enabled-ui {
+      display: none;
+    }
+
+    /* 2. Define the Scripting None/Fallback Interface (Visible by default) */
+    .test-scripting-none-ui {
+      display: block;
+      color: #666;
+      font-size: 0.9rem;
+      padding: 1rem;
+      background: #fff8e1;
+      border-radius: 4px;
+    }
+
+    /* 3. Media Query Switch */
+    @media (scripting: enabled) {
+      .test-scripting-enabled-ui {
+        display: block;
+      }
+      .test-scripting-none-ui {
+        display: none;
+      }
+    }
+
+    .test-interactive-action {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: background-color 0.2s;
+    }
+
+    .test-interactive-action:hover {
+      background-color: #1d4ed8;
+    }
+
+    #test-feedback-message {
+      margin-top: 1rem;
+      color: #059669;
+      font-weight: 500;
+      height: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Feature: <code>scripting</code> Media Query</h1>
+    <p>Using CSS to toggle between interactive components and static fallbacks based on JavaScript availability.</p>
+  </header>
+
+  <main>
+    <section class="test-component-container">
+      <h3>Installation Command</h3>
+      <div class="test-data-display">
+        <code id="test-target-text">npm install --save-dev @example/tooling</code>
+      </div>
+
+      <!-- This section is only functional if scripting is enabled -->
+      <div class="test-scripting-enabled-ui">
+        <button class="test-interactive-action" id="test-action-button">
+          Copy Command
+        </button>
+        <div id="test-feedback-message"></div>
+      </div>
+
+      <!-- This section is shown if scripting is disabled -->
+      <div class="test-scripting-none-ui">
+        <p><strong>Note:</strong> Please select and copy the text above manually. Interactive features are disabled because your browser does not support scripting or it is currently turned off.</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /**
+     * This script only runs if scripting is enabled.
+     * The CSS media query (scripting: enabled) will show the interactive 
+     * button that triggers this functionality.
+     */
+    const button = document.getElementById('test-action-button');
+    const feedback = document.getElementById('test-feedback-message');
+    const targetText = document.getElementById('test-target-text').textContent;
+
+    if (button) {
+      button.addEventListener('click', () => {
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(targetText).then(() => {
+            feedback.textContent = '✓ Copied to clipboard!';
+            setTimeout(() => { feedback.textContent = ''; }, 3000);
+          }).catch(() => {
+            feedback.textContent = '❌ Failed to copy.';
+            feedback.style.color = '#dc2626';
+          });
+        } else {
+          feedback.textContent = '❌ Clipboard API not supported.';
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

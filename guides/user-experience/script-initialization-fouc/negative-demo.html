@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Analytics Portal</title>
+<script>
+document.documentElement.className = "js-active";
+</script>
+<style>
+.main-wrapper {
+display: none;
+}
+.js-active .main-wrapper {
+display: block;
+}
+.dynamic-widget {
+background-color: #f4f4f4;
+border: 1px solid #ddd;
+}
+.footer {
+padding: 20px;
+background: #333;
+color: white;
+}
+</style>
+</head>
+<body>
+<div class="main-wrapper">
+<h1>System Statistics</h1>
+<p>Below is the real-time data visualization of the current system load.</p>
+<div id="load-chart" class="dynamic-widget">
+Initializing analytics engine...
+</div>
+<div class="footer">
+© 2026 Data Corp. All rights reserved.
+</div>
+</div>
+<script>
+window.addEventListener('load', () => {
+const chartElement = document.getElementById('load-chart');
+setTimeout(() => {
+chartElement.style.height = '500px';
+chartElement.style.backgroundColor = '#007bff';
+chartElement.innerHTML = '<div style="color:white; padding: 20px;">Load: 42%</div>';
+}, 2000);
+});
+</script>
+</body>
+</html>

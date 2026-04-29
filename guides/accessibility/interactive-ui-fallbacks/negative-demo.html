@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Dashboard</title>
+  <style>
+    body {
+      font-family: "Arial", sans-serif;
+      padding: 40px;
+      background: #f0f0f0;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .interactive-element {
+      display: none;
+    }
+
+    .js .interactive-element {
+      display: block;
+    }
+
+    .fallback-message {
+      padding: 15px;
+      background: #ffeb3b;
+      border: 1px solid #fbc02d;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <noscript>
+    <div class="fallback-message">
+      Warning: This application requires JavaScript to function properly. Please enable it in your browser settings.
+    </div>
+  </noscript>
+
+  <div class="card">
+    <h1>System Status</h1>
+    <p>Current status of the underlying infrastructure components.</p>
+    
+    <div class="interactive-element">
+      <button id="refresh-btn">Refresh Data</button>
+      <div id="status-display">Status: Operational</div>
+    </div>
+  </div>
+
+  <script>
+    document.documentElement.classList.remove('no-js');
+    document.documentElement.classList.add('js');
+
+    const btn = document.getElementById('refresh-btn');
+    const display = document.getElementById('status-display');
+
+    if (btn) {
+      btn.addEventListener('click', () => {
+        display.textContent = 'Status: Updating...';
+        setTimeout(() => {
+          display.textContent = 'Status: Operational';
+        }, 1000);
+      });
+    }
+  </script>
+
+</body>
+</html>
