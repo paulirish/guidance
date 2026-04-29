@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Preserve Accessibility Settings with CSS revert</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            color: #333;
+        }
+
+        .demo-box {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        /* 
+           Simulated "Author Styles" 
+           These might have poor contrast or override user preferences 
+        */
+        .custom-theme {
+            color: #999; /* Low contrast grey */
+            background-color: #f9f9f9;
+            font-size: 13px;
+            padding: 20px;
+            border: 1px solid #eee;
+        }
+
+        /* 
+           Using 'revert' to roll back to the User or User-Agent origin.
+           If a user has defined high-contrast or large-font settings in their browser,
+           'revert' will restore those values specifically.
+        */
+        .test-target-element.is-reverted {
+            color: revert;
+            background-color: revert;
+            font-size: revert;
+            /* Note: padding and border are not usually set in User-Agent for divs, 
+               so they may revert to initial if not inherited. */
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 15px;
+            cursor: pointer;
+            border: 1px solid #333;
+            background: #fff;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #eee;
+        }
+
+        code {
+            background: #eee;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .status-indicator {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #d9534f;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Preserve User Accessibility with <code>revert</code></h1>
+    
+    <p>
+        This demo illustrates how the <code>revert</code> keyword restores a property's value to whatever 
+        was defined in the <strong>User</strong> stylesheet (accessibility settings) or the 
+        <strong>User-Agent</strong> (browser default), effectively ignoring the website's custom "Author" styles.
+    </p>
+
+    <div class="controls">
+        <button class="test-apply-author" onclick="applyTheme()">Apply Custom Theme (Low Contrast)</button>
+        <button class="test-apply-revert" onclick="applyRevert()">Apply <code>revert</code></button>
+        <button class="test-reset" onclick="resetDemo()">Reset to Default</button>
+    </div>
+
+    <div class="demo-box">
+        <div id="target" class="test-target-element">
+            <h2 class="test-heading">Sample Content</h2>
+            <p>
+                This element is the target. When "Apply Custom Theme" is clicked, it uses 
+                author-defined styles. When "Apply revert" is clicked, it uses the <code>revert</code> 
+                keyword to ignore those author styles and favor your browser or system accessibility preferences.
+            </p>
+            <p>
+                <em>Try changing your browser's default font size or color settings to see <code>revert</code> in action.</em>
+            </p>
+        </div>
+    </div>
+
+    <div id="status" class="status-indicator">State: Browser Default</div>
+
+    <script>
+        const target = document.getElementById('target');
+        const status = document.getElementById('status');
+
+        function applyTheme() {
+            target.className = 'test-target-element custom-theme';
+            status.textContent = 'State: Custom Author Theme Applied (Author Origin)';
+            status.style.color = '#f0ad4e';
+        }
+
+        function applyRevert() {
+            // We keep the custom-theme class but add is-reverted which uses 'revert'
+            target.className = 'test-target-element custom-theme is-reverted';
+            status.textContent = 'State: Reverted to User/UA Settings (Accessibility Preserved)';
+            status.style.color = '#5cb85c';
+        }
+
+        function resetDemo() {
+            target.className = 'test-target-element';
+            status.textContent = 'State: Browser Default (User-Agent Origin)';
+            status.style.color = '#d9534f';
+        }
+    </script>
+
+</body>
+</html>

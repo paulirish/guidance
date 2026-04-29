@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Style Isolation</title>
+    <style>
+        body {
+            font-family: "Courier New", monospace;
+            background-color: #222;
+            color: #0f0;
+            padding: 50px;
+        }
+
+        h1, h2 {
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            color: #ff00ff;
+        }
+
+        p {
+            font-size: 18px;
+            border: 1px solid #0f0;
+            padding: 10px;
+            background-color: #333;
+        }
+
+        button {
+            background: linear-gradient(to bottom, #ff0000, #990000);
+            color: #fff;
+            padding: 20px 40px;
+            border: 5px outset #f00;
+            font-weight: bold;
+            cursor: crosshair;
+        }
+
+        .reset-component-initial {
+            all: initial;
+            border: 2px solid white;
+            margin: 20px;
+        }
+
+        .reset-component-unset {
+            all: unset;
+            display: block;
+            border: 2px solid white;
+            margin: 20px;
+            padding: 20px;
+        }
+
+        .reset-component-manual {
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: none;
+            color: black;
+            font-family: sans-serif;
+            display: block;
+        }
+
+        .reset-component-manual p {
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: none;
+            color: black;
+        }
+
+        .reset-component-manual button {
+            background: gray;
+            color: white;
+            border: 1px solid black;
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Global Styles Applied</h1>
+        <p>This is a globally styled paragraph with a border and monospace font.</p>
+        <button>Global Button</button>
+    </header>
+
+    <div class="reset-component-initial">
+        <h2>Reset with initial</h2>
+        <p>This div and its content use all: initial. Notice how the div and paragraph behaviors change unexpectedly.</p>
+        <button>Initial Button</button>
+    </div>
+
+    <div class="reset-component-unset">
+        <h2>Reset with unset</h2>
+        <p>This component uses all: unset. It still inherits some properties like font-family and color from the body.</p>
+        <button>Unset Button</button>
+    </div>
+
+    <div class="reset-component-manual">
+        <h2>Manual Reset</h2>
+        <p>This component uses manual property overrides to try and simulate a clean state.</p>
+        <button>Manual Button</button>
+    </div>
+
+</body>
+</html>

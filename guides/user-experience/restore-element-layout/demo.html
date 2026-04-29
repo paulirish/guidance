@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restore Layout with display: revert</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: var(--bg);
+        }
+
+        .demo-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .support-warning {
+            display: none;
+            background-color: #fef2f2;
+            color: #991b1b;
+            padding: 1rem;
+            border: 1px solid #fecaca;
+            margin-bottom: 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+
+        @supports not (display: revert) {
+            .support-warning {
+                display: block;
+            }
+        }
+
+        .controls {
+            margin-bottom: 2rem;
+        }
+
+        .test-dialog-trigger {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        .test-dialog-trigger:hover {
+            background-color: #1d4ed8;
+        }
+
+        .demo-canvas {
+            border: 2px dashed var(--border);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            min-height: 150px;
+        }
+
+        /* 
+           CORE LOGIC:
+           1. Elements are hidden by default via author styles.
+        */
+        .test-target-element {
+            display: none;
+        }
+
+        /* 
+           2. We reveal them using 'revert'.
+           This tells the browser to ignore the 'display: none' from this level 
+           of the cascade and go back to the User Agent (default) value.
+        */
+        .is-revealed {
+            display: revert;
+            /* Visual feedback for the demo */
+            outline: 2px solid var(--success);
+            background-color: #f0fdf4;
+            position: relative;
+        }
+
+        /* Utility styles for visualization */
+        div.test-target-element {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border-radius: 0.25rem;
+        }
+
+        span.test-target-element {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            margin-right: 0.25rem;
+        }
+
+        ul {
+            margin-top: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="demo-card">
+        <header>
+            <h1>Feature: <code>display: revert</code></h1>
+            <p>Restore an element's native layout behavior without manually tracking if it was a block, inline, list-item, or table-cell.</p>
+        </header>
+
+        <div class="support-warning">
+            <strong>Note:</strong> Your browser may not support the <code>revert</code> value. 
+            The demo requires a modern browser (Chrome 84+, Firefox 67+, Safari 9.1+).
+        </div>
+
+        <div class="controls">
+            <button class="test-dialog-trigger" onclick="toggleDisplay()">Reveal Elements</button>
+        </div>
+
+        <div class="demo-canvas">
+            <!-- A Block Element -->
+            <div class="test-target-element">
+                <strong>I am a DIV:</strong> I should automatically restore to <code>display: block</code> and fill the width.
+            </div>
+
+            <!-- Inline Elements -->
+            <span class="test-target-element">
+                <strong>Span 1:</strong> I am <code>inline</code>...
+            </span>
+            <span class="test-target-element">
+                <strong>Span 2:</strong> ...and I stay next to you.
+            </span>
+
+            <!-- A List Item -->
+            <ul>
+                <li class="test-target-element">
+                    <strong>I am an LI:</strong> I should restore my <code>list-item</code> behavior and bullet point.
+                </li>
+            </ul>
+        </div>
+
+        <footer>
+            <p style="margin-top: 1.5rem; font-size: 0.875rem; color: #64748b;">
+                Notice that all elements above are toggled with the exact same class. 
+                Using <code>display: revert</code> ensures a <code>&lt;span&gt;</code> doesn't 
+                accidentally become a block and a <code>&lt;li&gt;</code> doesn't lose its marker.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleDisplay() {
+            const elements = document.querySelectorAll('.test-target-element');
+            const btn = document.querySelector('.test-dialog-trigger');
+            
+            const isRevealing = btn.textContent === 'Reveal Elements';
+            
+            elements.forEach(el => {
+                el.classList.toggle('is-revealed');
+            });
+
+            btn.textContent = isRevealing ? 'Hide Elements' : 'Reveal Elements';
+        }
+    </script>
+</body>
+</html>

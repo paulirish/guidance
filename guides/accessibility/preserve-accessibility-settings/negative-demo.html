@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Reset Demo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            color: #000;
+            background: #fff;
+        }
+
+        .container {
+            border: 1px solid black;
+            padding: 10px;
+        }
+
+        .styled-element {
+            color: #ff0000;
+            background-color: #00ff00;
+            font-size: 24px;
+            outline: 5px solid blue;
+        }
+
+        .styled-element.reset {
+            color: initial;
+            background-color: initial;
+            font-size: initial;
+            outline: none;
+        }
+
+        .styled-element.hardcoded-reset {
+            color: black;
+            background-color: white;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .actions {
+            margin-top: 20px;
+        }
+
+        button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Reset Examples</h1>
+    
+    <div class="actions">
+        <button onclick="applyStyle()">Set Styles</button>
+        <button onclick="applyInitial()">Use Initial</button>
+        <button onclick="applyHardcoded()">Use Hardcoded Defaults</button>
+    </div>
+
+    <div class="container">
+        <div id="target" class="">
+            <h2>Content Area</h2>
+            <p>
+                This text will change based on the buttons clicked above.
+                It uses standard reset patterns that ignore user-defined styles.
+            </p>
+        </div>
+    </div>
+
+    <div id="info">Current State: Default</div>
+
+    <script>
+        const target = document.getElementById('target');
+        const info = document.getElementById('info');
+
+        function applyStyle() {
+            target.className = 'styled-element';
+            info.innerText = 'Current State: Custom Styles Applied';
+        }
+
+        function applyInitial() {
+            target.className = 'styled-element reset';
+            info.innerText = 'Current State: Reset using initial';
+        }
+
+        function applyHardcoded() {
+            target.className = 'styled-element hardcoded-reset';
+            info.innerText = 'Current State: Reset using hardcoded values';
+        }
+    </script>
+
+</body>
+</html>

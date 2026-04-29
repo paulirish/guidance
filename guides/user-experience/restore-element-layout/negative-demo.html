@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Element Layout Management</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: var(--bg);
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+        }
+
+        .controls {
+            margin-bottom: 2rem;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .display-area {
+            border: 2px dashed var(--border);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            min-height: 150px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .box {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background-color: #f1f5f9;
+        }
+
+        .chip {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid var(--border);
+            margin-right: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Manual Layout Control</h1>
+            <p>Example of managing element visibility through explicit state tracking and hardcoded display values.</p>
+        </header>
+
+        <div class="controls">
+            <button class="btn" onclick="toggleElements()">Show All Elements</button>
+        </div>
+
+        <div class="display-area">
+            <div id="element-1" class="box hidden" data-original-display="block">
+                <strong>Block Element:</strong> Manually restored to block.
+            </div>
+
+            <span id="element-2" class="chip hidden" data-original-display="inline">
+                <strong>Inline 1</strong>
+            </span>
+            <span id="element-3" class="chip hidden" data-original-display="inline">
+                <strong>Inline 2</strong>
+            </span>
+
+            <ul>
+                <li id="element-4" class="hidden" data-original-display="list-item">
+                    <strong>List Item:</strong> Manually restored to list-item.
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let isVisible = false;
+
+        function toggleElements() {
+            const elements = [
+                document.getElementById('element-1'),
+                document.getElementById('element-2'),
+                document.getElementById('element-3'),
+                document.getElementById('element-4')
+            ];
+            const btn = document.querySelector('.btn');
+            
+            isVisible = !isVisible;
+
+            elements.forEach(el => {
+                if (isVisible) {
+                    el.classList.remove('hidden');
+                    const originalMode = el.getAttribute('data-original-display');
+                    
+                    if (originalMode === 'block') {
+                        el.style.display = 'block';
+                    } else if (originalMode === 'inline') {
+                        el.style.display = 'inline';
+                    } else if (originalMode === 'list-item') {
+                        el.style.display = 'list-item';
+                    }
+                } else {
+                    el.classList.add('hidden');
+                    el.style.display = 'none';
+                }
+            });
+
+            btn.textContent = isVisible ? 'Hide All Elements' : 'Show All Elements';
+        }
+    </script>
+</body>
+</html>

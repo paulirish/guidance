@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS revert Value - Style Isolation Demo</title>
+    <style>
+        /* --- 1. Aggressive Global/Third-Party Framework Styles --- */
+        /* These styles simulate a heavy CSS framework that "pollutes" standard elements */
+        body {
+            font-family: "Comic Sans MS", "Chalkboard SE", cursive;
+            background-color: #f0f4f8;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        h1, h2 {
+            color: #2d3748;
+            border-bottom: 2px solid #cbd5e0;
+        }
+
+        p {
+            color: #e53e3e; /* Aggressive red */
+            font-weight: bold;
+            font-size: 1.25rem;
+            margin: 1rem 0;
+        }
+
+        button {
+            background-color: #48bb78; /* Bright green */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: 3px solid #2f855a;
+            border-radius: 9999px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s;
+        }
+
+        button:active {
+            transform: translateY(2px);
+        }
+
+        /* --- 2. Isolation Logic using 'revert' --- */
+        /* 
+           The 'revert' value rolls back the cascaded value to the value from the 
+           previous origin. For 'author' styles, this effectively rolls back to 
+           the User Agent (Browser) default styles.
+        */
+        .test-target-element.test-isolated-component {
+            all: revert; /* Revert the container itself */
+            
+            /* After reverting, we explicitly set layout properties we want to keep */
+            display: block;
+            margin-top: 3rem;
+            padding: 1.5rem;
+            border: 1px solid #718096;
+            background-color: white;
+        }
+
+        /* Apply revert to all children to ensure they escape global element selectors like 'p' and 'button' */
+        .test-isolated-component * {
+            all: revert;
+        }
+
+        /* Fallback / Feature Detection Message */
+        .feature-detection {
+            all: revert;
+            display: none;
+            background: #fff5f5;
+            color: #c53030;
+            padding: 1rem;
+            border: 1px solid #feb2b2;
+            margin-bottom: 1rem;
+            font-family: sans-serif;
+        }
+
+        @supports not (all: revert) {
+            .feature-detection {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="feature-detection">
+        <strong>Note:</strong> Your browser does not appear to support the <code>revert</code> keyword. The isolation demo may not render as intended.
+    </div>
+
+    <header style="all: revert; display: block; font-family: sans-serif; margin-bottom: 2rem;">
+        <h1>Feature: <code>revert</code> value</h1>
+        <p style="all: revert; color: #4a5568;">This demo demonstrates how to isolate a component from global CSS (like the red text and green buttons seen below) by reverting styles to the browser's native defaults.</p>
+    </header>
+
+    <section>
+        <h2>Elements with Global Styles</h2>
+        <p>This paragraph is styled by the global "framework" (Red & Bold).</p>
+        <button>Framework Styled Button</button>
+    </section>
+
+    <!-- The Isolated Component -->
+    <section class="test-target-element test-isolated-component">
+        <h2>Native Browser Styling (Isolated)</h2>
+        <p>This paragraph is inside the isolated component. Notice it has returned to the browser's default black serif font and standard margins, ignoring the global red styling.</p>
+        
+        <button class="test-target-button">Browser Default Button</button>
+        
+        <div style="margin-top: 1rem;">
+            <small>The button above renders with the native OS/browser appearance instead of the green "framework" style.</small>
+        </div>
+    </section>
+
+    <footer style="all: revert; display: block; margin-top: 4rem; font-size: 0.8rem; color: #718096; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+        <p>Reference Implementation: CSS <code>all: revert</code> for component style encapsulation.</p>
+    </footer>
+
+</body>
+</html>
