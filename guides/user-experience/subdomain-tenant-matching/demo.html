@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Routing Demo (URLPattern)</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --success: #16a34a;
+            --error: #dc2626;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        h1 { margin-top: 0; font-size: 1.5rem; }
+        p { color: #64748b; }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+
+        .result-panel {
+            display: none;
+            border-top: 2px solid #f1f5f9;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+        }
+
+        .label { color: #64748b; }
+        .value { font-weight: 700; font-family: monospace; }
+
+        .support-warning {
+            background: #fef2f2;
+            color: var(--error);
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #fee2e2;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .samples {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .sample-chip {
+            background: #e2e8f0;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+        }
+
+        .sample-chip:hover { background: #cbd5e1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="support-warning" class="support-warning">
+        <strong>Feature Not Supported:</strong> Your browser does not support the <code>URLPattern</code> API. This demo requires a modern browser (Chrome 95+, Edge 95+).
+    </div>
+
+    <section class="card">
+        <h1>Request Router</h1>
+        <p>This demo uses <code>URLPattern</code> to identify tenants and environments from subdomains in a hostname.</p>
+        
+        <div class="form-group">
+            <label for="url-input">Simulated Request URL</label>
+            <input type="text" id="url-input" class="test-url-input" placeholder="https://acme-prod.demo.io/dashboard" value="https://nike-staging.cloud-app.net/settings">
+        </div>
+
+        <button id="route-btn" class="test-route-btn">Process Request</button>
+
+        <div class="samples">
+            <button class="sample-chip test-sample-link" data-url="https://acme.my-platform.com">acme.my-platform.com</button>
+            <button class="sample-chip test-sample-link" data-url="https://dev-globex.internal.dev/api">dev-globex.internal.dev</button>
+            <button class="sample-chip test-sample-link" data-url="https://marketing-prod.saas.io">marketing-prod.saas.io</button>
+        </div>
+
+        <div id="result-panel" class="result-panel test-result-container">
+            <div class="result-item">
+                <span class="label">Status:</span>
+                <span id="status-msg" class="value test-status-message">Success</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Identified Tenant:</span>
+                <span id="tenant-output" class="value test-tenant-name">—</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Environment:</span>
+                <span id="env-output" class="value test-env-name">—</span>
+            </div>
+            <div class="result-item">
+                <span class="label">Host matched:</span>
+                <span id="host-output" class="value">—</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Logic Explanation</h2>
+        <p>We use two primary patterns for routing:</p>
+        <ol>
+            <li><code>:tenant.example.com</code> - Simple tenant subdomain.</li>
+            <li><code>:env-:tenant.example.com</code> - Environment prefixed tenant.</li>
+        </ol>
+    </section>
+</div>
+
+<script>
+    const input = document.getElementById('url-input');
+    const routeBtn = document.getElementById('route-btn');
+    const resultPanel = document.getElementById('result-panel');
+    const tenantOutput = document.getElementById('tenant-output');
+    const envOutput = document.getElementById('env-output');
+    const statusMsg = document.getElementById('status-msg');
+    const hostOutput = document.getElementById('host-output');
+    const supportWarning = document.getElementById('support-warning');
+
+    // Feature Detection
+    if (!window.URLPattern) {
+        supportWarning.style.display = 'block';
+    }
+
+    // Define patterns for different hosting structures
+    // Pattern 1: {environment}-{tenant}.domain.tld
+    const envTenantPattern = new URLPattern({
+        hostname: ':env-:tenant.:domain.:tld'
+    });
+
+    // Pattern 2: {tenant}.domain.tld
+    const simpleTenantPattern = new URLPattern({
+        hostname: ':tenant.:domain.:tld'
+    });
+
+    function processUrl() {
+        const urlString = input.value.trim();
+        let url;
+        
+        try {
+            url = new URL(urlString);
+        } catch (e) {
+            alert("Please enter a valid absolute URL (including https://)");
+            return;
+        }
+
+        resultPanel.style.display = 'block';
+        hostOutput.textContent = url.hostname;
+        
+        // Reset outputs
+        tenantOutput.textContent = 'None';
+        envOutput.textContent = 'Production (Default)';
+        statusMsg.textContent = 'Routed Successfully';
+        statusMsg.style.color = 'var(--success)';
+
+        // Attempt to match Environment + Tenant first (more specific)
+        const envMatch = envTenantPattern.exec(url);
+        if (envMatch && envMatch.hostname.groups.env && envMatch.hostname.groups.tenant) {
+            tenantOutput.textContent = envMatch.hostname.groups.tenant;
+            envOutput.textContent = envMatch.hostname.groups.env;
+            return;
+        }
+
+        // Attempt to match Simple Tenant
+        const tenantMatch = simpleTenantPattern.exec(url);
+        if (tenantMatch && tenantMatch.hostname.groups.tenant) {
+            tenantOutput.textContent = tenantMatch.hostname.groups.tenant;
+            envOutput.textContent = 'Production';
+            return;
+        }
+
+        // Fallback
+        statusMsg.textContent = 'No specific tenant match found';
+        statusMsg.style.color = 'var(--error)';
+        tenantOutput.textContent = 'Generic/Public';
+        envOutput.textContent = 'N/A';
+    }
+
+    routeBtn.addEventListener('click', processUrl);
+
+    // Handle sample clicks
+    document.querySelectorAll('.test-sample-link').forEach(btn => {
+        btn.addEventListener('click', () => {
+            input.value = btn.dataset.url;
+            processUrl();
+        });
+    });
+
+    // Initial run if value exists
+    if (input.value) processUrl();
+</script>
+
+</body>
+</html>

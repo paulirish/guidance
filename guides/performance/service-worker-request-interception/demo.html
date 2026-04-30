@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URLPattern Network Interception Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            color: #333;
+        }
+        section {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        h1 { margin-top: 0; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        button:hover { background: #0056b3; }
+        button:active { background: #004085; }
+        .test-response-output {
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            padding: 1rem;
+            border-radius: 4px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            color: #212529;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .status-supported { background: #d4edda; color: #155724; }
+        .status-unsupported { background: #f8d7da; color: #721c24; }
+        code { background: #e9ecef; padding: 0.2rem 0.4rem; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>URLPattern Interception</h1>
+        <div id="feature-support"></div>
+    </header>
+
+    <main>
+        <section>
+            <p>This demo uses a <strong>Service Worker</strong> and the <strong>URLPattern API</strong> to intercept network requests based on structured path patterns.</p>
+            
+            <div class="controls">
+                <button class="test-fetch-book-trigger">Fetch /api/books/101</button>
+                <button class="test-fetch-user-trigger">Fetch /api/users/jdoe/profile</button>
+                <button class="test-fetch-unmatched-trigger">Fetch /api/other/resource</button>
+            </div>
+
+            <div class="test-response-output">Click a button to see the intercepted response.</div>
+        </section>
+
+        <section>
+            <h3>How it works</h3>
+            <p>The Service Worker defines patterns like <code>/api/books/:id</code>. When a request matches, the worker extracts the parameters (like <code>id</code>) and returns a synthetic response without ever hitting the real network.</p>
+        </section>
+    </main>
+
+    <!-- Service Worker Logic in a Script Block -->
+    <script id="service-worker-source" type="text/plain">
+        self.addEventListener('install', event => {
+            self.skipWaiting();
+        });
+
+        self.addEventListener('activate', event => {
+            event.waitUntil(clients.claim());
+        });
+
+        // Initialize URLPatterns
+        const bookPattern = new URLPattern({ pathname: '/api/books/:id' });
+        const userPattern = new URLPattern({ pathname: '/api/users/:username/:action' });
+
+        self.addEventListener('fetch', event => {
+            const url = new URL(event.request.url);
+
+            // Match Book API
+            const bookMatch = bookPattern.exec(url);
+            if (bookMatch) {
+                const bookId = bookMatch.pathname.groups.id;
+                return event.respondWith(new Response(JSON.stringify({
+                    source: 'Service Worker (URLPattern)',
+                    matchType: 'Book Details',
+                    extractedId: bookId,
+                    timestamp: new Date().toISOString()
+                }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+            }
+
+            // Match User API
+            const userMatch = userPattern.exec(url);
+            if (userMatch) {
+                const { username, action } = userMatch.pathname.groups;
+                return event.respondWith(new Response(JSON.stringify({
+                    source: 'Service Worker (URLPattern)',
+                    matchType: 'User Action',
+                    user: username,
+                    requestedAction: action,
+                    timestamp: new Date().toISOString()
+                }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+            }
+
+            // Generic API Interceptor
+            if (url.pathname.startsWith('/api/')) {
+                return event.respondWith(new Response(JSON.stringify({
+                    source: 'Service Worker (Generic)',
+                    message: 'This path was not matched by specific URLPatterns but was caught by the API filter.',
+                    path: url.pathname
+                }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+            }
+        });
+    </script>
+
+    <script>
+        const output = document.querySelector('.test-response-output');
+        const supportDiv = document.getElementById('feature-support');
+
+        function checkSupport() {
+            const hasSW = 'serviceWorker' in navigator;
+            const hasURLPattern = 'URLPattern' in window;
+
+            if (hasSW && hasURLPattern) {
+                supportDiv.innerHTML = '<span class="status-badge status-supported">✓ URLPattern & Service Worker Supported</span>';
+                return true;
+            } else {
+                supportDiv.innerHTML = '<span class="status-badge status-unsupported">✕ URLPattern or Service Worker not supported in this browser.</span>';
+                return false;
+            }
+        }
+
+        async function setupServiceWorker() {
+            if (!checkSupport()) return;
+
+            try {
+                const swCode = document.getElementById('service-worker-source').textContent;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+
+                const registration = await navigator.serviceWorker.register(swUrl);
+                await navigator.serviceWorker.ready;
+
+                // If this is the first load, the SW might not be controlling the page yet
+                if (!navigator.serviceWorker.controller) {
+                    output.textContent = "Service Worker registered. Reloading to take control...";
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    output.textContent = "Ready. Click the buttons to test interception.";
+                }
+            } catch (err) {
+                output.textContent = "Service Worker initialization failed: " + err.message;
+            }
+        }
+
+        async function performFetch(path) {
+            output.textContent = `Requesting ${path}...`;
+            try {
+                const response = await fetch(path);
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                output.textContent = "Fetch error: " + err.message + "\n\nNote: In some environments, Blob-based Service Workers may be restricted. Ensure you are running on localhost or via HTTPS.";
+            }
+        }
+
+        // Event Listeners
+        document.querySelector('.test-fetch-book-trigger').onclick = () => performFetch('/api/books/101');
+        document.querySelector('.test-fetch-user-trigger').onclick = () => performFetch('/api/users/jdoe/profile');
+        document.querySelector('.test-fetch-unmatched-trigger').onclick = () => performFetch('/api/other/resource');
+
+        // Start
+        setupServiceWorker();
+    </script>
+</body>
+</html>

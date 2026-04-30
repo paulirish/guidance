@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Interception Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            color: #333;
+        }
+        section {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        h1 { margin-top: 0; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        button:hover { background: #0056b3; }
+        button:active { background: #004085; }
+        .test-response-output {
+            background: #f8f9fa;
+            border: 1px solid #eee;
+            padding: 1rem;
+            border-radius: 4px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9rem;
+            color: #212529;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Request Interception</h1>
+        <div id="feature-support">
+            <span class="status-badge">✓ System Ready</span>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <p>This implementation uses manual string parsing and regular expressions within a Service Worker to intercept and process API requests.</p>
+            
+            <div class="controls">
+                <button class="test-fetch-book-trigger">Fetch /api/books/101</button>
+                <button class="test-fetch-user-trigger">Fetch /api/users/jdoe/profile</button>
+                <button class="test-fetch-unmatched-trigger">Fetch /api/other/resource</button>
+            </div>
+
+            <div class="test-response-output">Click a button to see the intercepted response.</div>
+        </section>
+
+        <section>
+            <h3>How it works</h3>
+            <p>The Service Worker analyzes the request URL using <code>split()</code> and <code>indexOf()</code>. It then extracts parameters by index from the resulting array to generate responses.</p>
+        </section>
+    </main>
+
+    <script id="service-worker-source" type="text/plain">
+        self.addEventListener('install', event => {
+            self.skipWaiting();
+        });
+
+        self.addEventListener('activate', event => {
+            event.waitUntil(clients.claim());
+        });
+
+        self.addEventListener('fetch', event => {
+            const url = event.request.url;
+
+            if (url.indexOf('/api/books/') !== -1) {
+                const parts = url.split('/');
+                const bookId = parts[parts.length - 1];
+                
+                return event.respondWith(new Response(JSON.stringify({
+                    source: 'Service Worker',
+                    method: 'String Splitting',
+                    extractedId: bookId,
+                    timestamp: new Date().toISOString()
+                }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+            }
+
+            const userRegex = /\/api\/users\/([^\/]+)\/([^\/]+)/;
+            const userMatch = url.match(userRegex);
+            
+            if (userMatch) {
+                const username = userMatch[1];
+                const action = userMatch[2];
+                
+                return event.respondWith(new Response(JSON.stringify({
+                    source: 'Service Worker',
+                    method: 'Regular Expression',
+                    user: username,
+                    requestedAction: action,
+                    timestamp: new Date().toISOString()
+                }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+            }
+
+            if (url.startsWith('https://' + self.location.host + '/api/')) {
+                return event.respondWith(new Response(JSON.stringify({
+                    source: 'Service Worker (Generic)',
+                    message: 'Caught by startsWith check.',
+                    path: url
+                }), {
+                    headers: { 'Content-Type': 'application/json' }
+                }));
+            }
+        });
+    </script>
+
+    <script>
+        const output = document.querySelector('.test-response-output');
+
+        async function setupServiceWorker() {
+            try {
+                const swCode = document.getElementById('service-worker-source').textContent;
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+
+                await navigator.serviceWorker.register(swUrl);
+                await navigator.serviceWorker.ready;
+
+                if (!navigator.serviceWorker.controller) {
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    output.textContent = "Ready. Click the buttons to test manual interception.";
+                }
+            } catch (err) {
+                output.textContent = "Initialization failed.";
+            }
+        }
+
+        async function performFetch(path) {
+            output.textContent = `Requesting ${path}...`;
+            try {
+                const response = await fetch(path);
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                output.textContent = "Fetch error: " + err.message;
+            }
+        }
+
+        document.querySelector('.test-fetch-book-trigger').onclick = () => performFetch('/api/books/101');
+        document.querySelector('.test-fetch-user-trigger').onclick = () => performFetch('/api/users/jdoe/profile');
+        document.querySelector('.test-fetch-unmatched-trigger').onclick = () => performFetch('/api/other/resource');
+
+        setupServiceWorker();
+    </script>
+</body>
+</html>
