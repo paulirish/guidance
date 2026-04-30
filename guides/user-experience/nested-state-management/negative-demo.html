@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State Management Demo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #eee;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .box {
+            background: white;
+            padding: 15px;
+            border: 1px solid #ccc;
+            flex: 1;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        .msg {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="box">
+        <h3>Primary Data</h3>
+        <pre id="primaryView"></pre>
+    </div>
+    <div class="box">
+        <h3>Temporary Buffer</h3>
+        <pre id="bufferView"></pre>
+    </div>
+</div>
+
+<div>
+    <button id="makeBuffer">Generate Buffer</button>
+    <button id="modifyBuffer">Update Nested Data</button>
+    <button id="jsonMethod">Apply JSON Logic</button>
+</div>
+
+<div id="feedback" class="msg"></div>
+
+<script>
+    const primaryView = document.getElementById('primaryView');
+    const bufferView = document.getElementById('bufferView');
+    const makeBuffer = document.getElementById('makeBuffer');
+    const modifyBuffer = document.getElementById('modifyBuffer');
+    const jsonMethod = document.getElementById('jsonMethod');
+    const feedback = document.getElementById('feedback');
+
+    let state = {
+        meta: {
+            version: 1,
+            auth: {
+                roles: ['user'],
+                timestamp: new Date()
+            }
+        },
+        items: new Set(['init'])
+    };
+
+    let buffer = null;
+
+    function render() {
+        primaryView.textContent = JSON.stringify(state, (key, value) => 
+            value instanceof Set ? Array.from(value) : value, 2);
+        
+        if (buffer) {
+            bufferView.textContent = JSON.stringify(buffer, (key, value) => 
+                value instanceof Set ? Array.from(value) : value, 2);
+        } else {
+            bufferView.textContent = 'Empty';
+        }
+    }
+
+    makeBuffer.onclick = () => {
+        buffer = { ...state };
+        feedback.textContent = 'Buffer created using spread operator.';
+        render();
+    };
+
+    modifyBuffer.onclick = () => {
+        if (!buffer) return;
+        buffer.meta.auth.roles.push('admin');
+        if (state.meta.auth.roles.includes('admin')) {
+            feedback.textContent = 'Notice: Modifying buffer changed Primary Data too due to reference sharing.';
+        }
+        render();
+    };
+
+    jsonMethod.onclick = () => {
+        const serialized = JSON.stringify(state);
+        const deserialized = JSON.parse(serialized);
+        
+        state = deserialized;
+        
+        if (!(state.items instanceof Set)) {
+            feedback.textContent = 'Notice: Complex types like Set were converted to Arrays by JSON methods.';
+        }
+        render();
+    };
+
+    render();
+</script>
+
+</body>
+</html>

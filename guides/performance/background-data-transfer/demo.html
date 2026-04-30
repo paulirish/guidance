@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>structuredClone() Background Worker Demo</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #ffffff;
+            --surface: #f8fafc;
+            --border: #e2e8f0;
+            --text: #0f172a;
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            line-height: 1.6;
+        }
+        .demo-card {
+            border: 1px solid var(--border);
+            padding: 2rem;
+            border-radius: 12px;
+            background: var(--surface);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        .test-animation-box {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+            animation: pulse-rotate 2s ease-in-out infinite;
+        }
+        @keyframes pulse-rotate {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+        }
+        button {
+            padding: 0.625rem 1.25rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+        }
+        .test-start-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+        }
+        .test-start-btn:hover { background-color: #1d4ed8; }
+        .test-reset-btn { background-color: white; }
+        .test-reset-btn:hover { background-color: #f1f5f9; }
+
+        .status-container {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .test-status {
+            font-weight: bold;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        .status-idle { background: #f1f5f9; color: #64748b; }
+        .status-working { background: #fef3c7; color: #d97706; }
+        .status-complete { background: #dcfce7; color: #16a34a; }
+
+        .output-area {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 1.25rem;
+            border-radius: 8px;
+            font-family: 'ui-monospace', 'SFMono-Regular', Menlo, monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            min-height: 100px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Dataset Coordination with <code>structuredClone()</code></h1>
+        <p>This demo uses <code>structuredClone()</code> to deeply copy complex datasets for background processing without blocking the UI thread.</p>
+    </header>
+
+    <main class="demo-card">
+        <div class="test-animation-box" aria-hidden="true"></div>
+        
+        <div class="status-container">
+            Current Status: <span class="test-status status-idle">Idle</span>
+        </div>
+
+        <div class="controls">
+            <button class="test-start-btn">Start Background Job</button>
+            <button class="test-reset-btn">Reset UI</button>
+        </div>
+
+        <section>
+            <h2 style="font-size: 1.1rem; margin-top: 0;">Worker Response</h2>
+            <pre class="test-output output-area">Ready to begin...</pre>
+        </section>
+    </main>
+
+    <script>
+        if (typeof structuredClone !== 'function') {
+            const output = document.querySelector('.test-output');
+            output.textContent = "Error: structuredClone() not supported.";
+            output.style.color = "#ef4444";
+        }
+
+        const workerCode = `
+            self.onmessage = function(e) {
+                const data = e.data;
+                const start = Date.now();
+                while(Date.now() - start < 1000) {} 
+
+                const integrity = {
+                    hasMap: data.config instanceof Map,
+                    hasDate: data.created instanceof Date,
+                    configVal: data.config.get('priority')
+                };
+                
+                self.postMessage({
+                    id: data.id,
+                    integrity,
+                    sum: data.payload.reduce((a, b) => a + b, 0),
+                    completed: new Date()
+                });
+            };
+        `;
+
+        const blob = new Blob([workerCode], { type: 'text/javascript' });
+        const worker = new Worker(URL.createObjectURL(blob));
+
+        const startBtn = document.querySelector('.test-start-btn');
+        const resetBtn = document.querySelector('.test-reset-btn');
+        const statusEl = document.querySelector('.test-status');
+        const outputEl = document.querySelector('.test-output');
+
+        function setUIStatus(state) {
+            statusEl.textContent = state;
+            statusEl.className = 'test-status ' + (
+                state === 'Idle' ? 'status-idle' : 
+                state === 'Processing...' ? 'status-working' : 'status-complete'
+            );
+        }
+
+        startBtn.addEventListener('click', () => {
+            setUIStatus('Processing...');
+            outputEl.textContent = "Cloning complex data via structuredClone()...";
+
+            const dataToProcess = {
+                id: crypto.randomUUID(),
+                created: new Date(),
+                config: new Map([['priority', 'high'], ['threshold', 0.8]]),
+                payload: Array.from({ length: 100000 }, () => Math.floor(Math.random() * 100))
+            };
+
+            try {
+                const clone = structuredClone(dataToProcess);
+                worker.postMessage(clone);
+            } catch (err) {
+                outputEl.textContent = "Cloning Error: " + err.message;
+                setUIStatus('Idle');
+            }
+        });
+
+        worker.onmessage = (e) => {
+            setUIStatus('Complete');
+            outputEl.textContent = JSON.stringify(e.data, null, 2);
+        };
+
+        resetBtn.addEventListener('click', () => {
+            setUIStatus('Idle');
+            outputEl.textContent = "Ready to begin...";
+        });
+    </script>
+</body>
+</html>

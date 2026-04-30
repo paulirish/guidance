@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Cloning with structuredClone()</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --success-color: #16a34a;
+            --warning-color: #d97706;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: #1e293b;
+            line-height: 1.5;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        main {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 600px) {
+            .card-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+        h2 { font-size: 1.1rem; margin-top: 0; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        pre {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            min-height: 180px;
+        }
+
+        .controls {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.9; }
+        button:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+
+        .test-status-msg {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .status-success { background: #dcfce7; color: #166534; display: block; }
+        .status-warning { background: #fef9c3; color: #854d0e; display: block; }
+    </style>
+</head>
+<body>
+
+<main>
+    <header>
+        <h1>Application State Sandbox</h1>
+        <p>Demonstrating <code>structuredClone()</code> for deep cloning nested data to prevent side effects.</p>
+    </header>
+
+    <div class="card-container">
+        <section class="card">
+            <h2>Original State</h2>
+            <pre class="test-original-json" id="originalDisplay"></pre>
+        </section>
+
+        <section class="card">
+            <h2>Working Copy</h2>
+            <pre class="test-clone-json" id="cloneDisplay"><em>No active clone</em></pre>
+        </section>
+    </div>
+
+    <div class="controls">
+        <button class="test-btn-clone" id="btnClone">Create Deep Clone</button>
+        <button class="test-btn-mutate" id="btnMutate" disabled>Mutate Nested Property</button>
+        <button class="test-btn-apply" id="btnApply" disabled>Apply Changes</button>
+        <button class="test-btn-reset" id="btnReset">Reset All</button>
+    </div>
+
+    <div id="status" class="test-status-msg"></div>
+</main>
+
+<script>
+    const originalDisplay = document.getElementById('originalDisplay');
+    const cloneDisplay = document.getElementById('cloneDisplay');
+    const btnClone = document.getElementById('btnClone');
+    const btnMutate = document.getElementById('btnMutate');
+    const btnApply = document.getElementById('btnApply');
+    const btnReset = document.getElementById('btnReset');
+    const status = document.getElementById('status');
+
+    const INITIAL_DATA = {
+        id: "usr_123",
+        profile: {
+            name: "Alex Smith",
+            settings: {
+                theme: "dark",
+                notifications: {
+                    email: true,
+                    push: false
+                }
+            }
+        },
+        tags: ["admin", "editor"]
+    };
+
+    let appState = {};
+    let workingCopy = null;
+
+    function init() {
+        // Use structuredClone for initial setup too
+        appState = safeClone(INITIAL_DATA);
+        workingCopy = null;
+        updateUI();
+        showStatus("Ready. Create a clone to start editing safely.", "success");
+    }
+
+    function safeClone(obj) {
+        // Feature detection and fallback
+        if (typeof structuredClone === 'function') {
+            return structuredClone(obj);
+        }
+        // Fallback for older environments (note: doesn't handle Maps/Sets/Dates like structuredClone)
+        return JSON.parse(JSON.stringify(obj));
+    }
+
+    function updateUI() {
+        originalDisplay.textContent = JSON.stringify(appState, null, 2);
+        
+        if (workingCopy) {
+            cloneDisplay.textContent = JSON.stringify(workingCopy, null, 2);
+            btnMutate.disabled = false;
+            btnApply.disabled = false;
+        } else {
+            cloneDisplay.innerHTML = '<em>No active clone</em>';
+            btnMutate.disabled = true;
+            btnApply.disabled = true;
+        }
+    }
+
+    function showStatus(msg, type) {
+        status.textContent = msg;
+        status.className = `test-status-msg status-${type}`;
+    }
+
+    btnClone.addEventListener('click', () => {
+        workingCopy = safeClone(appState);
+        updateUI();
+        showStatus("Deep clone created! Changes here won't affect the original until applied.", "success");
+    });
+
+    btnMutate.addEventListener('click', () => {
+        if (!workingCopy) return;
+        
+        // Mutate a deeply nested property
+        workingCopy.profile.settings.notifications.push = true;
+        workingCopy.tags.push("tester");
+        
+        updateUI();
+        
+        // Verify independence
+        const isOriginalSafe = appState.profile.settings.notifications.push === false;
+        if (isOriginalSafe) {
+            showStatus("Mutation successful. Original state remains untouched (Nested push: false).", "success");
+        } else {
+            showStatus("Warning: Mutation leaked to original! (This shouldn't happen with structuredClone)", "warning");
+        }
+    });
+
+    btnApply.addEventListener('click', () => {
+        appState = safeClone(workingCopy);
+        workingCopy = null;
+        updateUI();
+        showStatus("Changes applied to original state.", "success");
+    });
+
+    btnReset.addEventListener('click', init);
+
+    // Start
+    init();
+</script>
+
+</body>
+</html>
