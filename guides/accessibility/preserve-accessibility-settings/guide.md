@@ -11,7 +11,7 @@ sources:
 
 Using the `revert` keyword allows you to roll back a CSS property to the value it would have had if no changes had been made in the current "Author" origin. Unlike `initial` (which resets to the CSS specification default) or `unset` (which resets to inherited or initial values), `revert` specifically honors the cascade. This ensures that any custom accessibility settings defined by the user (the "User" origin) or the browser (the "User Agent" origin) are preserved when you remove your custom styles.
 
-## How to implement
+## The skinny
 
 ### Use revert instead of initial or unset for resets
 When you need to "undo" a style, `revert` is the most accessible choice. While `initial` might reset a property to a hard-coded value (like `color: black` or `font-family: serif`), `revert` looks back at the user's browser settings. If a user has specified a large font size or high-contrast colors in their browser preferences, `revert` will restore those specific values.

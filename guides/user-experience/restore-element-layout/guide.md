@@ -11,7 +11,7 @@ sources:
 
 Managing the visibility of elements often leads to brittle code where developers manually track whether an element should be `display: block`, `display: inline-flex`, or `display: table-cell` when revealing it. Hardcoding these values in JavaScript or CSS utility classes makes the codebase difficult to maintain when layout requirements change. The `revert` keyword solves this by rolling back the property to the value it would have had if the current styling level (e.g., inline styles or a specific CSS layer) had not been applied, effectively restoring the element's intended layout behavior without needing to know what that behavior was.
 
-## How to implement
+## The skinny
 
 ### Use `revert` to clear inline style overrides
 When hiding elements via JavaScript using inline styles, use `revert` to show them again. This is superior to setting the value to an empty string or a specific keyword like `block` because it ensures that any CSS rules defined in your external stylesheets are respected.

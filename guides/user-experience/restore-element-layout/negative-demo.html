@@ -3,30 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Element Layout Management</title>
+    <title>Negative Demo: Brittle Layout Management</title>
     <style>
-        :root {
-            --primary: #2563eb;
-            --bg: #f8fafc;
-            --text: #1e293b;
-            --border: #e2e8f0;
-        }
-
         body {
-            font-family: system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            color: var(--text);
+            font-family: system-ui, sans-serif;
+            background-color: #f1f5f9;
+            color: #334155;
+            padding: 2rem;
             max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            background-color: var(--bg);
+            margin: 0 auto;
         }
 
         .container {
-            background: white;
+            background: #fff;
             padding: 2rem;
-            border-radius: 0.75rem;
-            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .complexity-note {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            color: #92400e;
         }
 
         .controls {
@@ -34,19 +42,19 @@
         }
 
         .btn {
-            background-color: var(--primary);
+            background-color: #475569;
             color: white;
             border: none;
-            padding: 0.625rem 1.25rem;
-            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
             cursor: pointer;
             font-weight: 600;
         }
 
         .display-area {
-            border: 2px dashed var(--border);
+            border: 2px dashed #e2e8f0;
             padding: 1.5rem;
-            border-radius: 0.5rem;
+            border-radius: 0.25rem;
             min-height: 150px;
         }
 
@@ -57,13 +65,24 @@
         .box {
             padding: 1rem;
             margin: 0.5rem 0;
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
         }
 
         .chip {
-            padding: 0.25rem 0.5rem;
-            border: 1px solid var(--border);
+            padding: 0.25rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.25rem;
             margin-right: 0.25rem;
+            display: inline-block;
+        }
+
+        .manual-state {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 1rem;
+            display: block;
         }
     </style>
 </head>
@@ -71,9 +90,13 @@
 
     <div class="container">
         <header>
-            <h1>Manual Layout Control</h1>
-            <p>Example of managing element visibility through explicit state tracking and hardcoded display values.</p>
+            <h1>Manual Layout Control (Negative Example)</h1>
+            <p>Managing visibility through explicit state tracking and hardcoded display values is brittle and complex.</p>
         </header>
+
+        <div class="complexity-note">
+            <strong>Brittle Pattern:</strong> This demo tracks "original-display" values in data attributes and manually reapplies them. If the layout requirements change (e.g., a block becomes flex), every data attribute must be updated.
+        </div>
 
         <div class="controls">
             <button class="btn" onclick="toggleElements()">Show All Elements</button>
@@ -81,21 +104,29 @@
 
         <div class="display-area">
             <div id="element-1" class="box hidden" data-original-display="block">
-                <strong>Block Element:</strong> Manually restored to block.
+                <strong>Block Element:</strong> Manually restored via <code>.style.display = 'block'</code>.
             </div>
 
-            <span id="element-2" class="chip hidden" data-original-display="inline">
+            <span id="element-2" class="chip hidden" data-original-display="inline-block">
                 <strong>Inline 1</strong>
             </span>
-            <span id="element-3" class="chip hidden" data-original-display="inline">
+            <span id="element-3" class="chip hidden" data-original-display="inline-block">
                 <strong>Inline 2</strong>
             </span>
 
             <ul>
                 <li id="element-4" class="hidden" data-original-display="list-item">
-                    <strong>List Item:</strong> Manually restored to list-item.
+                    <strong>List Item:</strong> Manually restored via <code>.style.display = 'list-item'</code>.
                 </li>
             </ul>
+        </div>
+
+        <div class="manual-state">
+            // Internal State Mapping:<br>
+            element-1 -> block<br>
+            element-2 -> inline-block<br>
+            element-3 -> inline-block<br>
+            element-4 -> list-item
         </div>
     </div>
 
@@ -116,15 +147,9 @@
             elements.forEach(el => {
                 if (isVisible) {
                     el.classList.remove('hidden');
+                    // BRITTLE: Reading from manual data attributes
                     const originalMode = el.getAttribute('data-original-display');
-                    
-                    if (originalMode === 'block') {
-                        el.style.display = 'block';
-                    } else if (originalMode === 'inline') {
-                        el.style.display = 'inline';
-                    } else if (originalMode === 'list-item') {
-                        el.style.display = 'list-item';
-                    }
+                    el.style.display = originalMode;
                 } else {
                     el.classList.add('hidden');
                     el.style.display = 'none';

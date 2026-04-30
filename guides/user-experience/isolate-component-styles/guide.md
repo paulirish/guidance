@@ -11,7 +11,7 @@ sources:
 
 The `revert` keyword allows you to restore an element's CSS properties to the values defined in the browser's User Agent (UA) stylesheet. This is the primary mechanism for "unstyling" an element that has been affected by aggressive global CSS frameworks or third-party resets, ensuring it renders using the native browser defaults.
 
-## How to implement
+## The skinny
 
 ### Resetting an entire element or container
 To completely isolate a component from global author styles, use the `all` shorthand property. This resets every CSS property on the element to the value it would have had if no author-level CSS (including your own and your framework's) were applied.
