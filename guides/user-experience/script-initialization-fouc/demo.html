@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scripting Media Query Demo</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, sans-serif;
+      color-cycle: #333;
+    }
+
+    body {
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 600px;
+      text-align: center;
+    }
+
+    /* 
+      The target element represents a component that requires JS initialization 
+      (e.g., a complex chart, a carousel, or a data-driven widget).
+    */
+    .test-target-element {
+      width: 100%;
+      height: 200px;
+      margin: 2rem 0;
+      background: #007bff;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+
+    /* 
+      PREVENTING FLICKER:
+      If scripting is enabled, we immediately hide the element via CSS.
+      This prevents the "Flash of Uninitialized Content" (FOUC) while the 
+      script loads and executes. Using 'visibility: hidden' instead of 
+      'display: none' ensures the element still occupies space, 
+      effectively preventing Layout Shift (CLS) when it eventually appears.
+    */
+    @media (scripting: enabled) {
+      .test-target-element:not(.js-initialized) {
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(0.95);
+      }
+    }
+
+    /* State applied by JavaScript once initialization is complete */
+    .test-target-element.js-initialized {
+      opacity: 1;
+      visibility: visible;
+      transform: scale(1);
+    }
+
+    .status-badge {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: bold;
+      background: #eee;
+    }
+
+    /* Fallback UI for users with scripting disabled */
+    .no-script-notice {
+      display: none;
+      color: #d9534f;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    @media (scripting: none) {
+      .no-script-notice {
+        display: block;
+      }
+      .status-badge {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Scripting Media Query</h1>
+    <p>
+      This demo demonstrates how to use the <code>scripting</code> media query to prevent visual flickering. 
+      If JavaScript is enabled, the blue box stays hidden until the "initialization" script runs, 
+      avoiding a flash of static content.
+    </p>
+
+    <div class="test-target-element">
+      <p>Dynamic Component Initialized!</p>
+    </div>
+
+    <div class="status-badge test-status-indicator">Status: Waiting for Script...</div>
+    
+    <p class="no-script-notice">
+      Note: Scripting is disabled. The element is shown immediately as a fallback.
+    </p>
+  </div>
+
+  <script>
+    /**
+     * Simulates a heavy initialization process (e.g., fetching data, 
+     * setting up a 3D scene, or complex layout calculations).
+     */
+    window.addEventListener('DOMContentLoaded', () => {
+      const target = document.querySelector('.test-target-element');
+      const status = document.querySelector('.test-status-indicator');
+
+      // Artificial delay to demonstrate the prevention of flickering
+      setTimeout(() => {
+        if (target) {
+          target.classList.add('js-initialized');
+          status.textContent = 'Status: Successfully Initialized';
+          status.style.background = '#d4edda';
+          status.style.color = '#155724';
+        }
+      }, 1500);
+    });
+  </script>
+
+</body>
+</html>
