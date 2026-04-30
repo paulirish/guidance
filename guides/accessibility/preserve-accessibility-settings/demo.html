@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo: Preserve Accessibility Settings with CSS revert</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #16a34a;
+            --warning: #ca8a04;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 0.75rem;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            letter-spacing: -0.025em;
+        }
+
+        .description {
+            color: var(--text-muted);
+            font-size: 1.125rem;
+        }
+
+        .demo-container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        /* Simulated Author Styles */
+        .custom-theme {
+            color: #94a3b8 !important; /* Low contrast grey */
+            background-color: #f1f5f9 !important;
+            font-size: 0.8125rem !important;
+            padding: 1.5rem !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 0.5rem;
+        }
+
+        /* 
+           Using 'revert' to roll back to the User or User-Agent origin.
+           It restores values from the User stylesheet (accessibility settings) 
+           or User-Agent (browser default).
+        */
+        .test-target-element.is-reverted {
+            color: revert !important;
+            background-color: revert !important;
+            font-size: revert !important;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        button {
+            appearance: none;
+            background-color: white;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+
+        button:hover {
+            background-color: var(--bg);
+            border-color: var(--text-muted);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+        }
+
+        .demo-box {
+            border: 2px dashed var(--border);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        #target {
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 1rem;
+            background-color: var(--border);
+            color: var(--text-muted);
+        }
+
+        .status-badge.author { background-color: #fef3c7; color: #92400e; }
+        .status-badge.reverted { background-color: #dcfce7; color: #166534; }
+        .status-badge.default { background-color: #fee2e2; color: #991b1b; }
+
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            background: var(--bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <h1>Preserve User Accessibility with <code>revert</code></h1>
+        <p class="description">
+            Restore property values to the <strong>User</strong> stylesheet (accessibility settings) 
+            or <strong>User-Agent</strong> (browser defaults) while ignoring custom "Author" styles.
+        </p>
+    </header>
+    
+    <div class="demo-container">
+        <div class="controls">
+            <button class="test-apply-author" onclick="applyTheme()">Apply Low Contrast</button>
+            <button class="btn-primary test-apply-revert" onclick="applyRevert()">Apply <code>revert</code></button>
+            <button class="test-reset" onclick="resetDemo()">Reset to Default</button>
+        </div>
+
+        <div class="demo-box">
+            <div id="target" class="test-target-element">
+                <h2 class="test-heading" style="margin-top: 0;">Sample Content</h2>
+                <p>
+                    When "Apply Low Contrast" is clicked, it uses author-defined styles that might be hard to read. 
+                    "Apply revert" uses the <code>revert</code> keyword to honor your browser or system preferences.
+                </p>
+                <p style="margin-bottom: 0;">
+                    <em>Tip: Change your browser's default font size or colors to see <code>revert</code> in action.</em>
+                </p>
+            </div>
+        </div>
+
+        <div id="status" class="status-badge default">State: Browser Default</div>
+    </div>
+
+    <script>
+        const target = document.getElementById('target');
+        const status = document.getElementById('status');
+
+        function applyTheme() {
+            target.className = 'test-target-element custom-theme';
+            status.textContent = 'State: Custom Author Theme (Low Contrast)';
+            status.className = 'status-badge author';
+        }
+
+        function applyRevert() {
+            target.className = 'test-target-element custom-theme is-reverted';
+            status.textContent = 'State: Reverted (Accessibility Preserved)';
+            status.className = 'status-badge reverted';
+        }
+
+        function resetDemo() {
+            target.className = 'test-target-element';
+            status.textContent = 'State: Browser Default';
+            status.className = 'status-badge default';
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restore Layout with display: revert</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #16a34a;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --radius: 0.75rem;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--bg);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
+        }
+
+        .demo-card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            font-size: 1.875rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.125rem;
+            margin-bottom: 2rem;
+        }
+
+        .support-warning {
+            display: none;
+            background-color: #fef2f2;
+            color: #991b1b;
+            padding: 1rem;
+            border: 1px solid #fecaca;
+            margin-bottom: 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        @supports not (display: revert) {
+            .support-warning {
+                display: block;
+            }
+        }
+
+        .controls {
+            margin-bottom: 2rem;
+        }
+
+        .test-dialog-trigger {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+
+        .test-dialog-trigger:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .demo-canvas {
+            border: 2px dashed var(--border);
+            padding: 2rem;
+            border-radius: 0.75rem;
+            min-height: 180px;
+            background-color: #fcfdfe;
+        }
+
+        /* 
+           CORE LOGIC:
+           1. Elements are hidden by default via author styles.
+        */
+        .test-target-element {
+            display: none;
+        }
+
+        /* 
+           2. We reveal them using 'revert'.
+           This tells the browser to ignore the 'display: none' from this level 
+           of the cascade and go back to the User Agent (default) value.
+        */
+        .is-revealed {
+            display: revert;
+            /* Visual feedback for the demo */
+            outline: 2px solid var(--success);
+            outline-offset: 4px;
+            background-color: #f0fdf4;
+            position: relative;
+        }
+
+        /* Utility styles for visualization */
+        div.test-target-element {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0.5rem;
+            border: 1px solid #dcfce7;
+        }
+
+        span.test-target-element {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #dcfce7;
+            border-radius: 9999px;
+            margin-right: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        ul {
+            margin-top: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        li.test-target-element {
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem;
+        }
+
+        code {
+            font-family: ui-monospace, monospace;
+            background: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9em;
+            color: var(--primary);
+        }
+
+        footer p {
+            margin-top: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="demo-card">
+        <header>
+            <h1>Restore Layout with <code>revert</code></h1>
+            <p>Restore an element's native layout behavior without manually tracking display modes.</p>
+        </header>
+
+        <div class="support-warning">
+            Note: Your browser does not support <code>display: revert</code>. 
+        </div>
+
+        <div class="controls">
+            <button class="test-dialog-trigger" onclick="toggleDisplay()">Reveal Elements</button>
+        </div>
+
+        <div class="demo-canvas">
+            <!-- A Block Element -->
+            <div class="test-target-element">
+                <strong>Block Element:</strong> I automatically restored to <code>display: block</code>.
+            </div>
+
+            <!-- Inline Elements -->
+            <span class="test-target-element">
+                <strong>Inline 1</strong>
+            </span>
+            <span class="test-target-element">
+                <strong>Inline 2</strong>
+            </span>
+
+            <!-- A List Item -->
+            <ul>
+                <li class="test-target-element">
+                    <strong>List Item:</strong> I restored my <code>list-item</code> behavior and marker.
+                </li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>
+                All elements above are toggled with the same class. 
+                Using <code>display: revert</code> ensures a <code>&lt;span&gt;</code> stays inline 
+                and a <code>&lt;li&gt;</code> keeps its bullet, without any manual state tracking.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function toggleDisplay() {
+            const elements = document.querySelectorAll('.test-target-element');
+            const btn = document.querySelector('.test-dialog-trigger');
+            
+            const isRevealing = btn.textContent === 'Reveal Elements';
+            
+            elements.forEach(el => {
+                el.classList.toggle('is-revealed');
+            });
+
+            btn.textContent = isRevealing ? 'Hide Elements' : 'Reveal Elements';
+        }
+    </script>
+</body>
+</html>

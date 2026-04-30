@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Negative Demo: Brittle Style Isolation</title>
+    <style>
+        /* --- EXTREME GLOBAL POLLUTION --- */
+        body {
+            font-family: "Courier New", monospace;
+            background-color: #000;
+            color: #0f0;
+            padding: 40px;
+        }
+
+        h1, h2 {
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #f0f;
+            text-shadow: 2px 2px #00f;
+        }
+
+        p {
+            font-size: 20px;
+            border: 2px solid #0f0;
+            padding: 15px;
+            background-color: #111;
+            box-shadow: 10px 10px 0px #333;
+        }
+
+        button {
+            background: linear-gradient(to bottom, #f00, #600);
+            color: #fff;
+            padding: 15px 30px;
+            border: 4px outset #f00;
+            font-weight: bold;
+            cursor: crosshair;
+            text-transform: uppercase;
+        }
+
+        /* --- ATTEMPTED ISOLATION (BRITTLE) --- */
+        .reset-box {
+            margin: 40px 0;
+            padding: 20px;
+            border: 2px solid #fff;
+        }
+
+        /* Using 'initial' - BREAKS LAYOUT */
+        .reset-initial {
+            all: initial;
+            border: 1px solid white;
+            display: block; /* Manually restoring block because initial broke it */
+            color: white;
+            padding: 20px;
+        }
+
+        .reset-initial * {
+            all: initial;
+        }
+
+        /* Using 'unset' - STILL INHERITS */
+        .reset-unset {
+            all: unset;
+            display: block;
+            border: 1px solid #aaa;
+            background-color: #222;
+            padding: 20px;
+            color: #ccc;
+        }
+
+        /* Manual Reset - TEDIOUS & INCOMPLETE */
+        .reset-manual {
+            background: #fff;
+            color: #000;
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        .reset-manual p {
+            background: none;
+            border: none;
+            color: #000;
+            box-shadow: none;
+            font-size: 16px;
+        }
+
+        .reset-manual button {
+            background: #ccc;
+            color: #000;
+            border: 1px solid #000;
+            padding: 5px 10px;
+            text-transform: none;
+        }
+
+        .warning-label {
+            color: #ff0;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Global Pollution Zone</h1>
+        <p>This page has aggressive global styles that affect everything.</p>
+        <button>Danger Button</button>
+    </header>
+
+    <div class="reset-box">
+        <span class="warning-label">Attempting Isolation with <code>all: initial</code></span>
+        <div class="reset-initial">
+            <h2>Initial Reset</h2>
+            <p>This uses <code>all: initial</code>. Notice how the paragraph loses its block behavior and text becomes hard to manage.</p>
+            <button>Initial Button</button>
+        </div>
+    </div>
+
+    <div class="reset-box">
+        <span class="warning-label">Attempting Isolation with <code>all: unset</code></span>
+        <div class="reset-unset">
+            <h2>Unset Reset</h2>
+            <p>This uses <code>all: unset</code>. It still inherits things like font-family from the body.</p>
+            <button>Unset Button</button>
+        </div>
+    </div>
+
+    <div class="reset-box">
+        <span class="warning-label">Attempting Manual Reset (High Maintenance)</span>
+        <div class="reset-manual">
+            <h2>Manual Overrides</h2>
+            <p>This requires manually overriding every single property that the "framework" changed.</p>
+            <button>Manual Button</button>
+        </div>
+    </div>
+
+</body>
+</html>

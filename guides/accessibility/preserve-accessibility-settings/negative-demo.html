@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Negative Demo: Brittle Accessibility Resets</title>
+    <style>
+        body {
+            font-family: "Times New Roman", Times, serif;
+            background-color: #eee;
+            color: #000;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .legacy-container {
+            background: #fff;
+            border: 1px solid #999;
+            padding: 25px;
+            box-shadow: 5px 5px 0px #ccc;
+        }
+
+        h1 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+
+        .bad-practice-note {
+            background: #fff3f3;
+            border-left: 5px solid #d9534f;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+
+        .styled-element {
+            color: #ff0000;
+            background-color: #00ff00;
+            font-size: 24px;
+            padding: 15px;
+            border: 5px double #000;
+            margin: 20px 0;
+        }
+
+        /* 
+           NEGATIVE PATTERN: Using 'initial' or hardcoded values.
+           These ignore any high-contrast or large-font settings the user 
+           might have configured in their browser.
+        */
+        .styled-element.reset-initial {
+            color: initial;
+            background-color: initial;
+            font-size: initial;
+        }
+
+        .styled-element.reset-hardcoded {
+            color: black;
+            background-color: white;
+            font-size: 16px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            background: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+
+        button {
+            padding: 8px 12px;
+            margin-right: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .status {
+            font-weight: bold;
+            margin-top: 15px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="legacy-container">
+        <h1>Legacy Reset Patterns (Negative Example)</h1>
+        
+        <div class="bad-practice-note">
+            <strong>Warning:</strong> This demo shows patterns that <strong>ignore</strong> user accessibility preferences.
+            Using <code>initial</code> or hardcoded defaults forces specific colors and sizes, breaking custom user styles.
+        </div>
+
+        <div class="controls">
+            <button onclick="applyStyle()">Apply Garish Styles</button>
+            <button onclick="applyInitial()">Reset with <code>initial</code></button>
+            <button onclick="applyHardcoded()">Reset with Hardcoded Values</button>
+        </div>
+
+        <div id="target" class="">
+            <h2>Content Area</h2>
+            <p>
+                This content will change its styling. Notice that when reset using these legacy methods, 
+                it completely ignores your browser's preferred font size or color settings.
+            </p>
+        </div>
+
+        <div id="info" class="status">Current State: Default</div>
+    </div>
+
+    <script>
+        const target = document.getElementById('target');
+        const info = document.getElementById('info');
+
+        function applyStyle() {
+            target.className = 'styled-element';
+            info.innerText = 'Current State: Garish Styles Applied';
+        }
+
+        function applyInitial() {
+            target.className = 'styled-element reset-initial';
+            info.innerText = 'Current State: Reset using initial (Brittle)';
+        }
+
+        function applyHardcoded() {
+            target.className = 'styled-element reset-hardcoded';
+            info.innerText = 'Current State: Reset using hardcoded values (Brittle)';
+        }
+    </script>
+
+</body>
+</html>
