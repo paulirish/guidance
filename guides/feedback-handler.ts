@@ -11,16 +11,64 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import fs from 'node:fs';
-import { runCommand, runGemini } from './lib/utils.ts';
-import { parsePassRates, PassRates } from './guide-gen.ts';
+import { runCommand, runGemini, escapeLeftAngleBracket } from './lib/utils.ts';
+import { parsePassRates, type PassRates } from './guide-gen.ts';
 
 async function fetchPRContext(prNumber: string): Promise<any> {
-  console.log('Fetching PR context via gh CLI...');
-  const prDataJson = await runCommand('gh', ['pr', 'view', prNumber, '--json', 'reviews,comments,headRefName,files']);
-  const prData = JSON.parse(prDataJson);
-  console.log(`PR Branch: ${prData.headRefName}`);
-  console.log(`Found ${prData.reviews.length} reviews and ${prData.comments.length} comments.`);
-  return prData;
+  console.log('Fetching PR context via GraphQL...');
+  const repo = process.env.GITHUB_REPOSITORY || 'paulirish/guidance';
+  const [owner, name] = repo.split('/');
+  
+  const query = `
+query($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      headRefName
+      files(first: 100) {
+        nodes {
+          path
+        }
+      }
+      reviewThreads(first: 100) {
+        nodes {
+          isResolved
+          comments(first: 10) {
+            nodes {
+              author { login }
+              body
+              path
+              line
+              createdAt
+              diffHunk
+            }
+          }
+        }
+      }
+      comments(first: 100) {
+        nodes {
+          author { login }
+          body
+          createdAt
+        }
+      }
+    }
+  }
+}
+  `.trim();
+
+  const result = await runCommand('gh', ['api', 'graphql', '-F', `owner=${owner}`, '-F', `name=${name}`, '-F', `number=${prNumber}`, '-f', `query=${query}`]);
+  const gqlData = JSON.parse(result);
+  const pr = gqlData.data.repository.pullRequest;
+  
+  console.log(`PR Branch: ${pr.headRefName}`);
+  console.log(`Found ${pr.reviewThreads.nodes.length} review threads and ${pr.comments.nodes.length} general comments.`);
+  
+  return {
+    headRefName: pr.headRefName,
+    files: pr.files.nodes,
+    reviewThreads: pr.reviewThreads.nodes,
+    comments: pr.comments.nodes,
+  };
 }
 
 function deriveGuideDirectories(prData: any): string[] {
@@ -52,6 +100,8 @@ Tasks:
 PR Data:
 ${JSON.stringify(prData)}
 
+Note: \`reviewThreads\` contains inline comments and their resolution status. \`comments\` contains top-level PR comments.
+
 Output your response as a clear markdown summary and TODO list.
 `;
 
@@ -64,11 +114,12 @@ Output your response as a clear markdown summary and TODO list.
 
 async function postPlanToPR(prNumber: string, synthesis: string): Promise<void> {
   console.log('Posting plan to PR...');
+  const escapedSynthesis = escapeLeftAngleBracket(synthesis);
   const body = `On it!
 
 <details><summary>Plan from feedback-handler</summary>
 
-${synthesis}
+${escapedSynthesis}
 
 </details>`;
   await runCommand('gh', ['pr', 'comment', prNumber, '-b', body]);
@@ -176,11 +227,12 @@ async function pushChanges(prData: any, guideDirs: string[]): Promise<void> {
 
 async function postFixesReportToPR(prNumber: string, report: string): Promise<void> {
   console.log('Posting fixes report to PR...');
+  const escapedReport = escapeLeftAngleBracket(report);
   const body = `Fixes applied!
 
 <details><summary>Report from FixerAgent</summary>
 
-${report}
+${escapedReport}
 
 </details>`;
   await runCommand('gh', ['pr', 'comment', prNumber, '-b', body]);
