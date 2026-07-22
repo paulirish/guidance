@@ -1,0 +1,244 @@
+diff --git a/index.html b/index.html
+index 66c9173..30a1be3 100644
+--- a/index.html
++++ b/index.html
+@@ -195,6 +195,18 @@
+         </div>
+       </div>
+     </section>
++
++    <!-- Live Order Progress Section -->
++    <section id="order-progress-section" style="margin-top: 60px;">
++      <h2 style="text-align: center;">Live Brewing Status</h2>
++      <p style="text-align: center; color: #666; margin-bottom: 20px;">Watch your artisanal coffee being prepared in real-time.</p>
++      <div id="status-log" style="background: #3e2723; color: #ffab40; padding: 25px; border-radius: 12px; font-family: 'Courier New', Courier, monospace; min-height: 200px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); border: 2px solid var(--primary);">
++        <div style="opacity: 0.5;">Waiting for orders...</div>
++      </div>
++      <div style="text-align: center; margin-top: 20px;">
++        <button id="start-simulation" class="btn" style="border: none; cursor: pointer; font-size: 1rem;">Simulate New Order</button>
++      </div>
++    </section>
+   </main>
+ 
+   <footer>
+@@ -207,6 +219,93 @@
+     <p>&copy; 2026 The Daily Grind Coffee Co. All rights reserved.</p>
+   </footer>
+ 
++  <script type="module">
++    import { streamToAsyncIterable } from './stream-utils.js';
++
++    // Simple EventEmitter implementation for the browser
++    class EventEmitter {
++      constructor() {
++        this.listeners = {};
++      }
++      on(event, cb) {
++        if (!this.listeners[event]) this.listeners[event] = [];
++        this.listeners[event].push(cb);
++      }
++      off(event, cb) {
++        if (!this.listeners[event]) return;
++        this.listeners[event] = this.listeners[event].filter(l => l !== cb);
++      }
++      emit(event, data) {
++        if (!this.listeners[event]) return;
++        this.listeners[event].forEach(cb => cb(data));
++      }
++    }
++
++    const logElement = document.getElementById('status-log');
++    const startBtn = document.getElementById('start-simulation');
++
++    function appendLog(message, isHeader = false) {
++      const entry = document.createElement('div');
++      entry.style.marginBottom = '8px';
++      if (isHeader) {
++        entry.style.color = 'var(--accent)';
++        entry.style.fontWeight = 'bold';
++        entry.style.borderBottom = '1px solid #4e342e';
++        entry.style.paddingBottom = '5px';
++      }
++      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
++      logElement.appendChild(entry);
++      logElement.scrollTop = logElement.scrollHeight;
++    }
++
++    async function processOrderStream(stream) {
++      // MANDATORY: Use the bridge to get an async iterable
++      const iterable = streamToAsyncIterable(stream);
++
++      try {
++        // Sequential processing: handles backpressure naturally
++        for await (const status of iterable) {
++          appendLog(status);
++          // Simulate complex processing work (e.g., database update or UI animation)
++          await new Promise(resolve => setTimeout(resolve, 800));
++        }
++        appendLog('--- Order Complete ---', true);
++      } catch (error) {
++        appendLog(`ERROR: ${error.message}`);
++      }
++    }
++
++    startBtn.addEventListener('click', () => {
++      startBtn.disabled = true;
++      logElement.innerHTML = '';
++      appendLog('--- Starting New Order Simulation ---', true);
++
++      const stream = new EventEmitter();
++      
++      // Start processing BEFORE emitting data to demonstrate the bridge
++      processOrderStream(stream).finally(() => {
++        startBtn.disabled = false;
++      });
++
++      // Simulate a "push" stream emitting data rapidly
++      // The bridge's queue ensures no data is lost even though processing is slow
++      const events = [
++        'Grinding Ethiopian Yirgacheffe beans...',
++        'Warming the portafilter...',
++        'Tamping at 30lbs of pressure...',
++        'Extracting liquid gold (25 seconds)...',
++        'Steaming micro-foam milk...',
++        'Crafting a perfect rosette...',
++        'Sprinkling a touch of cinnamon...'
++      ];
++
++      events.forEach((msg, i) => {
++        setTimeout(() => stream.emit('data', msg), i * 100);
++      });
++
++      setTimeout(() => stream.emit('end'), events.length * 100 + 500);
++    });
++  </script>
+ </body>
+ 
+ </html>
+diff --git a/stream-utils.js b/stream-utils.js
+new file mode 100644
+index 0000000..a3121c5
+--- /dev/null
++++ b/stream-utils.js
+@@ -0,0 +1,121 @@
++/**
++ * Feature detection and conditional polyfill for Promise.withResolvers.
++ * Promise.withResolvers() provides external control over a promise's lifecycle.
++ */
++if (!Promise.withResolvers) {
++  Promise.withResolvers = function() {
++    let resolve, reject;
++    const promise = new Promise((res, rej) => {
++      resolve = res;
++      reject = rej;
++    });
++    return { promise, resolve, reject };
++  };
++}
++
++/**
++ * Converts an event-based stream into an AsyncIterable.
++ * This implementation queues events to ensure no data is lost if multiple
++ * events occur before the async iterable's next() call is resolved.
++ *
++ * @param {Object} eventSource - The source emitting 'data', 'end', and 'error' events.
++ * @returns {AsyncIterable} An async iterable that yields data from the stream.
++ */
++export function streamToAsyncIterable(eventSource) {
++  const dataQueue = [];
++  const resolverQueue = [];
++  let isDone = false;
++  let error = null;
++
++  // Event handlers
++  const onData = (data) => {
++    if (resolverQueue.length > 0) {
++      const { resolve } = resolverQueue.shift();
++      resolve({ value: data, done: false });
++    } else {
++      dataQueue.push(data);
++    }
++  };
++
++  const onEnd = () => {
++    isDone = true;
++    while (resolverQueue.length > 0) {
++      const { resolve } = resolverQueue.shift();
++      resolve({ value: undefined, done: true });
++    }
++    cleanup();
++  };
++
++  const onError = (err) => {
++    error = err;
++    while (resolverQueue.length > 0) {
++      const { reject } = resolverQueue.shift();
++      reject(err);
++    }
++    cleanup();
++  };
++
++  // Helper to remove event listeners
++  const cleanup = () => {
++    const off = eventSource.off || eventSource.removeListener;
++    if (typeof off === 'function') {
++      off.call(eventSource, 'data', onData);
++      off.call(eventSource, 'end', onEnd);
++      off.call(eventSource, 'error', onError);
++    }
++  };
++
++  // Attach event listeners
++  if (typeof eventSource.on === 'function') {
++    eventSource.on('data', onData);
++    eventSource.on('end', onEnd);
++    eventSource.on('error', onError);
++  }
++
++  return {
++    [Symbol.asyncIterator]() {
++      return this;
++    },
++    /**
++     * Returns the next chunk of data from the stream.
++     * @returns {Promise<IteratorResult>}
++     */
++    async next() {
++      // 1. If there's data in the queue, return it immediately.
++      if (dataQueue.length > 0) {
++        return { value: dataQueue.shift(), done: false };
++      }
++      
++      // 2. If an error occurred, re-throw it.
++      if (error) {
++        throw error;
++      }
++      
++      // 3. If the stream has ended, return the terminal state.
++      if (isDone) {
++        return { value: undefined, done: true };
++      }
++
++      // 4. Otherwise, wait for the next event using Promise.withResolvers().
++      const { promise, resolve, reject } = Promise.withResolvers();
++      resolverQueue.push({ resolve, reject });
++      return promise;
++    },
++    /**
++     * Gracefully closes the iterator and cleans up listeners.
++     */
++    async return() {
++      isDone = true;
++      cleanup();
++      return { value: undefined, done: true };
++    },
++    /**
++     * Handles errors thrown during iteration.
++     */
++    async throw(err) {
++      isDone = true;
++      cleanup();
++      throw err;
++    }
++  };
++}

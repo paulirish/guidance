@@ -1,0 +1,268 @@
+diff --git a/index.html b/index.html
+index 66c9173..4533ae1 100644
+--- a/index.html
++++ b/index.html
+@@ -152,6 +152,78 @@
+       text-decoration: none;
+       font-size: 0.85rem;
+     }
++
++    /* Order Tracker Styles */
++    .order-tracker {
++      background: var(--secondary);
++      padding: 30px;
++      border-radius: 12px;
++      margin-top: 40px;
++    }
++
++    .order-grid {
++      display: grid;
++      grid-template-columns: 1fr 1fr;
++      gap: 30px;
++    }
++
++    .order-list {
++      background: white;
++      padding: 20px;
++      border-radius: 8px;
++      min-height: 200px;
++    }
++
++    .order-item {
++      display: flex;
++      justify-content: space-between;
++      align-items: center;
++      padding: 10px;
++      border-bottom: 1px solid #eee;
++    }
++
++    .order-item:last-child {
++      border-bottom: none;
++    }
++
++    .status-badge {
++      padding: 4px 8px;
++      border-radius: 4px;
++      font-size: 0.8rem;
++      font-weight: bold;
++    }
++
++    .status-pending { background: #fff3e0; color: #ef6c00; }
++    .status-completed { background: #e8f5e9; color: #2e7d32; }
++    .status-rejected { background: #ffebee; color: #c62828; }
++
++    .barista-controls {
++      display: flex;
++      gap: 10px;
++    }
++
++    .btn-small {
++      padding: 5px 10px;
++      font-size: 0.8rem;
++      cursor: pointer;
++      border: none;
++      border-radius: 4px;
++    }
++
++    .btn-complete { background: #4caf50; color: white; }
++    .btn-reject { background: #f44336; color: white; }
++
++    #log {
++      margin-top: 20px;
++      font-family: monospace;
++      font-size: 0.85rem;
++      max-height: 150px;
++      overflow-y: auto;
++      background: #333;
++      color: #9f9;
++      padding: 10px;
++      border-radius: 4px;
++    }
+   </style>
+ </head>
+ 
+@@ -171,7 +243,7 @@
+   <header class="hero">
+     <h1>Wake Up Your Senses</h1>
+     <p>Ethically sourced, locally roasted, delivered to your cup.</p>
+-    <a href="/order-online" class="btn">Order Now</a>
++    <a href="#order-section" class="btn">Order Now</a>
+   </header>
+ 
+   <main class="container">
+@@ -181,19 +253,40 @@
+         <div class="card">
+           <h3>Maple Oat Latte</h3>
+           <p>Creamy oat milk with a hint of Vermont maple syrup.</p>
+-          <a href="/menu/seasonal" class="btn">View Details</a>
++          <button onclick="shop.order('Maple Oat Latte')" class="btn">Order Now</button>
+         </div>
+         <div class="card">
+           <h3>Dark Roast Espresso</h3>
+           <p>Bold, smokey, and perfect for a morning boost.</p>
+-          <a href="/menu/espresso" class="btn">View Details</a>
++          <button onclick="shop.order('Dark Roast Espresso')" class="btn">Order Now</button>
+         </div>
+         <div class="card">
+           <h3>Cold Brew</h3>
+           <p>Steeped for 18 hours for maximum smoothness.</p>
+-          <a href="/menu/cold-brew" class="btn">View Details</a>
++          <button onclick="shop.order('Cold Brew')" class="btn">Order Now</button>
++        </div>
++      </div>
++    </section>
++
++    <section id="order-section" class="order-tracker">
++      <h2 style="margin-bottom: 20px;">Order Tracker & Barista Console</h2>
++      <div class="order-grid">
++        <div>
++          <h3>Pending Orders</h3>
++          <div id="pending-list" class="order-list">
++            <!-- Orders will appear here -->
++            <p style="color: #666; text-align: center; margin-top: 20px;">No active orders.</p>
++          </div>
++        </div>
++        <div>
++          <h3>Barista Console</h3>
++          <div id="barista-list" class="order-list">
++            <!-- Barista actions will appear here -->
++            <p style="color: #666; text-align: center; margin-top: 20px;">Waiting for orders...</p>
++          </div>
+         </div>
+       </div>
++      <div id="log">System initialized...</div>
+     </section>
+   </main>
+ 
+@@ -207,6 +300,131 @@
+     <p>&copy; 2026 The Daily Grind Coffee Co. All rights reserved.</p>
+   </footer>
+ 
++  <script>
++    /**
++     * Polyfill for Promise.withResolvers if not supported by the environment.
++     * This follows the pattern recommended in the guide.
++     */
++    if (typeof Promise.withResolvers !== 'function') {
++      Promise.withResolvers = function() {
++        let resolve, reject;
++        const promise = new Promise((res, rej) => {
++          resolve = res;
++          reject = rej;
++        });
++        return { promise, resolve, reject };
++      };
++    }
++
++    class CoffeeShop {
++      #pendingTasks = new Map();
++      #orderCount = 0;
++
++      constructor() {
++        this.pendingList = document.getElementById('pending-list');
++        this.baristaList = document.getElementById('barista-list');
++        this.logElement = document.getElementById('log');
++      }
++
++      log(message) {
++        const time = new Date().toLocaleTimeString();
++        this.logElement.innerHTML += `<div>[${time}] ${message}</div>`;
++        this.logElement.scrollTop = this.logElement.scrollHeight;
++      }
++
++      /**
++       * Place an order using Promise.withResolvers()
++       */
++      order(drinkName) {
++        const { promise, resolve, reject } = Promise.withResolvers();
++        const orderId = ++this.#orderCount;
++
++        try {
++          if (this.#pendingTasks.size >= 5) {
++            throw new Error("Barista is overwhelmed! Try again later.");
++          }
++
++          this.log(`Placing order #${orderId}: ${drinkName}`);
++          
++          // Store resolvers in the registry
++          this.#pendingTasks.set(orderId, { drinkName, resolve, reject });
++
++          this.render();
++
++          // Handle the promise fulfillment
++          promise
++            .then(result => {
++              this.log(`SUCCESS: Order #${result.orderId} (${result.drinkName}) is ready!`);
++            })
++            .catch(error => {
++              this.log(`FAILED: Order #${orderId} was cancelled. Reason: ${error.message}`);
++            });
++
++        } catch (err) {
++          // Handle synchronous errors manually as per guidance
++          this.log(`ERROR: ${err.message}`);
++          reject(err);
++        }
++
++        return promise;
++      }
++
++      /**
++       * Settle a task from an external context (Barista Console)
++       */
++      settleOrder(orderId, success) {
++        const task = this.#pendingTasks.get(orderId);
++        if (!task) return;
++
++        if (success) {
++          task.resolve({ orderId, drinkName: task.drinkName, status: 'served' });
++        } else {
++          task.reject(new Error("Machine malfunction or out of beans."));
++        }
++
++        // Clean up registry to prevent memory leaks
++        this.#pendingTasks.delete(orderId);
++        this.render();
++      }
++
++      render() {
++        // Render Pending Orders (Customer View)
++        if (this.#pendingTasks.size === 0) {
++          this.pendingList.innerHTML = '<p style="color: #666; text-align: center; margin-top: 20px;">No active orders.</p>';
++          this.baristaList.innerHTML = '<p style="color: #666; text-align: center; margin-top: 20px;">Waiting for orders...</p>';
++          return;
++        }
++
++        let pendingHtml = '';
++        let baristaHtml = '';
++
++        this.#pendingTasks.forEach((task, id) => {
++          pendingHtml += `
++            <div class="order-item">
++              <span><strong>#${id}</strong> ${task.drinkName}</span>
++              <span class="status-badge status-pending">Preparing...</span>
++            </div>
++          `;
++
++          baristaHtml += `
++            <div class="order-item">
++              <span><strong>#${id}</strong> ${task.drinkName}</span>
++              <div class="barista-controls">
++                <button class="btn-small btn-complete" onclick="shop.settleOrder(${id}, true)">Serve</button>
++                <button class="btn-small btn-reject" onclick="shop.settleOrder(${id}, false)">Cancel</button>
++              </div>
++            </div>
++          `;
++        });
++
++        this.pendingList.innerHTML = pendingHtml;
++        this.baristaList.innerHTML = baristaHtml;
++      }
++    }
++
++    const shop = new CoffeeShop();
++  </script>
++
+ </body>
+ 
+ </html>

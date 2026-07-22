@@ -1,0 +1,56 @@
+diff --git a/index.html b/index.html
+index 66c9173..b0f5f58 100644
+--- a/index.html
++++ b/index.html
+@@ -207,6 +207,51 @@
+     <p>&copy; 2026 The Daily Grind Coffee Co. All rights reserved.</p>
+   </footer>
+ 
++  <script>
++    /**
++     * Helper to create a deferred promise.
++     * Allows for manual resolution of the promise outside of the executor scope.
++     */
++    function createDeferred() {
++      var deferred = {};
++      deferred.promise = new Promise(function(resolve, reject) {
++        deferred.resolve = resolve;
++        deferred.reject = reject;
++      });
++      return deferred;
++    }
++
++    /**
++     * Track the current pending order. 
++     * Note: Only one order can be processed at a time.
++     */
++    var activeTask = null;
++
++    function startOrderProcessing(orderId) {
++      console.log("Starting process for order:", orderId);
++      
++      // Initialize the deferred object for this task
++      activeTask = createDeferred();
++      
++      // Simulate external settlement via a callback
++      setTimeout(function() {
++        if (activeTask) {
++          activeTask.resolve({ status: "completed", id: orderId });
++          activeTask = null;
++        }
++      }, 2000);
++
++      return activeTask.promise;
++    }
++
++    // Example handler for UI interactions
++    window.processOrder = function() {
++      startOrderProcessing(Math.floor(Math.random() * 1000))
++        .then(function(result) {
++          console.log("Order finished successfully:", result);
++        });
++    };
++  </script>
+ </body>
+ 
+ </html>

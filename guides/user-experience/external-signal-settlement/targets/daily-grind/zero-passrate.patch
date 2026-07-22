@@ -1,0 +1,89 @@
+diff --git a/index.html b/index.html
+index 66c9173..8fbc63b 100644
+--- a/index.html
++++ b/index.html
+@@ -207,6 +207,84 @@
+     <p>&copy; 2026 The Daily Grind Coffee Co. All rights reserved.</p>
+   </footer>
+ 
++  <div id="logout-modal" class="modal-overlay">
++    <div class="modal-content">
++      <h3>Sign Out?</h3>
++      <p>Are you sure you want to log out of your account?</p>
++      <div class="modal-actions">
++        <button id="cancel-logout" class="btn btn-secondary">Stay</button>
++        <button id="confirm-logout" class="btn">Sign Out</button>
++      </div>
++    </div>
++  </div>
++
++  <script>
++    // Legacy Logout Implementation
++    // Violates "Must Pass" by not using Promise.withResolvers()
++    // Violates "Must Fail" by using a manual state machine and setInterval polling
++
++    const logoutState = {
++      isComplete: false,
++      result: null,
++      error: null
++    };
++
++    function showLogoutModal() {
++      const modal = document.getElementById('logout-modal');
++      modal.style.display = 'flex';
++
++      const handleConfirm = () => {
++        logoutState.result = 'confirmed';
++        logoutState.isComplete = true;
++        cleanup();
++      };
++
++      const handleCancel = () => {
++        logoutState.error = new Error('User cancelled');
++        logoutState.isComplete = true;
++        cleanup();
++      };
++
++      const cleanup = () => {
++        modal.style.display = 'none';
++        document.getElementById('confirm-logout').removeEventListener('click', handleConfirm);
++        document.getElementById('cancel-logout').removeEventListener('click', handleCancel);
++      };
++
++      document.getElementById('confirm-logout').addEventListener('click', handleConfirm);
++      document.getElementById('cancel-logout').addEventListener('click', handleCancel);
++    }
++
++    async function handleLogoutClick(e) {
++      e.preventDefault();
++      
++      // Reset state
++      logoutState.isComplete = false;
++      logoutState.result = null;
++      logoutState.error = null;
++
++      showLogoutModal();
++
++      // Polling for completion - Explicitly forbidden by "Must Fail"
++      return new Promise((resolve, reject) => {
++        const checkInterval = setInterval(() => {
++          if (logoutState.isComplete) {
++            clearInterval(checkInterval);
++            if (logoutState.error) {
++              console.warn(logoutState.error.message);
++              reject(logoutState.error);
++            } else {
++              console.log('Logout successful');
++              window.location.href = '/';
++              resolve(logoutState.result);
++            }
++          }
++        }, 100);
++      });
++    }
++
++    document.querySelector('.logout-link').addEventListener('click', handleLogoutClick);
++  </script>
+ </body>
+ 
+ </html>
