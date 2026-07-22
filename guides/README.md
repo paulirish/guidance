@@ -224,16 +224,8 @@ flowchart LR
         direction LR
         H[Inventory Check] --> I[Generate Target Artifacts]
         
-        subgraph TARGETS ["Target Artifacts per Base App (e.g. daily-grind)"]
-            direction TB
-            I1[solution.patch]
-            I2[zero-passrate.patch]
-            I3[task.md]
-            I4[grader.ts]
-        end
-        class TARGETS fileStyle;
-
-        I --> TARGETS
+        I --> T[Target Artifacts:<br/>- solution.patch<br/>- zero-passrate.patch<br/>- task.md<br/>- grader.ts]
+        class T fileStyle;
         
         subgraph CAL_LOOP ["Calibration Loop (testGrader)"]
             direction TB
@@ -244,7 +236,7 @@ flowchart LR
         end
         class CAL_LOOP loopStyle;
 
-        TARGETS --> CAL_LOOP
+        T --> CAL_LOOP
         
         subgraph AGENT_TEST ["Agent E2E Test (runAgentTest)"]
             direction TB
