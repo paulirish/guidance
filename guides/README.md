@@ -176,3 +176,46 @@ gd dev <path/to/guide_dir>/test-app-result/index.html --grade
 ```
 
 Use the results to validate guide quality, and make changes as needed. A useful sanity check is to examine the result of the agent run *without* guide access.
+
+## Automated End-to-End Pipeline (Pipeline v2)
+
+The end-to-end automation pipeline is triggered via the `gd gen-guide <web-feature-id>` command (or run automatically inside GitHub Actions). It takes a raw web platform feature ID (from the `web-features` package) and performs all stages of research, scaffolding, calibration, and agent evaluation.
+
+### Execution Phases
+
+```mermaid
+graph TD
+    A[web-feature-id] --> B(1. Deep Research)
+    B --> C[research.md]
+    C --> D(2. Use Case Identification)
+    D --> E[JSON Use Cases]
+    E --> F(3. Scaffold Artifacts)
+    F --> G[guide.md & expectations.md]
+    G --> H(4. Dev-Guide Pipeline)
+    H --> I[demo.html & negative-demo.html]
+    I --> J[Playwright grader.ts]
+    J --> K[Grader Calibration]
+    K --> L[Agent E2E Evaluation]
+    L --> M(5. PR Creation / Push)
+```
+
+1. **Deep Research (`features/<feature-id>/research.md`)**
+   If a research report does not exist for the feature, a specialized research agent runs web and codebase searches (targeting spec URLs, MDN documents, and browser compat status) to compile a deep research report outlining best practices and legacy alternatives.
+
+2. **Use Case Identification**
+   Using the research report, the agent identifies 1–3 distinct developer-centric use cases. Low-level features (such as new Promise methods) default to a single fundamental use case to prevent artificial duplication.
+
+3. **Artifact Scaffolding**
+   The pipeline automatically creates the guide directory structure under `guides/<category>/<slug>/` and scaffolds the baseline:
+   - `guide.md`: Written using the `project-guides` skill, describing implementation, examples, and fallback strategies.
+   - `expectations.md`: Written using the `project-evals` skill, describing what should pass, what should fail, and app-agnostic grading rules.
+
+4. **Dev-Guide Calibration & Evaluation (`gd dev`)**
+   For each use case, the pipeline initiates the Stage 3 validation loop:
+   - Generates correct implementation (`demo.html`) and anti-pattern (`negative-demo.html`).
+   - Translates `expectations.md` into Playwright check assertions (`grader.ts`).
+   - Calibrates the grader (ensures it scores 100% on the demo, and 0% on the negative demo).
+   - Evaluates the impact of the guide by comparing unguided vs. guided agent runs against a base app template (e.g. `daily-grind`).
+
+5. **PR Creation & Git Push**
+   When running in GitHub Actions, the pipeline commits all generated files to a feature branch (`bot/<feature-id>`) and creates/updates a draft PR with the initial unguided vs. guided pass-rate metrics table to let reviewers easily assess the guide's impact.
