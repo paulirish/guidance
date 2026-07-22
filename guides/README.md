@@ -199,17 +199,62 @@ This stage is triggered by `gd dev <path/to/guide_dir>` or called automatically 
 ### Execution Flow Detail
 
 ```mermaid
-graph TD
-    A[web-feature-id] --> B(1. Deep Research)
-    B --> C[research.md]
-    C --> D(2. Use Case Identification)
-    D --> E[JSON Use Cases]
-    E --> F(3. Scaffold Artifacts)
-    F --> G[guide.md & expectations.md]
-    G --> H(4. Dev-Guide Pipeline)
-    H --> I[solution.patch & zero-passrate.patch]
-    I --> J[Playwright grader.ts]
-    J --> K[Grader Calibration]
-    K --> L[Agent E2E Evaluation]
-    L --> M(5. PR Creation / Push)
+flowchart TD
+    %% Define Styles
+    classDef stageStyle fill:#f5f7fa,stroke:#4a5568,stroke-width:2px;
+    classDef fileStyle fill:#edf2f7,stroke:#718096,stroke-width:1px,stroke-dasharray: 3 3;
+    classDef loopStyle fill:#fffaf0,stroke:#dd6b20,stroke-width:2px;
+    classDef agentStyle fill:#ebf8ff,stroke:#3182ce,stroke-width:2px;
+
+    subgraph STAGE1 ["Stage 1 & 2: Identification & Scaffolding (guide-gen.ts)"]
+        direction TB
+        A[Feature Lookup] --> B{Deep Research exists?}
+        B -- No --> C[Run deep_research.js] --> D[features/ID/research.md]
+        B -- Yes --> D
+        D --> E[Identify Use Cases via Gemini]
+        E --> F[Scaffold Base Files]
+    end
+    class STAGE1 stageStyle;
+
+    F --> G1[guide.md]
+    F --> G2[expectations.md]
+    class G1,G2 fileStyle;
+
+    subgraph STAGE3 ["Stage 3: Calibration & Testing (dev-guide.ts)"]
+        direction TB
+        H[Inventory Check] --> I[Generate Target Artifacts]
+        
+        subgraph TARGETS ["Target Artifacts per Base App (e.g. daily-grind)"]
+            I1[solution.patch]
+            I2[zero-passrate.patch]
+            I3[task.md]
+            I4[grader.ts]
+        end
+        class TARGETS fileStyle;
+
+        I --> TARGETS
+        TARGETS --> J
+
+        subgraph CAL_LOOP ["Calibration Loop (testGrader)"]
+            direction TB
+            J[Apply solution.patch] --> K[Run grader.ts - Expect 100% Pass]
+            L[Apply zero-passrate.patch] --> M[Run grader.ts - Expect 100% Fail]
+            K & M --> N{Calibration Valid?}
+            N -- No --> O[Regenerate grader.ts w/ failure logs] --> J
+        end
+        class CAL_LOOP loopStyle;
+
+        N -- Yes --> P
+
+        subgraph AGENT_TEST ["Agent E2E Test (runAgentTest)"]
+            direction TB
+            P[Grade Base App baseline] --> Q[Run Agent: Unguided vs Guided]
+            Q --> R[Grade Agent outputs using grader.ts]
+            R --> S[Compute and report impact metric]
+        end
+        class AGENT_TEST agentStyle;
+    end
+    class STAGE3 stageStyle;
+
+    G1 & G2 --> H
 ```
