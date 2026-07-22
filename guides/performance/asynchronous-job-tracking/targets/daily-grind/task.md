@@ -1,0 +1,1 @@
+- Can you build a system to coordinate a collection of asynchronous tasks that are settled by external components or workers?

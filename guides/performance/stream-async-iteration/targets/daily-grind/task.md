@@ -1,0 +1,1 @@
+- Can you add a utility to transform event-based data streams into asynchronous iterables for sequential processing?
