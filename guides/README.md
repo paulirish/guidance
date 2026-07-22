@@ -199,7 +199,7 @@ This stage is triggered by `gd dev <path/to/guide_dir>` or called automatically 
 ### Execution Flow Detail
 
 ```mermaid
-flowchart TD
+flowchart LR
     %% Define Styles
     classDef stageStyle fill:#f5f7fa,stroke:#4a5568,stroke-width:2px;
     classDef fileStyle fill:#edf2f7,stroke:#718096,stroke-width:1px,stroke-dasharray: 3 3;
@@ -221,10 +221,11 @@ flowchart TD
     class G1,G2 fileStyle;
 
     subgraph STAGE3 ["Stage 3: Calibration & Testing (dev-guide.ts)"]
-        direction TB
+        direction LR
         H[Inventory Check] --> I[Generate Target Artifacts]
         
         subgraph TARGETS ["Target Artifacts per Base App (e.g. daily-grind)"]
+            direction TB
             I1[solution.patch]
             I2[zero-passrate.patch]
             I3[task.md]
@@ -233,19 +234,18 @@ flowchart TD
         class TARGETS fileStyle;
 
         I --> TARGETS
-        TARGETS --> J
-
+        
         subgraph CAL_LOOP ["Calibration Loop (testGrader)"]
             direction TB
             J[Apply solution.patch] --> K[Run grader.ts - Expect 100% Pass]
             L[Apply zero-passrate.patch] --> M[Run grader.ts - Expect 100% Fail]
-            K & M --> N{Calibration Valid?}
+            K & M --> N([Calibration Valid?])
             N -- No --> O[Regenerate grader.ts w/ failure logs] --> J
         end
         class CAL_LOOP loopStyle;
 
-        N -- Yes --> P
-
+        TARGETS --> CAL_LOOP
+        
         subgraph AGENT_TEST ["Agent E2E Test (runAgentTest)"]
             direction TB
             P[Grade Base App baseline] --> Q[Run Agent: Unguided vs Guided]
@@ -253,6 +253,8 @@ flowchart TD
             R --> S[Compute and report impact metric]
         end
         class AGENT_TEST agentStyle;
+
+        N -- Yes --> AGENT_TEST
     end
     class STAGE3 stageStyle;
 
