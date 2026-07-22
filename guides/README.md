@@ -221,32 +221,45 @@ flowchart LR
     class G1,G2 fileStyle;
 
     subgraph STAGE3 ["Stage 3: Calibration & Testing (dev-guide.ts)"]
-        direction LR
-        H[Inventory Check] --> I[Generate Target Artifacts]
+        direction TB
         
-        I --> T[Target Artifacts:<br/>- solution.patch<br/>- zero-passrate.patch<br/>- task.md<br/>- grader.ts]
-        class T fileStyle;
-        
-        subgraph CAL_LOOP ["Calibration Loop (testGrader)"]
-            direction TB
-            J[Apply solution.patch] --> K[Run grader.ts - Expect 100% Pass]
-            L[Apply zero-passrate.patch] --> M[Run grader.ts - Expect 100% Fail]
-            K & M --> N([Calibration Valid?])
-            N -- No --> O[Regenerate grader.ts w/ failure logs] --> J
+        subgraph INIT ["Initialization"]
+            direction LR
+            H[Inventory Check] --> I[Generate Target Artifacts]
         end
-        class CAL_LOOP loopStyle;
-
-        T --> CAL_LOOP
         
-        subgraph AGENT_TEST ["Agent E2E Test (runAgentTest)"]
-            direction TB
-            P[Grade Base App baseline] --> Q[Run Agent: Unguided vs Guided]
-            Q --> R[Grade Agent outputs using grader.ts]
-            R --> S[Compute and report impact metric]
+        subgraph TARGETS ["Target Artifacts per Base App (e.g. daily-grind)"]
+            direction LR
+            I1[solution.patch] ~~~ I2[zero-passrate.patch] ~~~ I3[task.md] ~~~ I4[grader.ts]
         end
-        class AGENT_TEST agentStyle;
+        class TARGETS fileStyle;
 
-        N -- Yes --> AGENT_TEST
+        INIT --> TARGETS
+        
+        subgraph EXEC ["Execution"]
+            direction LR
+            
+            subgraph CAL_LOOP ["Calibration Loop (testGrader)"]
+                direction TB
+                J[Apply solution.patch] --> K[Run grader.ts - Expect 100% Pass]
+                L[Apply zero-passrate.patch] --> M[Run grader.ts - Expect 100% Fail]
+                K & M --> N([Calibration Valid?])
+                N -- No --> O[Regenerate grader.ts w/ failure logs] --> J
+            end
+            class CAL_LOOP loopStyle;
+            
+            subgraph AGENT_TEST ["Agent E2E Test (runAgentTest)"]
+                direction TB
+                P[Grade Base App baseline] --> Q[Run Agent: Unguided vs Guided]
+                Q --> R[Grade Agent outputs using grader.ts]
+                R --> S[Compute and report impact metric]
+            end
+            class AGENT_TEST agentStyle;
+
+            N -- Yes --> AGENT_TEST
+        end
+
+        TARGETS --> CAL_LOOP
     end
     class STAGE3 stageStyle;
 
