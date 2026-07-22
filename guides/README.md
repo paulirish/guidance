@@ -208,16 +208,16 @@ flowchart LR
 
     subgraph STAGE1 ["Stage 1 & 2: Identification & Scaffolding (guide-gen.ts)"]
         direction TB
-        A[Feature Lookup] --> B{Deep Research exists?}
-        B -- No --> C[Run deep_research.js] --> D[features/ID/research.md]
-        B -- Yes --> D
-        D --> E[Identify Use Cases via Gemini]
-        E --> F[Scaffold Base Files]
+        A["Feature Lookup"] --> B{"Deep Research exists?"}
+        B -- "No" --> C["Run deep_research.js"] --> D["features/ID/research.md"]
+        B -- "Yes" --> D
+        D --> E["Identify Use Cases via Gemini"]
+        E --> F["Scaffold Base Files"]
     end
     class STAGE1 stageStyle;
 
-    F --> G1[guide.md]
-    F --> G2[expectations.md]
+    F --> G1["guide.md"]
+    F --> G2["expectations.md"]
     class G1,G2 fileStyle;
 
     subgraph STAGE3 ["Stage 3: Calibration & Testing (dev-guide.ts)"]
@@ -225,12 +225,14 @@ flowchart LR
         
         subgraph INIT ["Initialization"]
             direction LR
-            H[Inventory Check] --> I[Generate Target Artifacts]
+            H["Inventory Check"] --> I["Generate Target Artifacts"]
         end
         
         subgraph TARGETS ["Target Artifacts per Base App (e.g. daily-grind)"]
             direction LR
-            I1[solution.patch] ~~~ I2[zero-passrate.patch] ~~~ I3[task.md] ~~~ I4[grader.ts]
+            I1["solution.patch"] ~~~ I2["zero-passrate.patch"]
+            I2 ~~~ I3["task.md"]
+            I3 ~~~ I4["grader.ts"]
         end
         class TARGETS fileStyle;
 
@@ -241,22 +243,23 @@ flowchart LR
             
             subgraph CAL_LOOP ["Calibration Loop (testGrader)"]
                 direction TB
-                J[Apply solution.patch] --> K[Run grader.ts - Expect 100% Pass]
-                L[Apply zero-passrate.patch] --> M[Run grader.ts - Expect 100% Fail]
-                K & M --> N([Calibration Valid?])
-                N -- No --> O[Regenerate grader.ts w/ failure logs] --> J
+                J["Apply solution.patch"] --> K["Run grader.ts - Expect 100% Pass"]
+                L["Apply zero-passrate.patch"] --> M["Run grader.ts - Expect 100% Fail"]
+                K --> N(["Calibration Valid?"])
+                M --> N
+                N -- "No" --> O["Regenerate grader.ts w/ failure logs"] --> J
             end
             class CAL_LOOP loopStyle;
             
             subgraph AGENT_TEST ["Agent E2E Test (runAgentTest)"]
                 direction TB
-                P[Grade Base App baseline] --> Q[Run Agent: Unguided vs Guided]
-                Q --> R[Grade Agent outputs using grader.ts]
-                R --> S[Compute and report impact metric]
+                P["Grade Base App baseline"] --> Q["Run Agent: Unguided vs Guided"]
+                Q --> R["Grade Agent outputs using grader.ts"]
+                R --> S["Compute and report impact metric"]
             end
             class AGENT_TEST agentStyle;
 
-            N -- Yes --> AGENT_TEST
+            N -- "Yes" --> AGENT_TEST
         end
 
         TARGETS --> CAL_LOOP
