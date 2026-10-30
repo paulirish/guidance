@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>How a guide becomes a finding you can trust · Modern Web Guidance analyzer</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;1,8..60,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f17; --card: #121a27; --card-2: #0e141f; --line: #263045; --line-2: #1c2433;
+    --ink: #ececec; --ink-2: #a9b1c1; --ink-3: #6b7486;
+    --orange: #ff9f43; --teal: #5cd0b3; --blue: #58c4dd; --gold: #e6b84a; --purple: #b189f5;
+    --green: #83c167; --red: #fc6255; --yellow: #f4d345;
+    --sans: Inter, "Noto Sans", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+    --serif: "Source Serif 4", "Noto Serif", Georgia, serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(ellipse 80% 40% at 50% -5%, rgba(88,196,221,.10), transparent 70%),
+      radial-gradient(rgba(255,255,255,.035) 1px, transparent 1.2px);
+    background-size: auto, 26px 26px;
+    color: var(--ink); font: 16px/1.55 var(--sans); padding: 56px 0 96px;
+  }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 28px; }
+  html.embedded { overflow: hidden; }
+  html.embedded body { padding: 28px 0 40px; }
+  code { font: 500 .86em var(--mono); color: var(--ink); background: #0a0e15; border: 1px solid var(--line); border-radius: 5px; padding: .05em .4em; }
+  b { color: var(--ink); }
+  svg text { font-family: var(--sans); }
+
+  /* ---------- header ---------- */
+  .kicker { font: 600 12px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--teal); }
+  h1 { font: 600 54px/1.08 var(--serif); letter-spacing: -.02em; margin: 12px 0 18px; max-width: 900px; }
+  .lede { font-size: 19px; color: var(--ink-2); max-width: 860px; }
+  .lede + .lede { margin-top: 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 26px 0 0; font: 500 13px var(--sans); color: var(--ink-2); align-items: center; }
+  .legend .grp { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .legend .sep { width: 1px; height: 18px; background: var(--line); }
+  .ico { width: 16px; height: 16px; vertical-align: -3px; margin-right: 6px; }
+  .sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 7px; vertical-align: -1px; }
+
+  /* ---------- overview map ---------- */
+  .map { margin: 30px 0 0; border: 1px solid var(--line); border-radius: 24px; padding: 16px 14px 6px;
+         background: linear-gradient(180deg, rgba(18,26,39,.75), rgba(11,15,23,.6)); box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  .map svg { width: 100%; height: auto; display: block; }
+  .map-cap { text-align: center; font: 500 12px var(--mono); color: var(--ink-3); padding: 2px 0 8px; }
+  .map a { cursor: pointer; }
+  .map a .st { transition: stroke .2s, filter .2s; }
+  .map a:hover .st { stroke: #fff; filter: drop-shadow(0 0 10px rgba(255,255,255,.25)); }
+  .t-name { font: 700 13px var(--sans); letter-spacing: .1em; fill: var(--ink); }
+  .t-desc { font: 400 11px var(--sans); fill: var(--ink-2); }
+  .t-mono { font: 500 10.5px var(--mono); fill: var(--ink-3); }
+  .flow { stroke-dasharray: 5 7; animation: flow 1.6s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -24; } }
+  .pulse { animation: pulse 3.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .45; } }
+  @media (prefers-reduced-motion: reduce) { .flow, .pulse { animation: none; } html { scroll-behavior: auto; } }
+
+  /* ---------- connectors ---------- */
+  .pipe { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0 0; }
+  .pipe svg { width: 40px; height: 64px; }
+  .pipe span { font: 500 12.5px var(--mono); color: var(--ink-3); background: var(--bg); border: 1px solid var(--line); border-radius: 999px; padding: 4px 14px; }
+  .pipe.zoom span { border-style: dashed; color: var(--purple); border-color: rgba(177,137,245,.45); }
+
+  /* ---------- chapters ---------- */
+  .chapter { padding: 44px 0 20px; scroll-margin-top: 20px; }
+  .ch-head { display: grid; grid-template-columns: 64px 1fr; gap: 6px 18px; align-items: start; margin-bottom: 26px; }
+  .ch-num { grid-row: span 3; width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center;
+            font: 700 24px var(--mono); color: var(--bg); background: var(--c); box-shadow: 0 0 30px color-mix(in srgb, var(--c) 45%, transparent); }
+  .ch-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font: 700 32px/1.15 var(--sans); letter-spacing: -.01em; }
+  .ch-title .badges { display: inline-flex; gap: 6px; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font: 500 12px var(--sans); color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 7px; }
+  .badge .ico { margin: 0; width: 14px; height: 14px; }
+  .ch-q { font: italic 500 25px/1.3 var(--serif); color: var(--c); }
+  .ch-p { color: var(--ink-2); max-width: 900px; font-size: 16.5px; }
+  .panel { background: rgba(18,26,39,.7); border: 1px solid var(--line); border-radius: 20px; padding: 22px; }
+  .cap { font: 500 12.5px var(--mono); color: var(--ink-3); margin: 0 0 12px; }
+
+  /* ---------- 1: triage grid ---------- */
+  .tgrid { display: grid; grid-template-columns: 260px repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .tg-corner { display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 0 0 6px; }
+  .ax { font: 600 11.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .tg-colh { padding: 4px 6px 8px; border-bottom: 2px solid var(--line); }
+  .tg-colh code { font-size: 14px; font-weight: 700; color: var(--ink); background: none; border: 0; padding: 0; }
+  .tg-colh p, .tg-rowh p { font-size: 13px; color: var(--ink-2); margin-top: 4px; line-height: 1.45; }
+  .tg-colh p code, .tg-rowh p code { font-size: 11.5px; font-weight: 500; color: var(--ink); background: #0a0e15; border: 1px solid var(--line); padding: 0 4px; }
+  .tg-rowh { padding: 12px 14px; border-left: 3px solid var(--rc); background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 10%, transparent), transparent); border-radius: 0 12px 12px 0; }
+  .tg-rowh > code { font-size: 14.5px; font-weight: 700; color: var(--rc); background: none; border: 0; padding: 0; }
+  .tg-rowh .mis { display: block; margin-top: 6px; font: 600 11.5px var(--mono); color: var(--rc); opacity: .9; }
+  .tg-cell { border: 1px solid color-mix(in srgb, var(--rc) 28%, transparent); background: color-mix(in srgb, var(--rc) 5%, transparent);
+             border-radius: 14px; padding: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+  .tg-cell span { font: 500 11.5px var(--mono); color: var(--ink); background: rgba(11,15,23,.8); border: 1px solid color-mix(in srgb, var(--rc) 40%, transparent);
+                  border-radius: 999px; padding: 3px 11px; max-width: 100%; overflow-wrap: anywhere; }
+  .tg-cell span.hero { border-color: var(--teal); box-shadow: 0 0 14px rgba(92,208,179,.45); color: #fff; font-size: 11px; padding: 3px 9px; }
+  .tg-cell .ex { font: 600 11px var(--mono); font-style: normal; color: var(--teal); margin: -3px 0 0 12px; }
+  .r-dt { --rc: var(--teal); } .r-sa { --rc: var(--blue); } .r-nv { --rc: var(--purple); } .r-nl { --rc: #7d879b; }
+  .tg-cell.r-nl { grid-column: span 3; flex-direction: row; align-items: center; flex-wrap: wrap; border-style: dashed; position: relative; }
+  .tg-cell.r-nl span { opacity: .75; }
+  .stamp { margin-left: auto; transform: rotate(-5deg); font: 800 22px var(--sans); letter-spacing: .12em;
+           color: var(--red); border: 3px solid var(--red); border-radius: 10px; padding: 4px 14px; background: rgba(11,15,23,.9); }
+  .hints { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .hints div { font-size: 14px; color: var(--ink-2); padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(11,15,23,.5); }
+  .hints b { font-family: var(--mono); font-size: 13px; }
+
+  .entry { margin-top: 22px; }
+  .entry-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 12px; }
+  .entry-head h3 { font: 700 19px var(--sans); }
+  .entry-head h3 code { font-size: 16px; color: var(--teal); }
+  .entry-head span { font: 500 13px var(--mono); color: var(--ink-3); }
+  .erows { display: grid; grid-template-columns: 250px 1fr 28px 250px; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .erows > * { padding: 11px 14px; border-top: 1px solid var(--line-2); font-size: 14px; color: var(--ink-2); display: flex; align-items: center; }
+  .erows > :nth-child(-n+4) { border-top: 0; }
+  .erows .k { font: 600 12px/1.5 var(--mono); color: var(--ink); background: rgba(11,15,23,.55); overflow-wrap: anywhere; }
+  .erows .v code { font-size: 12px; }
+  .erows .to { justify-content: center; color: var(--ink-3); padding: 0; }
+  .erows .d { font: 600 13px var(--sans); color: var(--dc); background: color-mix(in srgb, var(--dc) 7%, transparent); gap: 8px; }
+  .erows .d::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dc); box-shadow: 0 0 8px var(--dc); flex: none; }
+  .erows .d span { display: flex; flex-direction: column; line-height: 1.3; }
+  .erows .d small { font: 500 12px var(--sans); color: var(--ink-2); margin-top: 2px; }
+  .erows .never { color: var(--red); }
+  .erows .never-row { grid-column: 1 / -1; justify-content: center; gap: 10px; font: 600 14px var(--sans); color: var(--red); background: rgba(252,98,85,.06); }
+  q { font-family: var(--serif); font-style: italic; color: var(--ink); quotes: "“" "”"; }
+
+  .callouts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+  .callouts div { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: rgba(18,26,39,.6); font-size: 14px; color: var(--ink-2); }
+  .callouts h4 { font: 700 15px var(--sans); color: var(--ink); margin-bottom: 4px; }
+
+  /* ---------- 2: corpus + lanes ---------- */
+  .lanes-svg { width: 100%; height: auto; display: block; }
+  .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; margin-top: 10px; padding: 0 8px; }
+  .notes h4 { font: 700 12.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 6px; }
+  .notes ul { list-style: none; display: grid; gap: 7px; }
+  .notes li { font-size: 14.5px; color: var(--ink-2); padding-left: 16px; position: relative; }
+  .notes li::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; border-radius: 50%; background: var(--nc); }
+  .n-blue { --nc: var(--blue); } .n-blue h4 { color: var(--blue); }
+  .n-gold { --nc: var(--gold); } .n-gold h4 { color: var(--gold); }
+
+  /* ---------- 3: judgment ---------- */
+  .jgrid { display: grid; grid-template-columns: 1fr 330px 1fr; gap: 16px; align-items: stretch; }
+  .jcard { border: 1.5px solid rgba(177,137,245,.55); border-radius: 20px; padding: 20px 22px; background: linear-gradient(180deg, rgba(36,26,62,.55), rgba(18,26,39,.6));
+           box-shadow: 0 0 40px rgba(177,137,245,.12); display: flex; flex-direction: column; gap: 10px; }
+  .jtag { font: 600 11.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--purple); }
+  .jcard h3 { font: 700 24px var(--sans); }
+  .jq { font: italic 500 20px/1.3 var(--serif); color: var(--ink); }
+  .jcard p { font-size: 14.5px; color: var(--ink-2); }
+  .jart { height: 74px; }
+  .verdicts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .verdicts span { font: 500 11.5px var(--mono); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-3); }
+  .verdicts span.ok { color: var(--green); border-color: rgba(131,193,103,.6); background: rgba(131,193,103,.1); }
+  .reads { border: 1px solid var(--line); border-radius: 20px; padding: 18px; background: rgba(11,15,23,.6); }
+  .reads h4 { font: 700 12.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; text-align: center; }
+  .reads table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .reads th { font: 600 12px var(--mono); color: var(--purple); padding: 4px 6px 8px; text-align: center; }
+  .reads td { padding: 7px 6px; border-top: 1px solid var(--line-2); color: var(--ink-2); }
+  .reads td:not(:first-child) { text-align: center; font: 700 15px var(--sans); width: 64px; }
+  .reads td.y { color: var(--green); } .reads td.x { color: var(--red); } .reads td.n { color: var(--ink-3); }
+  .reads .key { margin-top: 10px; font-size: 12px; color: var(--ink-3); text-align: center; }
+  .blind { margin-top: 16px; display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: center; border: 1px dashed rgba(252,98,85,.4); border-radius: 18px; padding: 18px 22px; }
+  .blind h4 { font: 700 17px var(--sans); margin-bottom: 4px; }
+  .blind p { font-size: 14px; color: var(--ink-2); }
+  .bars { display: grid; gap: 8px; }
+  .bar-row { display: grid; grid-template-columns: 270px 1fr; gap: 12px; align-items: center; font-size: 13.5px; color: var(--ink-2); }
+  .bar { height: 22px; border-radius: 6px; background: #0a0e15; border: 1px solid var(--line); overflow: hidden; }
+  .bar i { display: flex; align-items: center; justify-content: flex-end; height: 100%; padding-right: 8px; font: 700 12px var(--mono); font-style: normal; color: var(--bg); }
+
+  /* ---------- 4: the bar ---------- */
+  .bargrid { display: grid; grid-template-columns: 560px 1fr; gap: 26px; align-items: start; }
+  .outs { display: grid; gap: 10px; }
+  .out { border-radius: 14px; padding: 12px 16px; border: 1.5px solid var(--oc); background: color-mix(in srgb, var(--oc) 7%, transparent); font-size: 14.5px; color: var(--ink-2); }
+  .out h4 { font: 700 16px var(--sans); color: var(--oc); margin-bottom: 2px; display: flex; align-items: center; gap: 8px; }
+  .out h4 small { font: 500 12px var(--mono); color: var(--ink-3); }
+  .dial { margin-top: 14px; font-size: 14.5px; color: var(--ink-2); border-left: 3px solid var(--teal); padding: 6px 0 6px 14px; }
+
+  /* ---------- 5: modernize ---------- */
+  .modgrid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 22px; align-items: start; }
+  .term { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: #070a10; box-shadow: 0 24px 70px rgba(0,0,0,.5); }
+  .term-bar { display: flex; gap: 7px; align-items: center; padding: 10px 14px; background: #121823; border-bottom: 1px solid var(--line); font: 500 12px var(--mono); color: var(--ink-3); }
+  .term-bar i { width: 10px; height: 10px; border-radius: 50%; background: #2f384a; }
+  .term-bar span { margin-left: 8px; }
+  .term pre { font: 500 12.5px/1.6 var(--mono); color: var(--ink-2); padding: 16px 18px; white-space: pre; overflow-x: auto; }
+  .term .you { color: #fff; font-weight: 600; } .term .ag { color: var(--purple); } .term .cmd { color: var(--green); }
+  .term .dim { color: var(--ink-3); } .term .gid { color: var(--yellow); } .term .q { color: var(--teal); }
+  .term .keep { color: var(--green); } .term .drop { color: var(--orange); } .term .say { color: var(--ink); } .term .ok { color: var(--green); font-weight: 700; }
+  .steps { display: grid; gap: 12px; counter-reset: s; }
+  .step { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: rgba(18,26,39,.6); }
+  .step .si { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; border: 1.5px solid var(--sc); color: var(--sc); background: color-mix(in srgb, var(--sc) 10%, transparent); }
+  .step .si svg { width: 22px; height: 22px; }
+  .step h4 { font: 700 16px var(--sans); margin-bottom: 2px; }
+  .step p { font-size: 14.5px; color: var(--ink-2); }
+
+  /* ---------- 6: who ---------- */
+  .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .role { border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; background: rgba(18,26,39,.6); }
+  .role .rh { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .role .rh svg { width: 18px; height: 18px; }
+  .role b { font-size: 16px; }
+  .role .who { display: block; font: 500 12px var(--mono); color: var(--ink-3); margin-bottom: 6px; }
+  .role p { font-size: 14px; color: var(--ink-2); }
+  .role.paul { grid-row: span 2; border-color: rgba(236,236,236,.35); background: linear-gradient(180deg, rgba(236,236,236,.06), rgba(18,26,39,.6)); }
+  .role.paul p + p { margin-top: 8px; }
+  .role.judge { border-color: rgba(177,137,245,.5); }
+  .rails { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .rails span { font: 500 13px var(--mono); color: var(--ink-2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 13px; background: rgba(11,15,23,.6); }
+
+  footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); font: 500 12.5px/1.7 var(--mono); color: var(--ink-3); }
+
+  @media (max-width: 1000px) {
+    h1 { font-size: 40px; }
+    .tgrid { grid-template-columns: 1fr; } .tg-corner, .tg-colh { display: none; } .tg-cell.r-nl { grid-column: auto; }
+    .tg-cell[data-col]::before { content: "Update Scope: " attr(data-col); font: 600 11px var(--mono); color: var(--ink-3); letter-spacing: .04em; }
+    .erows { grid-template-columns: 1fr; } .erows .to { display: none; }
+    .hints, .callouts, .notes, .jgrid, .bargrid, .modgrid, .roles, .blind { grid-template-columns: 1fr; }
+    .role.paul { grid-row: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Shared defs: arrowheads, glow, icons -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="halo"><stop offset="0" stop-color="#b189f5" stop-opacity=".55"/><stop offset="1" stop-color="#b189f5" stop-opacity="0"/></radialGradient>
+    <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="7" stroke="#83c167" stroke-width="2" stroke-opacity=".45"/>
+    </pattern>
+    <marker id="a-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#8a93a6"/></marker>
+    <marker id="a-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#58c4dd"/></marker>
+    <marker id="a-gold" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#e6b84a"/></marker>
+    <marker id="a-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5cd0b3"/></marker>
+    <marker id="a-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#83c167"/></marker>
+    <marker id="a-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ff9f43"/></marker>
+    <marker id="a-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#b189f5"/></marker>
+    <symbol id="i-agent" viewBox="0 0 16 16"><path d="M8 .8 L9.7 6.3 L15.2 8 L9.7 9.7 L8 15.2 L6.3 9.7 L.8 8 L6.3 6.3 Z" fill="currentColor"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 16 16"><g stroke="currentColor" fill="none"><circle cx="8" cy="8" r="3.6" stroke-width="2"/><path d="M8 .9V3.3M8 12.7v2.4M.9 8h2.4M12.7 8h2.4M3 3l1.7 1.7M11.3 11.3 13 13M3 13l1.7-1.7M11.3 4.7 13 3" stroke-width="2.2"/></g></symbol>
+    <symbol id="i-judge" viewBox="0 0 16 16"><g stroke="currentColor" fill="none" stroke-width="1.4" stroke-linecap="round"><path d="M8 2v11.5M5 14.5h6M2 4h12M3 4 1 9.5M3 4l2 5.5M13 4l-2 5.5M13 4l2 5.5"/><path d="M.8 9.5q2.2 2.6 4.4 0M10.8 9.5q2.2 2.6 4.4 0"/></g></symbol>
+    <symbol id="i-paul" viewBox="0 0 16 16"><circle cx="8" cy="4.8" r="3.1" fill="currentColor"/><path d="M1.8 15.2C1.8 10.4 14.2 10.4 14.2 15.2Z" fill="currentColor"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="2.5" y="7" width="11" height="8" rx="1.6" fill="currentColor"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header>
+  <div class="kicker">Modern Web Guidance · analyzer</div>
+  <h1>How a guide becomes a finding you can trust</h1>
+  <p class="lede"><code>npx modern-web-guidance analyze</code> finds old web platform code in an existing app and points each finding at the guide that replaces it. If it cries wolf, people stop listening.. so most of this pipeline is about one question: is this finding real?</p>
+  <p class="lede">Agents wrote all of it (rules, tests, scripts, even this page). Paul sets the bar, the corpus split, and the guardrails, and makes the calls the judges can't.</p>
+  <div class="legend">
+    <div class="grp">
+      <span><svg class="ico" style="color:#a9b1c1"><use href="#i-agent"/></svg>agent-written</span>
+      <span><svg class="ico" style="color:#8a93a6"><use href="#i-gear"/></svg>deterministic</span>
+      <span><svg class="ico" style="color:#b189f5"><use href="#i-judge"/></svg>LLM judgment</span>
+      <span><svg class="ico" style="color:#ececec"><use href="#i-paul"/></svg>Paul's call</span>
+    </div>
+    <span class="sep"></span>
+    <div class="grp">
+      <span><i class="sw" style="background:var(--blue)"></i>rule-writing split</span>
+      <span><i class="sw" style="background:var(--gold)"></i>held-out split</span>
+      <span><i class="sw" style="background:var(--orange)"></i>old code · experimental</span>
+      <span><i class="sw" style="background:var(--teal)"></i>modern · the bar</span>
+    </div>
+  </div>
+</header>
+
+<!-- ======================= OVERVIEW MAP ======================= -->
+<div class="map">
+<svg viewBox="0 0 1240 525" role="img" aria-label="Pipeline overview: guides, guide triage, build on rule-writing, measure on held-out, the bar, modernize">
+  <!-- corpus reservoir -->
+  <path d="M450 30 V92 A170 13 0 0 0 790 92 V30" fill="rgba(255,255,255,.035)" stroke="#4a5570" stroke-width="1.4"/>
+  <ellipse cx="620" cy="30" rx="170" ry="13" fill="#141b29" stroke="#4a5570" stroke-width="1.4"/>
+  <text x="620" y="57" text-anchor="middle" style="font:700 14px var(--sans);fill:#ececec">Open-Source Corpus</text>
+  <text x="620" y="73" text-anchor="middle" class="t-desc">Permissively licensed open-source GitHub code</text>
+  <text x="620" y="89" text-anchor="middle" style="font:600 11px var(--sans);fill:#5cd0b3">rules' fastTokens pull ≈ 2.8 GB of JS, HTML &amp; CSS</text>
+  <path d="M600 104 C600 128 490 122 490 139" fill="none" stroke="#58c4dd" stroke-width="1.6" class="flow" marker-end="url(#a-blue)"/>
+  <path d="M640 104 C640 128 750 122 750 139" fill="none" stroke="#e6b84a" stroke-width="1.6" class="flow" marker-end="url(#a-gold)"/>
+
+  <!-- local repos -> rule-writing -->
+  <path d="M266 160 V204 A64 8 0 0 0 394 204 V160" fill="rgba(88,196,221,.05)" stroke="#58c4dd" stroke-opacity=".6" stroke-width="1.3"/>
+  <ellipse cx="330" cy="160" rx="64" ry="8" fill="#101a24" stroke="#58c4dd" stroke-opacity=".6" stroke-width="1.3"/>
+  <text x="330" y="184" text-anchor="middle" style="font:600 11px var(--sans);fill:#ececec">208 local repos</text>
+  <text x="330" y="199" text-anchor="middle" class="t-desc" style="font-size:10.5px">30,461 files · 377 MB</text>
+  <path d="M396 182 H409" stroke="#58c4dd" stroke-width="1.6" marker-end="url(#a-blue)"/>
+
+  <!-- tanks -->
+  <path d="M412 150 V212 A78 9 0 0 0 568 212 V150" fill="rgba(88,196,221,.08)" stroke="#58c4dd" stroke-width="1.5"/>
+  <ellipse cx="490" cy="150" rx="78" ry="9" fill="#0f1a24" stroke="#58c4dd" stroke-width="1.5"/>
+  <text x="490" y="177" text-anchor="middle" style="font:700 12.5px var(--sans);fill:#58c4dd">rule-writing</text>
+  <text x="490" y="193" text-anchor="middle" style="font:500 11px var(--sans);fill:#ececec">22,558 repos · 1,355 MB</text>
+  <text x="490" y="207" text-anchor="middle" class="t-desc" style="font-size:10.5px">29,951 corpus files</text>
+
+  <path d="M672 150 V212 A78 9 0 0 0 828 212 V150" fill="rgba(230,184,74,.08)" stroke="#e6b84a" stroke-width="1.5"/>
+  <ellipse cx="750" cy="150" rx="78" ry="9" fill="#1a1710" stroke="#e6b84a" stroke-width="1.5"/>
+  <text x="750" y="177" text-anchor="middle" style="font:700 12.5px var(--sans);fill:#e6b84a">held-out</text>
+  <text x="750" y="193" text-anchor="middle" style="font:500 11px var(--sans);fill:#ececec">22,516 repos · 1,410 MB</text>
+  <text x="750" y="207" text-anchor="middle" class="t-desc" style="font-size:10.5px">30,041 corpus files</text>
+  <use href="#i-lock" x="836" y="168" width="16" height="16" style="color:#e6b84a"/>
+
+  <path d="M490 221 V246" stroke="#58c4dd" stroke-width="1.6" class="flow" marker-end="url(#a-blue)"/>
+  <path d="M750 221 V246" stroke="#e6b84a" stroke-width="1.6" class="flow" marker-end="url(#a-gold)"/>
+  <text x="499" y="239" style="font:500 10px var(--sans);fill:#58c4dd">read freely</text>
+  <text x="759" y="239" style="font:500 10px var(--sans);fill:#e6b84a">measure only</text>
+
+  <!-- the cut / firewall -->
+  <g filter="url(#glow)">
+    <path d="M620 108 l7 7 l-7 7 l-7 -7 z" fill="#fc6255"/>
+    <path d="M616 122 V306 M616 354 V452 M624 122 V306 M624 354 V452" stroke="#fc6255" stroke-width="1.6" stroke-opacity=".9"/>
+  </g>
+  <rect x="586" y="168" width="68" height="34" rx="6" fill="#0d1119"/>
+  <text x="620" y="182" text-anchor="middle" style="font:600 10.5px var(--mono);fill:#fc6255">hash(repo)</text>
+  <text x="620" y="196" text-anchor="middle" style="font:600 10.5px var(--mono);fill:#fc6255">mod 2</text>
+
+  <!-- track arrows -->
+  <path d="M160 330 H197" stroke="#8a93a6" stroke-width="1.6" marker-end="url(#a-ink)"/>
+  <path d="M350 330 H412" stroke="#8a93a6" stroke-width="1.6" marker-end="url(#a-ink)"/>
+  <text x="381" y="322" text-anchor="middle" class="t-mono">scope</text>
+  <path d="M565 330 H672" stroke="#58c4dd" stroke-width="1.8" class="flow" marker-end="url(#a-blue)"/>
+  <text x="620" y="320" text-anchor="middle" style="font:600 10px var(--mono);fill:#58c4dd">committed rule</text>
+  <path d="M825 330 H882" stroke="#8a93a6" stroke-width="1.6" marker-end="url(#a-ink)"/>
+  <text x="855" y="322" text-anchor="middle" class="t-mono">scores</text>
+  <path d="M1035 330 H1072" stroke="#83c167" stroke-width="1.8" marker-end="url(#a-green)"/>
+
+  <!-- 1 guides -->
+  <a href="#triage">
+    <rect class="st" x="10" y="250" width="150" height="160" rx="16" fill="#121a27" stroke="#2f3a50" stroke-width="1.4"/>
+    <g transform="translate(85 302)">
+      <rect x="-24" y="-30" width="40" height="52" rx="5" transform="rotate(-9)" fill="#0f1520" stroke="#3d475c" stroke-width="1.3"/>
+      <rect x="-18" y="-31" width="40" height="52" rx="5" transform="rotate(6)" fill="#0f1520" stroke="#56607a" stroke-width="1.3"/>
+      <rect x="-20" y="-30" width="40" height="52" rx="5" fill="#111a28" stroke="#5cd0b3" stroke-width="1.6"/>
+      <path d="M-12 -19 H12 M-12 -11 H8 M-12 -3 H12 M-12 5 H3" stroke="#5cd0b3" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>
+      <text y="17" text-anchor="middle" style="font:600 8px var(--mono);fill:#5cd0b3">guide.md</text>
+    </g>
+    <text x="85" y="362" text-anchor="middle" class="t-name">GUIDES</text>
+    <text x="85" y="380" text-anchor="middle" class="t-desc">one guide.md per</text>
+    <text x="85" y="395" text-anchor="middle" class="t-desc">modern feature</text>
+  </a>
+
+  <!-- 2 triage -->
+  <a href="#triage">
+    <rect class="st" x="200" y="250" width="150" height="160" rx="16" fill="#121a27" stroke="#2f3a50" stroke-width="1.4"/>
+    <use href="#i-agent" x="328" y="258" width="13" height="13" style="color:#a9b1c1"/>
+    <g transform="translate(275 300)">
+      <g stroke-width="1.3">
+        <rect x="-33" y="-32" width="20" height="12" rx="3" fill="rgba(92,208,179,.22)" stroke="#5cd0b3"/>
+        <rect x="-10" y="-32" width="20" height="12" rx="3" fill="rgba(92,208,179,.22)" stroke="#5cd0b3"/>
+        <rect x="13" y="-32" width="20" height="12" rx="3" fill="rgba(92,208,179,.22)" stroke="#5cd0b3"/>
+        <rect x="-33" y="-16" width="20" height="12" rx="3" fill="rgba(88,196,221,.22)" stroke="#58c4dd"/>
+        <rect x="-10" y="-16" width="20" height="12" rx="3" fill="rgba(88,196,221,.22)" stroke="#58c4dd"/>
+        <rect x="13" y="-16" width="20" height="12" rx="3" fill="rgba(88,196,221,.22)" stroke="#58c4dd"/>
+        <rect x="-33" y="0" width="20" height="12" rx="3" fill="rgba(177,137,245,.22)" stroke="#b189f5"/>
+        <rect x="-10" y="0" width="20" height="12" rx="3" fill="rgba(177,137,245,.22)" stroke="#b189f5"/>
+        <rect x="13" y="0" width="20" height="12" rx="3" fill="rgba(177,137,245,.22)" stroke="#b189f5"/>
+        <rect x="-33" y="16" width="66" height="12" rx="3" fill="none" stroke="#6b7486" stroke-dasharray="3 3"/>
+      </g>
+    </g>
+    <text x="275" y="362" text-anchor="middle" class="t-name">GUIDE TRIAGE</text>
+    <text x="275" y="380" text-anchor="middle" class="t-desc">old pattern? what fix?</text>
+    <text x="275" y="395" text-anchor="middle" class="t-desc">everything keys off it</text>
+  </a>
+
+  <!-- 3 build -->
+  <a href="#split">
+    <rect class="st" x="415" y="250" width="150" height="160" rx="16" fill="#101b26" stroke="#58c4dd" stroke-width="1.5"/>
+    <use href="#i-agent" x="543" y="258" width="13" height="13" style="color:#a9b1c1"/>
+    <use href="#i-gear" x="525" y="258" width="13" height="13" style="color:#8a93a6"/>
+    <g transform="translate(490 302)">
+      <path d="M-28.6 -16.5 A33 33 0 1 1 -16.5 28.6" fill="none" stroke="#58c4dd" stroke-width="1.6" stroke-dasharray="4 4" marker-end="url(#a-blue)"/>
+      <rect x="-17" y="-20" width="24" height="32" rx="3" fill="#0f1a24" stroke="#58c4dd" stroke-width="1.5"/>
+      <path d="M-12 -12 H2 M-12 -6 H-1 M-12 0 H3 M-12 6 H-3" stroke="#58c4dd" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="1" y="-1" width="19" height="22" rx="3" fill="#161226" stroke="#b189f5" stroke-width="1.5"/>
+      <path d="M5 6 l2 2 l4 -4 M5 13 l5 5 M10 13 l-5 5" stroke="#b189f5" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+    </g>
+    <text x="490" y="362" text-anchor="middle" class="t-name">BUILD</text>
+    <text x="490" y="380" text-anchor="middle" class="t-desc">Static Matcher +</text>
+    <text x="490" y="395" text-anchor="middle" class="t-desc">verifier rubric, ↻ tighten</text>
+  </a>
+
+  <!-- 4 measure -->
+  <a href="#split">
+    <rect class="st" x="675" y="250" width="150" height="160" rx="16" fill="#1a1810" stroke="#e6b84a" stroke-width="1.5"/>
+    <use href="#i-paul" x="803" y="258" width="13" height="13" style="color:#ececec"/>
+    <use href="#i-judge" x="785" y="258" width="13" height="13" style="color:#b189f5"/>
+    <use href="#i-gear" x="767" y="258" width="13" height="13" style="color:#8a93a6"/>
+    <g transform="translate(750 304)">
+      <g fill="#1a1710" stroke="#e6b84a" stroke-width="1.4">
+        <rect x="-44" y="-12" width="18" height="26" rx="3" transform="rotate(-14 -35 1)"/>
+        <rect x="-38" y="-14" width="18" height="26" rx="3"/>
+        <rect x="-32" y="-12" width="18" height="26" rx="3" transform="rotate(14 -23 1)"/>
+      </g>
+      <circle cx="18" cy="-2" r="30" fill="url(#halo)" class="pulse"/>
+      <g fill="none" stroke-width="1.4">
+        <circle cx="4" cy="-12" r="5" stroke="#a9b1c1"/><circle cx="17" cy="-14" r="5" stroke="#a9b1c1"/><circle cx="30" cy="-12" r="5" stroke="#a9b1c1"/>
+        <circle cx="17" cy="6" r="7.5" stroke="#b189f5" stroke-width="1.8"/>
+        <rect x="31" y="2" width="13" height="17" rx="2" stroke="#b189f5"/>
+        <path d="M34 8 l1.5 1.5 l3 -3 M34 14 l4 4 M38 14 l-4 4" stroke="#b189f5" stroke-width="1.1"/>
+      </g>
+    </g>
+    <text x="750" y="362" text-anchor="middle" class="t-name">MEASURE</text>
+    <text x="750" y="380" text-anchor="middle" class="t-desc">blind cards graded by</text>
+    <text x="750" y="395" text-anchor="middle" class="t-desc">judge panel + verifier</text>
+  </a>
+
+  <!-- 5 bar -->
+  <a href="#bar">
+    <rect class="st" x="885" y="250" width="150" height="160" rx="16" fill="#0f1b1a" stroke="#5cd0b3" stroke-width="1.5"/>
+    <use href="#i-paul" x="1013" y="258" width="13" height="13" style="color:#ececec"/>
+    <use href="#i-gear" x="995" y="258" width="13" height="13" style="color:#8a93a6"/>
+    <g transform="translate(960 304)">
+      <path d="M-26 24 V-24 M26 24 V-24" stroke="#a9b1c1" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M-32 -4 H32" stroke="#5cd0b3" stroke-width="3" filter="url(#glow)"/>
+      <text y="-10" text-anchor="middle" style="font:700 9px var(--mono);fill:#5cd0b3">≥ 90%</text>
+      <path d="M-40 -18 Q0 -42 40 -18" fill="none" stroke="#83c167" stroke-width="1.6" marker-end="url(#a-green)"/>
+      <path d="M0 4 V22" stroke="#ff9f43" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#a-orange)"/>
+    </g>
+    <text x="960" y="362" text-anchor="middle" class="t-name">THE BAR</text>
+    <text x="960" y="380" text-anchor="middle" class="t-desc">static ≥ 80% and</text>
+    <text x="960" y="395" text-anchor="middle" class="t-desc">post-verifier ≥ 90%</text>
+  </a>
+
+  <!-- 6 modernize -->
+  <a href="#modernize">
+    <rect class="st" x="1075" y="250" width="150" height="160" rx="16" fill="#111b14" stroke="#83c167" stroke-width="1.5"/>
+    <use href="#i-judge" x="1203" y="258" width="13" height="13" style="color:#b189f5"/>
+    <use href="#i-gear" x="1185" y="258" width="13" height="13" style="color:#8a93a6"/>
+    <g transform="translate(1150 306)">
+      <rect x="-32" y="-28" width="64" height="40" rx="4" fill="#0f1520" stroke="#83c167" stroke-width="1.6"/>
+      <path d="M-40 14 H40 L33 21 H-33 Z" fill="#0f1520" stroke="#83c167" stroke-width="1.4"/>
+      <path d="M-24 -18 H-8" stroke="#ff9f43" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-3 -18 H2" stroke="#6b7486" stroke-width="1.4"/>
+      <path d="M7 -18 H22" stroke="#5cd0b3" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-24 -9 H-12" stroke="#ff9f43" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-7 -9 H-2" stroke="#6b7486" stroke-width="1.4"/>
+      <path d="M3 -9 H18" stroke="#5cd0b3" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-24 0 H14" stroke="#5cd0b3" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="30" cy="-30" r="14" fill="url(#halo)" class="pulse"/>
+      <use href="#i-agent" x="23" y="-37" width="14" height="14" style="color:#b189f5"/>
+    </g>
+    <text x="1150" y="362" text-anchor="middle" class="t-name">MODERNIZE</text>
+    <text x="1150" y="380" text-anchor="middle" class="t-desc">the developer's agent</text>
+    <text x="1150" y="395" text-anchor="middle" class="t-desc">verifies, plans, rewrites</text>
+  </a>
+
+  <!-- bottom band: no-rule chute + feedback loop -->
+  <path d="M275 410 V442" stroke="#6b7486" stroke-width="1.4" stroke-dasharray="3 3" marker-end="url(#a-ink)"/>
+  <path d="M257 447 h36 l-4 14 h-28 z" fill="none" stroke="#6b7486" stroke-width="1.4"/>
+  <text x="275" y="480" text-anchor="middle" class="t-mono">no-legacy-pattern</text>
+  <text x="275" y="494" text-anchor="middle" class="t-mono">→ no rule</text>
+
+  <path d="M960 410 V466 Q960 476 950 476 H500 Q490 476 490 466 V415" fill="none" stroke="#ff9f43" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#a-orange)"/>
+  <text x="725" y="497" text-anchor="middle" style="font:600 11.5px var(--sans);fill:#ff9f43">below the bar: stays experimental, back to tighten</text>
+  <text x="725" y="513" text-anchor="middle" class="t-desc" style="fill:#6b7486">only numbers cross back, never files</text>
+</svg>
+<div class="map-cap">click a station to jump to its section</div>
+</div>
+
+<!-- ======================= 1. GUIDE TRIAGE ======================= -->
+<section class="chapter" id="triage" style="--c: var(--teal)">
+  <div class="ch-head">
+    <div class="ch-num">1</div>
+    <div class="ch-title">Guide Triage <span class="badges"><span class="badge"><svg class="ico" style="color:#a9b1c1"><use href="#i-agent"/></svg>agent-written</span><span class="badge"><svg class="ico" style="color:#ececec"><use href="#i-paul"/></svg>scope calls</span></span></div>
+    <div class="ch-q">Is there an old pattern here, and what would the fix look like?</div>
+    <p class="ch-p">Each guide covers one modern feature. Before anyone writes a matcher, an agent reads the whole guide and writes its triage entry: two answers (Detection and Update Scope) plus the exact scope, with every claim quoted from <code>guide.md</code>. The rest of the pipeline leans on this entry for <b>what the matcher looks for, how big the fix is, and whether a rule should exist at all.</b></p>
+  </div>
+
+  <div class="panel">
+    <p class="cap">scored on each guide's cleanest old sub-pattern · every name below is a real triage entry</p>
+    <div class="tgrid">
+      <div class="tg-corner"><span class="ax">Detection ↓</span><span class="ax">Update Scope →</span></div>
+      <div class="tg-colh"><code>local-swap</code><p>Change one site, same language: add <code>autocomplete</code>, or use <code>scrollbar-color</code> instead of <code>::-webkit-scrollbar</code>.</p></div>
+      <div class="tg-colh"><code>cross-layer-refactor</code><p>Delete JS listeners, observers, or libraries and move the behavior into CSS or HTML (<code>field-sizing</code>, <code>animation-timeline</code>, <code>:has()</code>).</p></div>
+      <div class="tg-colh"><code>widget-recipe</code><p>Rework a composite widget's HTML, CSS, and JS together (<code>navigation-drawer</code>, <code>menu</code>).</p></div>
+
+      <div class="tg-rowh r-dt"><code>direct-token</code><p>A dedicated token proves intent: a vendor prefix, a deprecated attribute, a single-purpose package like <code>autosize</code>.</p><span class="mis">~0–3% static misfire</span></div>
+      <div class="tg-cell r-dt" data-col="local-swap"><span>complex-shapes</span><span>browser-ui-theming</span><span>calculate-event-differentials</span></div>
+      <div class="tg-cell r-dt" data-col="cross-layer-refactor"><span class="hero">form-fields-automatically-fit-contents</span><em class="ex">↓ worked example below</em><span>cross-document-transitions</span><span>equal-width-text-lines</span></div>
+      <div class="tg-cell r-dt" data-col="widget-recipe"><span>interest-triggered-tooltips</span><span>branded-select-styling</span><span>persistent-toast-notifications</span></div>
+
+      <div class="tg-rowh r-sa"><code>structural-ast</code><p>Everyday HTML, CSS, or JS, but a 2–3 clause shape proves intent (a <code>&lt;dialog&gt;</code> backdrop click that checks the target and calls <code>.close()</code>).</p><span class="mis">~3–10% static misfire</span></div>
+      <div class="tg-cell r-sa" data-col="local-swap"><span>autofill-address-form</span><span>checkbox</span><span>autofill-payment-form</span></div>
+      <div class="tg-cell r-sa" data-col="cross-layer-refactor"><span>scrollspy</span><span>animate-element-entry-exit</span><span>declarative-dialog-popover-control</span></div>
+      <div class="tg-cell r-sa" data-col="widget-recipe"><span>menu</span><span>card</span><span>dark-mode-toggle</span></div>
+
+      <div class="tg-rowh r-nv"><code>needs-verifier</code><p>A real old pattern written with everyday APIs (<code>setTimeout</code>, <code>ResizeObserver</code>, rect math). Statically it looks like normal code.</p><span class="mis">&gt;50% static misfire: leans on the verifier</span></div>
+      <div class="tg-cell r-nv" data-col="local-swap"><span>break-up-long-tasks</span><span>batch-analytics-events</span></div>
+      <div class="tg-cell r-nv" data-col="cross-layer-refactor"><span>carousel-slide-effects</span><span>contrast-color</span><span>2d-panning</span></div>
+      <div class="tg-cell r-nv" data-col="widget-recipe"><span>navigation-drawer</span><span>swipe-to-remove</span><span>anchor-positioning-tab-underline</span></div>
+
+      <div class="tg-rowh r-nl"><code>no-legacy-pattern</code><p>Nothing to find: a greenfield feature (<code>passkey-registration</code>) or a call that needs human visual judgment.</p></div>
+      <div class="tg-cell r-nl"><span>passkey-registration</span><span>agentic-forms</span><span>accessible-generated-content</span><span>accessible-error-announcement</span><div class="stamp">NO RULE</div></div>
+    </div>
+    <div class="hints">
+      <div><b>Detection</b> tells the rule author how much a matcher can prove on its own, and when it'll need the verifier.</div>
+      <div><b>Update Scope</b> tells the coding agent how big the edit will be when it modernizes.</div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <h3>One entry, field by field: <code>form-fields-automatically-fit-contents</code></h3>
+        <span>modern feature: CSS field-sizing: content · direct-token × cross-layer-refactor</span>
+      </div>
+      <div class="erows">
+        <div class="k">replaces</div>
+        <div class="v"><span><code>textarea.style.height = textarea.scrollHeight + "px"</code> listeners, and the CSS Grid <code>data-replicated-value</code> auto-grow hack</span></div>
+        <div class="to">→</div>
+        <div class="d" style="--dc: var(--blue)"><span>Static Matcher<small>what to match</small></span></div>
+
+        <div class="k">doesNotReplace</div>
+        <div class="v">fixed-height textareas · contenteditable · <code>resize: vertical</code></div>
+        <div class="to">→</div>
+        <div class="d" style="--dc: var(--blue)"><span>Static Matcher<small>what to leave alone, incl. syntax-only swaps</small></span></div>
+
+        <div class="k">falsePositiveTraps</div>
+        <div class="v"><span>any <code>autosize()</code> that isn't the textarea library · <code>height = 'auto'</code> then <code>scrollHeight</code> on non-form elements (that's <code>animate-to-intrinsic-sizes</code>, a different guide)</span></div>
+        <div class="to">→</div>
+        <div class="d" style="--dc: var(--purple)"><span>matcher guards<small>and the verifier's Drop when</small></span></div>
+
+        <div class="k">citations</div>
+        <div class="v"><q>By default, form controls like &lt;input&gt;, &lt;textarea&gt;, and &lt;select&gt; have fixed dimensions.</q></div>
+        <div class="to">→</div>
+        <div class="d" style="--dc: var(--teal)"><span>grounding<small>no quote, no claim</small></span></div>
+
+        <div class="k">detection</div>
+        <div class="v"><code>direct-token</code>: syncing <code>scrollHeight</code> into a textarea's height, or the <code>autosize</code> package, proves intent on its own</div>
+        <div class="to">→</div>
+        <div class="d" style="--dc: var(--blue)"><span>Static Matcher<small>how much it can prove alone</small></span></div>
+
+        <div class="k">updateScope</div>
+        <div class="v"><code>cross-layer-refactor</code></div>
+        <div class="to">→</div>
+        <div class="d" style="--dc: var(--green)"><span>Modernize<small>delete the JS, add one CSS property</small></span></div>
+
+        <div class="never-row">✗ The Eval Judge never sees any of this (triage only feeds rule authoring).</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callouts">
+    <div><h4>Sometimes there's nothing to find</h4>We used to ask agents to find the legacy pattern for every guide.. and they always found one. :) Now <code>no-legacy-pattern</code> is a valid answer. 62 of the 205 triaged guides got it, and they don't get a rule.</div>
+    <div><h4>Does the fix change anything?</h4>If adopting the guide doesn't change anything for the developer or the user, we don't report it. That's why the rule rewriting working <code>+</code>/<code>~</code> selectors as <code>:has()</code> got retired. Same behavior, new syntax (and <code>:has()</code> can be slower).</div>
+    <div><h4>Overlaps go to the more specific guide</h4>When two guides could flag the same code, the more specific one owns it. The general rule excludes that case in its own matcher, so there's no dedup step later.</div>
+    <div><h4>Every claim quotes the guide</h4>Triage claims have to quote <code>guide.md</code> verbatim or they're dropped. Rules also store a hash of their guide, so editing a guide flags its rules for a re-check.</div>
+  </div>
+</section>
+
+<div class="pipe">
+  <svg viewBox="0 0 40 64"><path d="M20 0 V56" stroke="#5cd0b3" stroke-width="2" class="flow"/><path d="M13 50 L20 60 L27 50" fill="none" stroke="#5cd0b3" stroke-width="2"/></svg>
+  <span>guides with an old pattern to find, each with its triage entry</span>
+</div>
+
+<!-- ======================= 2. SPLIT, BUILD, MEASURE ======================= -->
+<section class="chapter" id="split" style="--c: var(--blue)">
+  <div class="ch-head">
+    <div class="ch-num">2</div>
+    <div class="ch-title">Corpus split · Build · Measure <span class="badges"><span class="badge"><svg class="ico" style="color:#a9b1c1"><use href="#i-agent"/></svg>agents build</span><span class="badge"><svg class="ico" style="color:#8a93a6"><use href="#i-gear"/></svg>deterministic split</span></span></div>
+    <div class="ch-q">How do we know a rule works on code it's never seen?</div>
+    <p class="ch-p">Agents write and tighten rules on one half of the corpus. The rule gets graded on the other half, which no rule author ever opens. <b>A hash of each repo's name decides the halves</b> (and doubles as the wall between those two jobs).</p>
+  </div>
+
+  <div class="panel">
+  <svg class="lanes-svg" viewBox="0 0 1200 960" role="img" aria-label="The corpus splits by repo hash into rule-writing and held-out halves; rules are built and tightened on rule-writing and measured on held-out">
+    <!-- sampler input -->
+    <path d="M600 0 V44" stroke="#58c4dd" stroke-width="1.8" class="flow" marker-end="url(#a-blue)"/>
+    <text x="614" y="22" class="t-mono" style="font-size:11px">from rules: fastTokens compiled to SQL (D-084)</text>
+
+    <!-- Open-Source Corpus reservoir -->
+    <path d="M40 52 V146 A160 15 0 0 0 360 146 V52" fill="rgba(255,255,255,.03)" stroke="#4a5570" stroke-width="1.4"/>
+    <ellipse cx="200" cy="52" rx="160" ry="15" fill="#141b29" stroke="#4a5570" stroke-width="1.4"/>
+    <text x="200" y="94" text-anchor="middle" style="font:700 16px var(--sans);fill:#ececec">Open-Source Corpus</text>
+    <text x="200" y="114" text-anchor="middle" style="font:400 12px var(--sans);fill:#a9b1c1">Permissively licensed open-source GitHub code</text>
+    <text x="200" y="132" text-anchor="middle" style="font:400 11.5px var(--sans);fill:#6b7486">queried with SQL</text>
+    <path d="M362 98 C410 98 420 79 466 79" fill="none" stroke="#8a93a6" stroke-width="1.6" class="flow" marker-end="url(#a-ink)"/>
+    <text x="414" y="72" text-anchor="middle" style="font:700 12px var(--sans);fill:#5cd0b3">≈ 2.8 GB</text>
+    <text x="414" y="114" text-anchor="middle" style="font:600 10.5px var(--sans);fill:#5cd0b3">JS · HTML · CSS</text>
+
+    <!-- sampler -->
+    <rect x="470" y="48" width="260" height="62" rx="12" fill="#121a27" stroke="#56607a" stroke-width="1.4"/>
+    <text x="600" y="71" text-anchor="middle" style="font:700 13px var(--sans);fill:#ececec">Sampler</text>
+    <text x="600" y="86" text-anchor="middle" style="font:500 10.5px var(--sans);fill:#5cd0b3">SQL compiled from rules' fastTokens</text>
+    <text x="600" y="100" text-anchor="middle" style="font:400 10.5px var(--sans);fill:#a9b1c1">≤ 200 files/guide/split · ≤ 2/repo</text>
+
+    <!-- scale check -->
+    <text x="1060" y="12" style="font:600 10px var(--mono);fill:#6b7486;letter-spacing:.14em">SCALE CHECK</text>
+    <rect x="1060" y="20" width="120" height="120" fill="rgba(255,255,255,.035)" stroke="#3a4458"/>
+    <text x="1068" y="36" style="font:400 10.5px var(--sans);fill:#6b7486">Open-Source Corpus</text>
+    <circle cx="1172" cy="132" r=".95" fill="#5cd0b3"/>
+    <circle cx="1172" cy="132" r="8" fill="none" stroke="#5cd0b3" stroke-width="1.2"/>
+    <path d="M1165 128 L1052 101" stroke="#5cd0b3" stroke-width=".8" stroke-opacity=".7"/>
+    <text x="1048" y="90" text-anchor="end" style="font:700 12px var(--sans);fill:#5cd0b3">our sample: ~2.8 GB of JS, HTML &amp; CSS</text>
+    <text x="1048" y="106" text-anchor="end" style="font:400 11px var(--sans);fill:#a9b1c1">Stratified 2-file-per-repo sample</text>
+    <text x="1048" y="121" text-anchor="end" style="font:400 10.5px var(--sans);fill:#6b7486">(the dot is drawn ~36× too big)</text>
+
+    <!-- knife -->
+    <path d="M600 110 V131" stroke="#8a93a6" stroke-width="1.6" marker-end="url(#a-ink)"/>
+    <rect x="532" y="134" width="136" height="28" rx="14" fill="#1d1013" stroke="#fc6255" stroke-width="1.6" filter="url(#glow)"/>
+    <text x="600" y="153" text-anchor="middle" style="font:600 12px var(--mono);fill:#fc6255">hash(repo) mod 2</text>
+    <text x="684" y="146" style="font:500 10.5px var(--mono);fill:#6b7486">MOD(ABS(HASH(repository)), 2)</text>
+    <text x="684" y="162" style="font:400 11px var(--sans);fill:#6b7486">split by repo, not file, so one repo's idioms can't leak across</text>
+
+    <path d="M590 162 C590 205 300 200 300 230" fill="none" stroke="#58c4dd" stroke-width="1.8" class="flow" marker-end="url(#a-blue)"/>
+    <path d="M610 162 C610 205 900 200 900 230" fill="none" stroke="#e6b84a" stroke-width="1.8" class="flow" marker-end="url(#a-gold)"/>
+
+    <!-- tanks -->
+    <path d="M110 250 V336 A190 16 0 0 0 490 336 V250" fill="rgba(88,196,221,.07)" stroke="#58c4dd" stroke-width="1.6"/>
+    <ellipse cx="300" cy="250" rx="190" ry="16" fill="#0f1a24" stroke="#58c4dd" stroke-width="1.6"/>
+    <text x="300" y="288" text-anchor="middle" style="font:700 17px var(--sans);fill:#58c4dd">rule-writing</text>
+    <text x="300" y="309" text-anchor="middle" style="font:500 12.5px var(--sans);fill:#ececec">Open-Source Corpus: 22,558 repos · 29,951 files · 1,355 MB</text>
+    <text x="300" y="328" text-anchor="middle" style="font:500 12.5px var(--sans);fill:#a9b1c1">local: 208 repos · 30,461 files · 377 MB</text>
+
+    <path d="M710 250 V336 A190 16 0 0 0 1090 336 V250" fill="rgba(230,184,74,.07)" stroke="#e6b84a" stroke-width="1.6"/>
+    <ellipse cx="900" cy="250" rx="190" ry="16" fill="#1a1710" stroke="#e6b84a" stroke-width="1.6"/>
+    <text x="900" y="288" text-anchor="middle" style="font:700 17px var(--sans);fill:#e6b84a">held-out</text>
+    <text x="900" y="309" text-anchor="middle" style="font:500 12.5px var(--sans);fill:#ececec">Open-Source Corpus: 22,516 repos · 30,041 files · 1,410 MB</text>
+    <text x="900" y="328" text-anchor="middle" style="font:400 12px var(--sans);fill:#6b7486">no local repos (agents had already read them)</text>
+    <use href="#i-lock" x="1098" y="262" width="18" height="18" style="color:#e6b84a"/>
+
+    <path d="M300 352 V476" stroke="#58c4dd" stroke-width="1.8" class="flow" marker-end="url(#a-blue)"/>
+    <text x="312" y="378" style="font:500 11.5px var(--sans);fill:#58c4dd">read freely</text>
+    <path d="M900 352 V492" stroke="#e6b84a" stroke-width="1.8" class="flow" marker-end="url(#a-gold)"/>
+    <text x="912" y="378" style="font:500 11.5px var(--sans);fill:#e6b84a">look once and it's burned</text>
+
+    <!-- lanes -->
+    <rect x="16" y="392" width="566" height="512" rx="20" fill="rgba(88,196,221,.035)" stroke="#58c4dd" stroke-opacity=".35"/>
+    <rect x="618" y="392" width="566" height="512" rx="20" fill="rgba(230,184,74,.035)" stroke="#e6b84a" stroke-opacity=".35"/>
+    <text x="40" y="426" style="font:700 15px var(--sans);fill:#58c4dd;letter-spacing:.14em">BUILD</text>
+    <text x="40" y="445" style="font:400 12px var(--sans);fill:#6b7486">rule-writing · iterate freely</text>
+    <use href="#i-agent" x="550" y="410" width="15" height="15" style="color:#a9b1c1"/>
+    <text x="642" y="426" style="font:700 15px var(--sans);fill:#e6b84a;letter-spacing:.14em">MEASURE</text>
+    <text x="642" y="445" style="font:400 12px var(--sans);fill:#6b7486">held-out · measure, never tune</text>
+    <use href="#i-gear" x="1112" y="410" width="15" height="15" style="color:#8a93a6"/>
+    <use href="#i-judge" x="1132" y="410" width="15" height="15" style="color:#b189f5"/>
+    <use href="#i-paul" x="1152" y="410" width="15" height="15" style="color:#ececec"/>
+
+    <!-- the wall (continues from the knife) -->
+    <g filter="url(#glow)">
+      <path d="M596 162 V524 M596 548 V850 M596 874 V935 M604 162 V524 M604 548 V850 M604 874 V935" stroke="#fc6255" stroke-width="1.6" stroke-opacity=".9"/>
+    </g>
+    <rect x="588" y="575" width="24" height="250" fill="#0d1119"/>
+    <text x="600" y="704" text-anchor="middle" transform="rotate(-90 600 700)" style="font:600 10.5px var(--mono);fill:#fc6255;letter-spacing:.2em">AUTHORS NEVER READ HELD-OUT</text>
+
+    <!-- tighten loop -->
+    <g fill="none" stroke="#58c4dd" stroke-width="1.8">
+      <path d="M281.8 486.6 A105 105 0 0 0 207.3 540.7" marker-end="url(#a-blue)"/>
+      <path d="M196.0 575.4 A105 105 0 0 0 224.5 662.9" marker-end="url(#a-blue)"/>
+      <path d="M254.0 684.4 A105 105 0 0 0 346.0 684.4" marker-end="url(#a-blue)"/>
+      <path d="M375.5 662.9 A105 105 0 0 0 404.0 575.4" marker-end="url(#a-blue)"/>
+      <path d="M392.7 540.7 A105 105 0 0 0 318.2 486.6" marker-end="url(#a-blue)"/>
+    </g>
+    <g fill="#0f1a24" stroke="#58c4dd" stroke-width="2">
+      <circle cx="300" cy="485" r="7"/><circle cx="200.1" cy="557.6" r="7"/><circle cx="238.3" cy="674.9" r="7"/><circle cx="361.7" cy="674.9" r="7"/><circle cx="399.9" cy="557.6" r="7"/>
+    </g>
+    <text x="314" y="452" style="font:700 13px var(--sans);fill:#ececec">write / tighten</text>
+    <text x="314" y="468" style="font:400 12px var(--sans);fill:#a9b1c1">matcher + rubric + fastTokens</text>
+    <text x="186" y="550" text-anchor="end" style="font:700 12.5px var(--sans);fill:#58c4dd">diagnose</text>
+    <text x="186" y="566" text-anchor="end" style="font:500 11.5px var(--sans);fill:#ececec">on rule-writing (D-080)</text>
+    <text x="186" y="581" text-anchor="end" style="font:400 10.5px var(--sans);fill:#6b7486">≤ 25 cards · Judge + Verifier</text>
+    <text x="226" y="702" text-anchor="end" style="font:500 12px var(--sans);fill:#ececec">dossier: real FPs →</text>
+    <text x="226" y="718" text-anchor="end" style="font:600 12px var(--sans);fill:#ececec">negative unit tests</text>
+    <text x="374" y="702" style="font:500 12.5px var(--sans);fill:#ececec">0 regressions</text>
+    <text x="374" y="718" style="font:500 12.5px var(--sans);fill:#ececec">recall + selectivity gates</text>
+    <text x="414" y="574" style="font:700 12.5px var(--sans);fill:#5cd0b3">clears RW bar?</text>
+    <text x="414" y="590" style="font:500 11.5px var(--sans);fill:#ececec">fresh-context review</text>
+    <text x="414" y="605" style="font:400 10.5px var(--sans);fill:#6b7486">then commit → held-out</text>
+    <text x="300" y="569" text-anchor="middle" style="font:400 12px var(--sans);fill:#6b7486">one rule =</text>
+    <text x="300" y="588" text-anchor="middle" style="font:600 13px var(--sans);fill:#ececec">one matcher +</text>
+    <text x="300" y="605" text-anchor="middle" style="font:600 13px var(--sans);fill:#ececec">one verifier rubric</text>
+    <text x="300" y="623" text-anchor="middle" style="font:400 12px var(--sans);fill:#6b7486">for one old code shape</text>
+
+    <!-- commit crosses the wall -->
+    <path d="M405 550 Q420 536 444 536 H656" fill="none" stroke="#58c4dd" stroke-width="2" class="flow" marker-end="url(#a-blue)"/>
+    <text x="520" y="528" text-anchor="middle" style="font:700 11.5px var(--sans);fill:#58c4dd">commit</text>
+
+    <!-- rule anatomy -->
+    <rect x="40" y="748" width="520" height="40" rx="10" fill="#0f1722" stroke="#58c4dd" stroke-opacity=".45"/>
+    <text x="56" y="773" style="font:700 12.5px var(--sans);fill:#58c4dd">Static Matcher</text>
+    <text x="160" y="773" style="font:400 11px var(--sans);fill:#a9b1c1">ts-morph · linkedom · cssomnom · package.json · fastTokens · no LLM</text>
+    <rect x="40" y="796" width="520" height="40" rx="10" fill="#140f22" stroke="#b189f5" stroke-opacity=".5"/>
+    <text x="56" y="821" style="font:700 12.5px var(--sans);fill:#b189f5">Verifier rubric</text>
+    <text x="178" y="821" style="font:400 11.5px var(--sans);fill:#a9b1c1">Keep when / Drop when: context a matcher can't see</text>
+
+    <!-- numbers come back -->
+    <path d="M658 862 H454" fill="none" stroke="#ff9f43" stroke-width="1.7" stroke-dasharray="6 5" marker-end="url(#a-orange)"/>
+    <text x="446" y="866" text-anchor="end" style="font:600 11.5px var(--sans);fill:#ff9f43">only numbers come back</text>
+
+    <!-- measure flow -->
+    <rect x="660" y="495" width="480" height="80" rx="12" fill="#17150d" stroke="#e6b84a" stroke-opacity=".6"/>
+    <text x="680" y="522" style="font:700 13px var(--sans);fill:#ececec">Run the committed rule over held-out</text>
+    <text x="680" y="541" style="font:400 12px var(--sans);fill:#a9b1c1">→ yield: every raw finding it makes</text>
+    <text x="680" y="560" style="font:400 11px var(--sans);fill:#6b7486">from committed code (at-commit.ts), both SHAs recorded</text>
+    <path d="M900 575 V595" stroke="#e6b84a" stroke-width="1.6" marker-end="url(#a-gold)"/>
+
+    <rect x="660" y="598" width="480" height="72" rx="12" fill="#17150d" stroke="#e6b84a" stroke-opacity=".6"/>
+    <g fill="#1a1710" stroke="#e6b84a" stroke-width="1.4">
+      <rect x="684" y="618" width="20" height="28" rx="3" transform="rotate(-12 694 632)"/>
+      <rect x="692" y="616" width="20" height="28" rx="3"/>
+      <rect x="700" y="618" width="20" height="28" rx="3" transform="rotate(12 710 632)"/>
+    </g>
+    <text x="742" y="625" style="font:700 13px var(--sans);fill:#ececec">Blind cards</text>
+    <text x="742" y="643" style="font:400 11.5px var(--sans);fill:#a9b1c1">unseen repos · ≤ 2 per repo · no docs or tests</text>
+    <text x="742" y="660" style="font:400 11px var(--sans);fill:#6b7486">code + location + guide. no rubric, no author notes</text>
+
+    <path d="M890 670 C890 688 775 684 775 699" fill="none" stroke="#b189f5" stroke-width="1.6" marker-end="url(#a-purple)"/>
+    <path d="M910 670 C910 688 1025 684 1025 699" fill="none" stroke="#b189f5" stroke-width="1.6" marker-end="url(#a-purple)"/>
+
+    <circle cx="845" cy="742" r="40" fill="url(#halo)" class="pulse"/>
+    <rect x="660" y="702" width="230" height="84" rx="14" fill="#17122a" stroke="#b189f5" stroke-width="1.6" filter="url(#glow)"/>
+    <text x="676" y="730" style="font:700 13px var(--sans);fill:#ececec">Eval Judge panel</text>
+    <text x="676" y="748" style="font:400 10.5px var(--sans);fill:#a9b1c1">3-pass Flash + Pro</text>
+    <text x="676" y="766" style="font:400 11px var(--sans);fill:#a9b1c1">→ one of 7 verdicts</text>
+    <g fill="none" stroke-width="1.4">
+      <circle cx="827" cy="735" r="5" stroke="#a9b1c1"/><circle cx="840" cy="735" r="5" stroke="#a9b1c1"/><circle cx="853" cy="735" r="5" stroke="#a9b1c1"/>
+      <circle cx="873" cy="732" r="8" stroke="#b189f5" stroke-width="1.8"/>
+      <path d="M820 751 q7 -7 14 0 M833 751 q7 -7 14 0 M846 751 q7 -7 14 0 M863 753 q10 -10 20 0" stroke="#6b7486"/>
+    </g>
+
+    <circle cx="1100" cy="742" r="40" fill="url(#halo)" class="pulse"/>
+    <rect x="910" y="702" width="230" height="84" rx="14" fill="#17122a" stroke="#b189f5" stroke-width="1.6" filter="url(#glow)"/>
+    <text x="926" y="730" style="font:700 13px var(--sans);fill:#ececec">LLM Verifier</text>
+    <text x="926" y="748" style="font:400 11px var(--sans);fill:#a9b1c1">reads the rule's rubric</text>
+    <text x="926" y="766" style="font:400 11px var(--sans);fill:#a9b1c1">→ keep or drop</text>
+    <g fill="none" stroke="#b189f5" stroke-width="1.5" stroke-linecap="round">
+      <rect x="1088" y="716" width="32" height="44" rx="4"/>
+      <path d="M1096 714 h16 v6 h-16 z"/>
+      <path d="M1095 732 l3 3 l6 -6 M1108 732 h7 M1095 747 l7 7 M1102 747 l-7 7 M1108 750 h7"/>
+    </g>
+
+    <use href="#i-paul" x="664" y="792" width="14" height="14" style="color:#ececec"/>
+    <text x="684" y="803" style="font:400 11px var(--sans);fill:#a9b1c1">disagreements → Paul</text>
+
+    <path d="M840 786 V813" stroke="#b189f5" stroke-width="1.6" marker-end="url(#a-purple)"/>
+    <path d="M1025 786 V813" stroke="#b189f5" stroke-width="1.6" marker-end="url(#a-purple)"/>
+    <rect x="660" y="816" width="480" height="66" rx="12" fill="#0f1a17" stroke="#5cd0b3" stroke-opacity=".55"/>
+    <text x="680" y="843" style="font:700 12.5px var(--sans);fill:#ececec">Static Matcher Precision</text>
+    <text x="680" y="862" style="font:400 11.5px var(--sans);fill:#a9b1c1">legit ÷ all judged</text>
+    <text x="910" y="843" style="font:700 12.5px var(--sans);fill:#ececec">Post-Verifier Precision</text>
+    <text x="910" y="862" style="font:400 11.5px var(--sans);fill:#a9b1c1">legit ÷ what the verifier kept</text>
+
+    <path d="M900 882 V946" stroke="#5cd0b3" stroke-width="1.8" class="flow" marker-end="url(#a-teal)"/>
+    <text x="914" y="932" style="font:700 12px var(--sans);fill:#5cd0b3">to the bar</text>
+  </svg>
+
+  <div class="notes">
+    <div class="n-blue">
+      <h4>Build · rule-writing</h4>
+      <ul>
+        <li>Authors (Gemini Pro) read the guide and its triage entry, then write a Static Matcher (~50–150 lines, with required <code>fastTokens</code>) against rule-writing code.</li>
+        <li>Matchers never call an LLM. They skip vendored, generated, and &gt;1 MB files.</li>
+        <li><code>diagnose-rule-writing.ts</code> runs the judge panel and the verifier over up to 25 rule-writing findings (≤ 2 per repo, no docs or tests) and writes up a dossier of the false positives and verifier drops.</li>
+        <li>Real false positives from the dossier become negative unit tests. Repeat until rule-writing precision clears the bar.</li>
+        <li>Every validated finding still has to fire (losing one needs a written reason in <code>accepted-regressions.json</code>), and the D-084 recall and selectivity tests have to pass.</li>
+        <li>Every commit gets a fresh-context review of its <code>git show</code> (independent reviewer agent). Once a rule clears the rule-writing bar, it gets scored on held-out from committed code (<code>at-commit.ts</code>).</li>
+      </ul>
+    </div>
+    <div class="n-gold">
+      <h4>Measure · held-out</h4>
+      <ul>
+        <li>Authors see the numbers, never the cards. An edited rule gets re-scored on the same held-out split (we don't go mine fresh shards for it).</li>
+        <li>Cards come from unseen repos (≤ 2 per repo, no docs or test paths).</li>
+        <li>The judge panel and the verifier read the same cards (more on that in 3). Disagreements and scope calls go to Paul.</li>
+        <li>There's one sanctioned hole in the wall: <code>validated-regressions.ts</code> names validated findings by file and line.</li>
+      </ul>
+    </div>
+  </div>
+  </div>
+</section>
+
+<div class="pipe zoom">
+  <svg viewBox="0 0 40 64"><circle cx="20" cy="26" r="13" fill="none" stroke="#b189f5" stroke-width="2"/><path d="M29 36 L37 46" stroke="#b189f5" stroke-width="3" stroke-linecap="round"/><path d="M20 0 V12 M20 40 V60" stroke="#b189f5" stroke-width="2" class="flow"/></svg>
+  <span>zoom in: the two judgment calls inside Measure</span>
+</div>
+
+<!-- ======================= 3. JUDGMENT ======================= -->
+<section class="chapter" id="judgment" style="--c: var(--purple)">
+  <div class="ch-head">
+    <div class="ch-num">3</div>
+    <div class="ch-title">Where we rely on judgment <span class="badges"><span class="badge"><svg class="ico" style="color:#b189f5"><use href="#i-judge"/></svg>LLM judgment</span><span class="badge"><svg class="ico" style="color:#ececec"><use href="#i-paul"/></svg>calibrated by Paul</span></span></div>
+    <div class="ch-q">Where do we need an LLM, and why are there two?</div>
+    <p class="ch-p">Hashing, sampling, matching and the thresholds are all deterministic code. Code is bad at context though.. is this <code>scrollHeight</code> math an auto-growing textarea or an animation? Is that hidden checkbox part of a toggle switch? Two LLM roles make those calls, and neither sees the other's notes.</p>
+  </div>
+
+  <div class="jgrid">
+    <article class="jcard">
+      <div class="jtag">measurement · offline · never in the CLI</div>
+      <svg class="jart" viewBox="0 0 220 74">
+        <circle cx="110" cy="40" r="40" fill="url(#halo)"/>
+        <g fill="none" stroke-width="2">
+          <circle cx="52" cy="28" r="11" stroke="#a9b1c1"/><circle cx="84" cy="28" r="11" stroke="#a9b1c1"/><circle cx="116" cy="28" r="11" stroke="#a9b1c1"/>
+          <path d="M36 66 q16 -20 32 0 M68 66 q16 -20 32 0 M100 66 q16 -20 32 0" stroke="#6b7486"/>
+          <circle cx="160" cy="24" r="15" stroke="#b189f5" stroke-width="2.4"/>
+          <path d="M138 70 q22 -28 44 0" stroke="#b189f5"/>
+        </g>
+        <text x="84" y="31.5" text-anchor="middle" style="font:600 9px var(--mono);fill:#a9b1c1">×3</text>
+        <text x="160" y="28" text-anchor="middle" style="font:700 8px var(--mono);fill:#b189f5">Pro</text>
+      </svg>
+      <h3>Detection Eval Judge</h3>
+      <div class="jq">“Is this a real modernization target?”</div>
+      <p>It's a panel: <code>gemini-flash</code> (3 passes) plus <code>gemini-pro</code> (1 pass). If they agree, that's the verdict. If not, it goes to Paul.</p>
+      <div class="verdicts"><span class="ok">legit-modernize-target</span><span>not-old-pattern</span><span>fallback-or-guard</span><span>loses-behavior</span><span>no-payoff</span><span>guide-wrong</span><span>unsure</span></div>
+      <p>Only <code>legit-modernize-target</code> counts toward precision. Paul grades sealed blind decks to see how often the panel agrees with him.</p>
+    </article>
+
+    <div class="reads">
+      <h4>What each one reads</h4>
+      <table>
+        <tr><th></th><th>Judge</th><th>Verifier</th></tr>
+        <tr><td><code>guide.md</code></td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>the code on the card</td><td class="y">✓</td><td class="y">✓</td></tr>
+        <tr><td>upstream explainers (W3C, TC39)</td><td class="y">✓</td><td class="n">–</td></tr>
+        <tr><td>the rule's Keep / Drop rubric</td><td class="x">✗</td><td class="y">✓</td></tr>
+        <tr><td>triage entry, author notes</td><td class="x">✗</td><td class="n">–</td></tr>
+        <tr><td>earlier labels</td><td class="x">✗</td><td class="n">–</td></tr>
+      </table>
+      <p class="key">✓ reads · ✗ withheld on purpose · – not part of its input</p>
+    </div>
+
+    <article class="jcard">
+      <div class="jtag">product · runtime</div>
+      <svg class="jart" viewBox="0 0 220 74">
+        <circle cx="110" cy="40" r="40" fill="url(#halo)"/>
+        <g fill="none" stroke-width="2">
+          <circle cx="86" cy="24" r="14" stroke="#b189f5" stroke-width="2.4"/>
+          <path d="M62 70 q24 -30 48 0" stroke="#b189f5"/>
+          <rect x="118" y="12" width="44" height="58" rx="5" stroke="#b189f5"/>
+          <path d="M130 9 h20 v8 h-20 z" stroke="#b189f5"/>
+          <path d="M127 33 l4 4 l8 -8 M144 33 h11 M127 52 l9 9 M136 52 l-9 9 M144 56 h11" stroke="#b189f5" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <h3>LLM Verifier</h3>
+      <div class="jq">“Should this finding be reported, here?”</div>
+      <p>It reads the finding's code, <code>guide.md</code>, and the rule's own Keep when / Drop when, then says keep or drop.</p>
+      <p>In a real app, the verifier is the developer's own coding agent, applying the rubric from <code>analyze --json</code> (no extra API key or cost).</p>
+      <p>For measurement we run it over the same blind cards, which is where Post-Verifier Precision comes from. Paul spot-checks its drops with sealed decks too.</p>
+    </article>
+  </div>
+
+  <div class="blind">
+    <div>
+      <h4>Why keep the judge blind?</h4>
+      <p>Same 45 findings, three different inputs. Here's how often the judge said legit:</p>
+    </div>
+    <div class="bars">
+      <div class="bar-row"><span>guide + code</span><div class="bar"><i style="width:64.4%;background:#7d879b">64.4%</i></div></div>
+      <div class="bar-row"><span>+ upstream explainers <b>(adopted)</b></span><div class="bar"><i style="width:73.3%;background:var(--purple)">73.3%</i></div></div>
+      <div class="bar-row"><span>+ the rule-writer's triage notes</span><div class="bar"><i style="width:97.8%;background:var(--red)">97.8%</i></div></div>
+      <p style="font-size:13.5px;color:var(--ink-3)">With the author's notes in hand, the judge mostly just agreed with the author. Not exactly an independent grader. :) (Guide Triage is agent judgment too, but it only feeds authoring.)</p>
+    </div>
+  </div>
+</section>
+
+<div class="pipe">
+  <svg viewBox="0 0 40 64"><path d="M20 0 V56" stroke="#5cd0b3" stroke-width="2" class="flow"/><path d="M13 50 L20 60 L27 50" fill="none" stroke="#5cd0b3" stroke-width="2"/></svg>
+  <span>precision per rule, each with n, Wilson 95% CI, and yield</span>
+</div>
+
+<!-- ======================= 4. THE BAR ======================= -->
+<section class="chapter" id="bar" style="--c: var(--teal)">
+  <div class="ch-head">
+    <div class="ch-num">4</div>
+    <div class="ch-title">The bar <span class="badges"><span class="badge"><svg class="ico" style="color:#8a93a6"><use href="#i-gear"/></svg>fixed thresholds</span><span class="badge"><svg class="ico" style="color:#ececec"><use href="#i-paul"/></svg>scope holds, retirements</span></span></div>
+    <div class="ch-q">When does a rule run by default?</div>
+    <p class="ch-p">The judge panel scores each rule on its own held-out findings. Two numbers decide it: how often the raw matcher is right, and how often it's right after the verifier's pass. Until both clear the bar, the rule stays off by default (you can still run it with <code>--all</code>).</p>
+  </div>
+
+  <div class="bargrid">
+    <div class="panel" style="padding:14px">
+      <svg viewBox="0 0 560 470" style="width:100%;height:auto;display:block" role="img" aria-label="Qualification regions on static versus post-verifier precision">
+        <rect x="70" y="40" width="460" height="370" fill="rgba(255,255,255,.02)" stroke="#263045"/>
+        <rect x="70" y="40" width="306.7" height="61.7" fill="rgba(177,137,245,.12)"/>
+        <rect x="376.7" y="40" width="153.3" height="61.7" fill="rgba(131,193,103,.26)" stroke="#83c167" stroke-width="1.5"/>
+        <rect x="453.3" y="40" width="76.7" height="61.7" fill="url(#hatch)"/>
+        <g stroke="#3a4458" stroke-width="1">
+          <path d="M146.7 40 V410 M223.3 40 V410 M300 40 V410 M70 348.3 H530 M70 286.7 H530 M70 225 H530 M70 163.3 H530" stroke-opacity=".5"/>
+        </g>
+        <path d="M376.7 30 V410 M453.3 30 V410 M70 101.7 H540" stroke="#5cd0b3" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <text x="376.7" y="24" text-anchor="middle" style="font:600 10.5px var(--mono);fill:#5cd0b3">static ≥ 80%</text>
+        <text x="460" y="24" text-anchor="start" style="font:600 10.5px var(--mono);fill:#5cd0b3">≥ 90%</text>
+        <text x="76" y="117" style="font:600 10.5px var(--mono);fill:#5cd0b3">post-verifier ≥ 90%</text>
+
+        <text x="384" y="66" style="font:700 14px var(--sans);fill:#83c167">qualified</text>
+        <text x="384" y="83" style="font:500 10.5px var(--mono);fill:#a9b1c1">at n ≥ 10</text>
+        <rect x="469" y="62" width="45" height="19" rx="4" fill="#0f1a14" fill-opacity=".9"/>
+        <text x="491.6" y="76" text-anchor="middle" style="font:700 11px var(--mono);fill:#83c167">n ≥ 5</text>
+        <text x="522" y="398" text-anchor="end" style="font:400 11px var(--sans);fill:#6b7486">hatched: static ≥ 90% lets a rare pattern qualify at n ≥ 5</text>
+        <text x="84" y="64" style="font:700 12px var(--sans);fill:#b189f5">the verifier rescues it, but the</text>
+        <text x="84" y="80" style="font:400 11px var(--sans);fill:#a9b1c1">default CLI runs no LLM: experimental</text>
+        <text x="180" y="270" text-anchor="middle" style="font:700 14px var(--sans);fill:#a9b1c1">below the bar</text>
+        <text x="180" y="289" text-anchor="middle" style="font:400 12px var(--sans);fill:#6b7486">stays experimental (--all)</text>
+        <text x="180" y="306" text-anchor="middle" style="font:400 12px var(--sans);fill:#ff9f43">↩ back to Build</text>
+
+        <g style="font:500 10.5px var(--mono);fill:#6b7486">
+          <text x="70" y="428" text-anchor="middle">40%</text><text x="146.7" y="428" text-anchor="middle">50%</text><text x="223.3" y="428" text-anchor="middle">60%</text>
+          <text x="300" y="428" text-anchor="middle">70%</text><text x="376.7" y="428" text-anchor="middle">80%</text><text x="453.3" y="428" text-anchor="middle">90%</text><text x="530" y="428" text-anchor="middle">100%</text>
+          <text x="62" y="414" text-anchor="end">40%</text><text x="62" y="352" text-anchor="end">50%</text><text x="62" y="290" text-anchor="end">60%</text>
+          <text x="62" y="229" text-anchor="end">70%</text><text x="62" y="167" text-anchor="end">80%</text><text x="62" y="106" text-anchor="end">90%</text><text x="62" y="44" text-anchor="end">100%</text>
+        </g>
+        <text x="300" y="456" text-anchor="middle" style="font:600 12px var(--sans);fill:#a9b1c1">Static Matcher Precision →</text>
+        <text x="20" y="225" text-anchor="middle" transform="rotate(-90 20 225)" style="font:600 12px var(--sans);fill:#a9b1c1">Post-Verifier Precision →</text>
+      </svg>
+    </div>
+
+    <div>
+      <div class="outs">
+        <div class="out" style="--oc: var(--green)"><h4>Qualified <small>default-on</small></h4>Post-Verifier Precision ≥ 90% and either Static Matcher Precision ≥ 80% at n ≥ 10, or ≥ 90% at n ≥ 5 for rare patterns. Runs in every <code>npx modern-web-guidance analyze</code> (and a guide is on by default if any of its rules qualifies).</div>
+        <div class="out" style="--oc: #ececec"><h4><svg class="ico" style="color:#ececec;margin:0"><use href="#i-paul"/></svg>Scope Hold <small>held-pending-paul</small></h4>Clears the bar, but the scope or payoff needs a human call. Paul promotes it or declines it.</div>
+        <div class="out" style="--oc: var(--orange)"><h4>Experimental <small>--all only</small></h4>Below the bar, or not enough held-out findings to judge yet. Back to Build: tighten on rule-writing, then re-score on the same held-out split.</div>
+        <div class="out" style="--oc: #7d879b"><h4>Retired</h4>Needs a written reason, a decision ID, and Paul's OK.</div>
+      </div>
+      <p class="dial">Where should the dial sit? Tolerating 1 false alarm in 10 vs 1 in 5 changes how many rules ship. Paul picked 80% static and 90% post-verifier (the coding agent's verify step covers the gap between the two).</p>
+    </div>
+  </div>
+</section>
+
+<div class="pipe">
+  <svg viewBox="0 0 40 64"><path d="M20 0 V56" stroke="#83c167" stroke-width="2" class="flow"/><path d="M13 50 L20 60 L27 50" fill="none" stroke="#83c167" stroke-width="2"/></svg>
+  <span>qualified rules ship in the CLI</span>
+</div>
+
+<!-- ======================= 5. MODERNIZE ======================= -->
+<section class="chapter" id="modernize" style="--c: var(--green)">
+  <div class="ch-head">
+    <div class="ch-num">5</div>
+    <div class="ch-title">Modernize <span class="badges"><span class="badge"><svg class="ico" style="color:#8a93a6"><use href="#i-gear"/></svg>detect</span><span class="badge"><svg class="ico" style="color:#b189f5"><use href="#i-judge"/></svg>the developer's agent verifies</span></span></div>
+    <div class="ch-q">What happens in a developer's app?</div>
+    <p class="ch-p">A developer tells their agent “modernize this app” and the Modern Web Guidance skill takes it from there, in three steps. (The terminal is real output from our demo checkout app, trimmed to fit.)</p>
+  </div>
+
+  <div class="modgrid">
+    <div class="term">
+      <div class="term-bar"><i></i><i></i><i></i><span>coding agent · checkout app</span></div>
+<pre><span class="you">› modernize this app</span>
+
+<span class="ag">✦</span> <span class="cmd">npx modern-web-guidance analyze</span>   <span class="dim"># agents add --json</span>
+Found 17 modernization opportunities across 9 guides:
+<span class="dim">Note: Static analysis results are provisional — verify
+against the Keep/Drop criteria below.</span>
+
+* <span class="gid">checkbox</span> <span class="q">[qualified]</span> (2 findings)
+  <span class="keep">Keep when:</span> The CSS rule hides or strips a checkbox
+             input (opacity: 0 or appearance: none …
+  <span class="drop">Drop when:</span> Modern custom checkboxes applying
+             appearance: none directly on the input …
+  - styles.css:362
+    .custom-checkbox input[type="checkbox"] {
+<span class="dim">  … and 8 more guides</span>
+
+<span class="ag">✦</span> <span class="say">Checked each finding against Keep / Drop.</span>
+  <span class="say">Here's the plan (no edits yet) …</span>
+<span class="ag">✦</span> <span class="cmd">npx modern-web-guidance retrieve checkbox</span>
+<span class="ag">✦</span> <span class="say">Edited styles.css · ran the app's tests</span> <span class="ok">✓</span></pre>
+    </div>
+
+    <div class="steps">
+      <div class="step" style="--sc: #8a93a6"><div class="si"><svg><use href="#i-gear"/></svg></div><div><h4>Detect</h4><p><code>analyze --json</code> runs the qualified rules (no LLM, no API key). Each finding comes with its rule's Keep when / Drop when.</p></div></div>
+      <div class="step" style="--sc: var(--purple)"><div class="si"><svg><use href="#i-judge"/></svg></div><div><h4>Verify, then plan</h4><p>The agent plays the LLM Verifier: it applies Keep / Drop to every finding, then reports back before touching any code.</p></div></div>
+      <div class="step" style="--sc: var(--green)"><div class="si"><svg><use href="#i-agent"/></svg></div><div><h4>Update</h4><p><code>retrieve &lt;guide-id&gt;</code> pulls the guide, then the agent rewrites the code and runs the app's own tests. Why no <code>--fix</code>? Even the “simple” swaps had behavior traps.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 6. WHO BUILDS IT ======================= -->
+<section class="chapter" id="who" style="--c: #ececec">
+  <div class="ch-head">
+    <div class="ch-num">6</div>
+    <div class="ch-title">Who builds it</div>
+    <div class="ch-q">If agents write all of it, why trust it?</div>
+    <p class="ch-p">Nobody hand-writes rules here. The trust comes from the process around the agents: who's allowed to see what, who checks whose work, and which calls stay human.</p>
+  </div>
+
+  <div class="roles">
+    <div class="role paul">
+      <div class="rh"><svg style="color:#ececec"><use href="#i-paul"/></svg><b>Paul</b></div>
+      <span class="who">human · meta-meta review</span>
+      <p>Sets the bar, the corpus split, and the guardrails.</p>
+      <p>Grades judge disagreements and scope/payoff calls, spot-checks the judge and the verifier with sealed decks, and signs off on any rule retirement.</p>
+      <p>Doesn't read rule files line by line (that's what the process is for).</p>
+    </div>
+    <div class="role"><div class="rh"><svg style="color:#a9b1c1"><use href="#i-agent"/></svg><b>Conductor</b></div><span class="who">agent</span><p>Plans each wave, briefs agents, reviews, merges, keeps <code>PLAN.md</code>. Doesn't edit code itself.</p></div>
+    <div class="role"><div class="rh"><svg style="color:#58c4dd"><use href="#i-agent"/></svg><b>Authors</b></div><span class="who">Gemini Pro</span><p>Triage guides, write and tighten rules, dig into failures. One worktree each.</p></div>
+    <div class="role"><div class="rh"><svg style="color:#fc6255"><use href="#i-agent"/></svg><b>Reviewers</b></div><span class="who">fresh context · Pro High · reviewer</span><p>Read every commit's <code>git show</code> and red-team rules, triage, and the scorecard. One fix pass.</p></div>
+    <div class="role judge"><div class="rh"><svg style="color:#b189f5"><use href="#i-judge"/></svg><b>Judge panel</b></div><span class="who">3-pass Flash + Pro</span><p>Grades blind held-out cards. Never sees rule-writer text.</p></div>
+    <div class="role"><div class="rh"><svg style="color:#e6b84a"><use href="#i-agent"/></svg><b>Process observer</b></div><span class="who">different model family</span><p>Audits the process itself at the end of each wave and before any promotion.</p></div>
+    <div class="role"><div class="rh"><svg style="color:#8a93a6"><use href="#i-gear"/></svg><b>Mechanical work</b></div><span class="who">Flash</span><p>Materializing corpus data, doc sync, diff checks.</p></div>
+  </div>
+  <div class="rails"><span>nothing grades itself</span><span>measure from committed code</span><span>predict before measuring</span><span>validated findings don't silently regress</span><span>one registry: RULE_REGISTRY</span></div>
+</section>
+
+<footer>
+  Corpus numbers: enumerated through src/corpus.ts on 2026-10-29 (bytes are file contents; 99.8% of them are JS/TS, HTML, or CSS). Open-Source Corpus size per the process notes.<br>
+  Vocabulary: src/analyzing/LEXICON.md. Decisions: D-065 (judge panel), D-068 (qualify rules, not guides), D-078 (Scope Hold, Post-Verifier Precision), D-079 (the bar, including the rare-pattern path), D-080 (rule-writing diagnostic loop), D-084 (rule-compiled sampler SQL and gates).<br>
+  Triage examples and the worked entry: guide-triage.json. Judge-input comparison: R65 blind deck.
+</footer>
+
+</div>
+<script>
+  // In the dashboard's Pipeline tab this page sits in a same-origin iframe: grow the iframe to fit the page,
+  // and scroll the dashboard (not the iframe) for in-page links such as the map's stations.
+  const frame = window.frameElement;
+  if (frame) {
+    document.documentElement.classList.add('embedded');
+    new ResizeObserver(() => {
+      const height = Math.ceil(document.body.getBoundingClientRect().height);
+      if (height > 0) frame.style.height = `${height}px`;
+    }).observe(document.body);
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('a[href^="#"]');
+      const target = link && document.getElementById(link.getAttribute('href').slice(1));
+      if (!target) return;
+      e.preventDefault();
+      const top = parent.scrollY + frame.getBoundingClientRect().top + window.scrollY + target.getBoundingClientRect().top - 12;
+      parent.scrollTo({ top, behavior: 'smooth' });
+    });
+  }
+</script>
+</body>
+</html>
