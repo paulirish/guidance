@@ -26,8 +26,8 @@
     --danger: #ef4444;
     --danger-bg: rgba(239, 68, 68, 0.15);
     --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    /* Lines full-bleed bars up with main's 1400px column. Resolved where it's used, so 100% is that bar's width. */
-    --page-gutter: max(1.25rem, calc((100% - 1400px) / 2 + 1.25rem));
+    /* Lines full-bleed bars up with main's 1680px column. Resolved where it's used, so 100% is that bar's width. */
+    --page-gutter: max(1.25rem, calc((100% - 1680px) / 2 + 1.25rem));
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -325,9 +325,9 @@
 
   /* Main Container (24px Spacing from header to tab content) */
   main {
-    max-width: 1400px;
+    max-width: 1680px;
     margin: 0 auto;
-    padding: 24px var(--page-gutter) 48px;
+    padding: 24px 1.25rem 48px;
   }
 
   .view-panel { display: none; }

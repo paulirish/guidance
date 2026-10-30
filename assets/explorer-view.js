@@ -335,40 +335,442 @@ function filteredGuides() {
   return [...list].sort(sort.cmp);
 }
 
+const ZOOM_ANIMATION_DURATION = 450;
+const ZOOM_ANIMATION_EASING = 'cubic-bezier(0.2, 0.7, 0.2, 1)';
+
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+let lastRenderedZoom = state.zoom;
+
+/**
+ * Records current positions and elements in #xp-map before re-rendering.
+ * @param {SVGSVGElement} svg
+ */
+function recordMapPositions(svg) {
+  const dots = new Map();
+  for (const dot of svg.querySelectorAll('circle.dot[data-id]')) {
+    const id = dot.dataset.id;
+    if (id) {
+      dots.set(id, {
+        el: dot.cloneNode(true),
+        cx: parseFloat(dot.getAttribute('cx') || '0'),
+        cy: parseFloat(dot.getAttribute('cy') || '0'),
+      });
+    }
+  }
+
+  const gridX = new Map();
+  for (const line of svg.querySelectorAll('line[data-grid-x]')) {
+    const v = line.dataset.gridX;
+    if (v) gridX.set(v, parseFloat(line.getAttribute('x1') || '0'));
+  }
+
+  const gridY = new Map();
+  for (const line of svg.querySelectorAll('line[data-grid-y]')) {
+    const v = line.dataset.gridY;
+    if (v) gridY.set(v, parseFloat(line.getAttribute('y1') || '0'));
+  }
+
+  const tickX = new Map();
+  for (const text of svg.querySelectorAll('text[data-tick-x]')) {
+    const v = text.dataset.tickX;
+    if (v) {
+      tickX.set(v, {
+        x: parseFloat(text.getAttribute('x') || '0'),
+        y: parseFloat(text.getAttribute('y') || '0'),
+      });
+    }
+  }
+
+  const tickY = new Map();
+  for (const text of svg.querySelectorAll('text[data-tick-y]')) {
+    const v = text.dataset.tickY;
+    if (v) {
+      tickY.set(v, {
+        x: parseFloat(text.getAttribute('x') || '0'),
+        y: parseFloat(text.getAttribute('y') || '0'),
+      });
+    }
+  }
+
+  const thr = new Map();
+  for (const line of svg.querySelectorAll('line[data-thr]')) {
+    const id = line.dataset.thr;
+    if (id) {
+      thr.set(id, {
+        x1: parseFloat(line.getAttribute('x1') || '0'),
+        y1: parseFloat(line.getAttribute('y1') || '0'),
+      });
+    }
+  }
+
+  const thrLabels = new Map();
+  for (const text of svg.querySelectorAll('text[data-thr-label]')) {
+    const id = text.dataset.thrLabel;
+    if (id) {
+      thrLabels.set(id, {
+        x: parseFloat(text.getAttribute('x') || '0'),
+        y: parseFloat(text.getAttribute('y') || '0'),
+      });
+    }
+  }
+
+  const axisTitles = new Map();
+  for (const text of svg.querySelectorAll('text[data-axis-title]')) {
+    const id = text.dataset.axisTitle;
+    if (id) {
+      axisTitles.set(id, {
+        x: parseFloat(text.getAttribute('x') || '0'),
+        y: parseFloat(text.getAttribute('y') || '0'),
+      });
+    }
+  }
+
+  const gutters = [...svg.querySelectorAll('[data-gutter]')].map((el) => el.cloneNode(true));
+  const gutterLabels = [...svg.querySelectorAll('[data-gutter-label]')].map((el) => el.cloneNode(true));
+  const cornerEl = svg.querySelector('[data-corner]');
+  const cornerClone = cornerEl ? cornerEl.cloneNode(true) : null;
+
+  let cornerCenter = null;
+  if (cornerEl) {
+    const circle = cornerEl.querySelector('circle.corner');
+    if (circle) {
+      cornerCenter = {
+        x: parseFloat(circle.getAttribute('cx') || '0'),
+        y: parseFloat(circle.getAttribute('cy') || '0'),
+      };
+    }
+  }
+
+  const exitingTicks = [];
+  for (const line of svg.querySelectorAll('line[data-grid-x], line[data-grid-y]')) {
+    const v = parseInt(line.dataset.gridX || line.dataset.gridY || '100', 10);
+    if (v < 40) exitingTicks.push(line.cloneNode(true));
+  }
+  for (const text of svg.querySelectorAll('text[data-tick-x], text[data-tick-y]')) {
+    const v = parseInt(text.dataset.tickX || text.dataset.tickY || '100', 10);
+    if (v < 40) exitingTicks.push(text.cloneNode(true));
+  }
+
+  return {
+    dots,
+    gridX,
+    gridY,
+    tickX,
+    tickY,
+    thr,
+    thrLabels,
+    axisTitles,
+    gutters,
+    gutterLabels,
+    cornerClone,
+    cornerCenter,
+    exitingTicks,
+  };
+}
+
+/**
+ * Animates elements in #xp-map between previous and new layout.
+ * @param {SVGSVGElement} svg
+ * @param {ReturnType<typeof recordMapPositions>} prev
+ * @param {ReturnType<typeof layoutMap>} L
+ */
+function animateMapZoom(svg, prev, L) {
+  const exitLayer = svg.querySelector('#xp-exit-layer');
+
+  // 1. Exiting elements placed in exitLayer to fade out
+  if (exitLayer) {
+    if (!L.gutter) {
+      // Zooming out: old gutters and corner bubble fade out
+      for (const el of [...prev.gutters, ...prev.gutterLabels]) {
+        exitLayer.appendChild(el);
+        const a = el.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+          fill: 'forwards',
+        });
+        a.onfinish = () => el.remove();
+      }
+      if (prev.cornerClone) {
+        exitLayer.appendChild(prev.cornerClone);
+        const a = prev.cornerClone.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+          fill: 'forwards',
+        });
+        a.onfinish = () => prev.cornerClone.remove();
+      }
+    } else {
+      // Zooming in: ticks < 40% disappear
+      for (const el of prev.exitingTicks) {
+        exitLayer.appendChild(el);
+        const a = el.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+          fill: 'forwards',
+        });
+        a.onfinish = () => el.remove();
+      }
+      // Any dot that collapsed into corner bubble
+      for (const [id, oldDot] of prev.dots) {
+        if (!svg.querySelector(`circle.dot[data-id="${id}"]`)) {
+          const clone = oldDot.el;
+          exitLayer.appendChild(clone);
+          const dx = L.gutterCenterX - oldDot.cx;
+          const dy = L.gutterCenterY - oldDot.cy;
+          const a = clone.animate([
+            { transform: 'translate(0px, 0px)', opacity: 1 },
+            { transform: `translate(${dx}px, ${dy}px)`, opacity: 0 },
+          ], {
+            duration: ZOOM_ANIMATION_DURATION,
+            easing: ZOOM_ANIMATION_EASING,
+            fill: 'forwards',
+          });
+          a.onfinish = () => clone.remove();
+        }
+      }
+    }
+  }
+
+  // 2. Entering elements in new layout fade in
+  if (L.gutter) {
+    for (const el of svg.querySelectorAll('[data-gutter], [data-gutter-label], [data-corner]')) {
+      el.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: ZOOM_ANIMATION_DURATION,
+        easing: ZOOM_ANIMATION_EASING,
+      });
+    }
+  } else {
+    for (const el of svg.querySelectorAll('line[data-grid-x], line[data-grid-y], text[data-tick-x], text[data-tick-y]')) {
+      const v = parseInt(el.dataset.gridX || el.dataset.gridY || el.dataset.tickX || el.dataset.tickY || '100', 10);
+      if (v < 40) {
+        el.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+        });
+      }
+    }
+  }
+
+  // 3. Persistent elements: FLIP translates
+  // Dots
+  for (const dot of svg.querySelectorAll('circle.dot[data-id]')) {
+    const id = dot.dataset.id;
+    const newCx = parseFloat(dot.getAttribute('cx') || '0');
+    const newCy = parseFloat(dot.getAttribute('cy') || '0');
+    const old = prev.dots.get(id);
+    if (old) {
+      const dx = old.cx - newCx;
+      const dy = old.cy - newCy;
+      if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+        dot.animate([
+          { transform: `translate(${dx}px, ${dy}px)` },
+          { transform: 'translate(0px, 0px)' },
+        ], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+        });
+      }
+    } else if (prev.cornerCenter) {
+      const dx = prev.cornerCenter.x - newCx;
+      const dy = prev.cornerCenter.y - newCy;
+      dot.animate([
+        { transform: `translate(${dx}px, ${dy}px)`, opacity: 0 },
+        { transform: 'translate(0px, 0px)', opacity: 1 },
+      ], {
+        duration: ZOOM_ANIMATION_DURATION,
+        easing: ZOOM_ANIMATION_EASING,
+      });
+    }
+  }
+
+  // Grid X
+  for (const line of svg.querySelectorAll('line[data-grid-x]')) {
+    const v = line.dataset.gridX;
+    const oldX = prev.gridX.get(v);
+    if (oldX !== undefined) {
+      const newX = parseFloat(line.getAttribute('x1') || '0');
+      const dx = oldX - newX;
+      if (Math.abs(dx) > 0.1) {
+        line.animate([
+          { transform: `translate(${dx}px, 0px)` },
+          { transform: 'translate(0px, 0px)' },
+        ], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+        });
+      }
+    }
+  }
+
+  // Grid Y
+  for (const line of svg.querySelectorAll('line[data-grid-y]')) {
+    const v = line.dataset.gridY;
+    const oldY = prev.gridY.get(v);
+    if (oldY !== undefined) {
+      const newY = parseFloat(line.getAttribute('y1') || '0');
+      const dy = oldY - newY;
+      if (Math.abs(dy) > 0.1) {
+        line.animate([
+          { transform: `translate(0px, ${dy}px)` },
+          { transform: 'translate(0px, 0px)' },
+        ], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+        });
+      }
+    }
+  }
+
+  // Tick X
+  for (const text of svg.querySelectorAll('text[data-tick-x]')) {
+    const v = text.dataset.tickX;
+    const old = prev.tickX.get(v);
+    if (old) {
+      const newX = parseFloat(text.getAttribute('x') || '0');
+      const dx = old.x - newX;
+      if (Math.abs(dx) > 0.1) {
+        text.animate([
+          { transform: `translate(${dx}px, 0px)` },
+          { transform: 'translate(0px, 0px)' },
+        ], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+        });
+      }
+    }
+  }
+
+  // Tick Y
+  for (const text of svg.querySelectorAll('text[data-tick-y]')) {
+    const v = text.dataset.tickY;
+    const old = prev.tickY.get(v);
+    if (old) {
+      const newY = parseFloat(text.getAttribute('y') || '0');
+      const dy = old.y - newY;
+      if (Math.abs(dy) > 0.1) {
+        text.animate([
+          { transform: `translate(0px, ${dy}px)` },
+          { transform: 'translate(0px, 0px)' },
+        ], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+        });
+      }
+    }
+  }
+
+  // Threshold lines
+  for (const line of svg.querySelectorAll('line[data-thr]')) {
+    const id = line.dataset.thr;
+    const old = prev.thr.get(id);
+    if (old) {
+      const newX1 = parseFloat(line.getAttribute('x1') || '0');
+      const newY1 = parseFloat(line.getAttribute('y1') || '0');
+      const dx = old.x1 - newX1;
+      const dy = old.y1 - newY1;
+      if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+        line.animate([
+          { transform: `translate(${dx}px, ${dy}px)` },
+          { transform: 'translate(0px, 0px)' },
+        ], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+        });
+      }
+    }
+  }
+
+  // Threshold labels
+  for (const text of svg.querySelectorAll('text[data-thr-label]')) {
+    const id = text.dataset.thrLabel;
+    const old = prev.thrLabels.get(id);
+    if (old) {
+      const newX = parseFloat(text.getAttribute('x') || '0');
+      const newY = parseFloat(text.getAttribute('y') || '0');
+      const dx = old.x - newX;
+      const dy = old.y - newY;
+      if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+        text.animate([
+          { transform: `translate(${dx}px, ${dy}px)` },
+          { transform: 'translate(0px, 0px)' },
+        ], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+        });
+      }
+    }
+  }
+
+  // Axis titles
+  for (const text of svg.querySelectorAll('text[data-axis-title]')) {
+    const id = text.dataset.axisTitle;
+    const old = prev.axisTitles.get(id);
+    if (old) {
+      const newX = parseFloat(text.getAttribute('x') || '0');
+      const dx = old.x - newX;
+      if (Math.abs(dx) > 0.1) {
+        text.animate([
+          { transform: `translate(${dx}px, 0px)` },
+          { transform: 'translate(0px, 0px)' },
+        ], {
+          duration: ZOOM_ANIMATION_DURATION,
+          easing: ZOOM_ANIMATION_EASING,
+        });
+      }
+    }
+  }
+}
+
 /** @param {readonly ExplorerRule[]} list */
 function renderMap(list) {
   const mapCard = byId('xp-map-card');
   const plottable = list.filter((r) => r.judged !== null && r.judged.n >= bar.rarePattern.minN);
   mapCard.hidden = state.unit !== 'rules' || plottable.length === 0;
   if (mapCard.hidden) return;
+
+  const svg = byId('xp-map');
+  const shouldAnimate = lastRenderedZoom !== state.zoom && !prefersReducedMotion() && svg.children.length > 0;
+  const prevPositions = shouldAnimate ? recordMapPositions(svg) : null;
+  lastRenderedZoom = state.zoom;
+  if (shouldAnimate) {
+    hideTip();
+    hideTrail();
+  }
+
   const L = layoutMap(plottable, state.zoom);
   const { margins: mg, gutter: gut, x0, x1, y0, y1, fx, fy } = L;
   const H = MAP_HEIGHT;
   const out = [];
   if (gut) {
-    out.push(`<rect class="gutter" x="${mg.left}" y="${y0}" width="${gut - 4}" height="${H - mg.bottom - y0}"/>`);
-    out.push(`<rect class="gutter" x="${mg.left}" y="${y1 + 4}" width="${x1 + 8 - mg.left}" height="${gut - 4}"/>`);
-    out.push(`<text class="axis" x="${L.gutterCenterX}" y="${H - mg.bottom + 30}" text-anchor="middle">&lt;${pctShort(ZOOM_FLOOR)}</text>`);
-    out.push(`<text class="axis" x="${mg.left - 6}" y="${L.gutterCenterY + 4}" text-anchor="end">&lt;${pctShort(ZOOM_FLOOR)}</text>`);
+    out.push(`<rect class="gutter" data-gutter="y" x="${mg.left}" y="${y0}" width="${gut - 4}" height="${H - mg.bottom - y0}"/>`);
+    out.push(`<rect class="gutter" data-gutter="x" x="${mg.left}" y="${y1 + 4}" width="${x1 + 8 - mg.left}" height="${gut - 4}"/>`);
+    out.push(`<text class="axis" data-gutter-label="x" x="${L.gutterCenterX}" y="${H - mg.bottom + 30}" text-anchor="middle">&lt;${pctShort(ZOOM_FLOOR)}</text>`);
+    out.push(`<text class="axis" data-gutter-label="y" x="${mg.left - 6}" y="${L.gutterCenterY + 4}" text-anchor="end">&lt;${pctShort(ZOOM_FLOOR)}</text>`);
   }
   for (let i = 0; i <= Math.round((1 - L.floor) * 10); i++) {
     const t = Math.round((L.floor + i / 10) * 100) / 100;
-    out.push(`<line class="grid" x1="${fx(t)}" x2="${fx(t)}" y1="${y0}" y2="${y1}"/>`);
-    out.push(`<line class="grid" x1="${x0}" x2="${x1}" y1="${fy(t)}" y2="${fy(t)}"/>`);
-    out.push(`<text class="axis" x="${fx(t)}" y="${H - mg.bottom + 16}" text-anchor="middle">${Math.round(t * 100)}%</text>`);
-    out.push(`<text class="axis" x="${mg.left - 6}" y="${fy(t) + 4}" text-anchor="end">${Math.round(t * 100)}%</text>`);
+    const p = Math.round(t * 100);
+    out.push(`<line class="grid" data-grid-x="${p}" x1="${fx(t)}" x2="${fx(t)}" y1="${y0}" y2="${y1}"/>`);
+    out.push(`<line class="grid" data-grid-y="${p}" x1="${x0}" x2="${x1}" y1="${fy(t)}" y2="${fy(t)}"/>`);
+    out.push(`<text class="axis" data-tick-x="${p}" x="${fx(t)}" y="${H - mg.bottom + 16}" text-anchor="middle">${p}%</text>`);
+    out.push(`<text class="axis" data-tick-y="${p}" x="${mg.left - 6}" y="${fy(t) + 4}" text-anchor="end">${p}%</text>`);
   }
   const std = bar.standard;
   const rare = bar.rarePattern;
-  out.push(`<text class="axis" x="${(x0 + x1) / 2}" y="${H - 8}" text-anchor="middle">Static matcher precision →</text>`);
-  out.push(`<text class="axis" transform="translate(14 ${(y0 + y1) / 2}) rotate(-90)" text-anchor="middle">Post-verifier precision →</text>`);
-  out.push(`<line class="thr" x1="${fx(std.staticMatcherPrecision)}" x2="${fx(std.staticMatcherPrecision)}" y1="${y0 - 6}" y2="${y1}"/>`);
-  out.push(`<line class="thr2" x1="${fx(rare.staticMatcherPrecision)}" x2="${fx(rare.staticMatcherPrecision)}" y1="${y0 - 6}" y2="${y1}"/>`);
-  out.push(`<line class="thr" x1="${x0}" x2="${x1 + 10}" y1="${fy(bar.postVerifierPrecision)}" y2="${fy(bar.postVerifierPrecision)}"/>`);
-  out.push(`<text class="axis" x="${fx(std.staticMatcherPrecision) - 4}" y="${y0 - 18}" text-anchor="end">static bar ${pctShort(std.staticMatcherPrecision)} (n ≥ ${std.minN})</text>`);
-  out.push(`<text class="axis" x="${fx(rare.staticMatcherPrecision) + 4}" y="${y0 - 18}" text-anchor="start">${pctShort(rare.staticMatcherPrecision)} (n ${rare.minN}–${std.minN - 1})</text>`);
-  out.push(`<text class="axis" x="${x1 + 16}" y="${fy(bar.postVerifierPrecision) - 2}">post-verifier</text>`);
-  out.push(`<text class="axis" x="${x1 + 16}" y="${fy(bar.postVerifierPrecision) + 13}">bar ${pctShort(bar.postVerifierPrecision)}</text>`);
+  out.push(`<text class="axis" data-axis-title="x" x="${(x0 + x1) / 2}" y="${H - 8}" text-anchor="middle">Static matcher precision →</text>`);
+  out.push(`<text class="axis" data-axis-title="y" transform="translate(14 ${(y0 + y1) / 2}) rotate(-90)" text-anchor="middle">Post-verifier precision →</text>`);
+  out.push(`<line class="thr" data-thr="std" x1="${fx(std.staticMatcherPrecision)}" x2="${fx(std.staticMatcherPrecision)}" y1="${y0 - 6}" y2="${y1}"/>`);
+  out.push(`<line class="thr2" data-thr="rare" x1="${fx(rare.staticMatcherPrecision)}" x2="${fx(rare.staticMatcherPrecision)}" y1="${y0 - 6}" y2="${y1}"/>`);
+  out.push(`<line class="thr" data-thr="post" x1="${x0}" x2="${x1 + 10}" y1="${fy(bar.postVerifierPrecision)}" y2="${fy(bar.postVerifierPrecision)}"/>`);
+  out.push(`<text class="axis" data-thr-label="std" x="${fx(std.staticMatcherPrecision) - 4}" y="${y0 - 18}" text-anchor="end">static bar ${pctShort(std.staticMatcherPrecision)} (n ≥ ${std.minN})</text>`);
+  out.push(`<text class="axis" data-thr-label="rare" x="${fx(rare.staticMatcherPrecision) + 4}" y="${y0 - 18}" text-anchor="start">${pctShort(rare.staticMatcherPrecision)} (n ${rare.minN}–${std.minN - 1})</text>`);
+  out.push(`<text class="axis" data-thr-label="post-1" x="${x1 + 16}" y="${fy(bar.postVerifierPrecision) - 2}">post-verifier</text>`);
+  out.push(`<text class="axis" data-thr-label="post-2" x="${x1 + 16}" y="${fy(bar.postVerifierPrecision) + 13}">bar ${pctShort(bar.postVerifierPrecision)}</text>`);
 
   out.push(`<defs>
     <marker id="trail-arrow" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -376,10 +778,11 @@ function renderMap(list) {
     </marker>
   </defs>`);
   out.push('<g id="xp-trail-layer"></g>');
+  out.push('<g id="xp-exit-layer" style="pointer-events: none;"></g>');
 
   if (L.corner.length) {
     const title = `${plural(L.corner.length, 'rule')} below ${pctShort(ZOOM_FLOOR)} on both axes: ${L.corner.map((r) => r.id).join(', ')}`;
-    out.push(html`<g><title>${title}</title><circle cx="${L.gutterCenterX}" cy="${L.gutterCenterY}" r="11" class="corner"/><text x="${L.gutterCenterX}" y="${L.gutterCenterY + 4}" text-anchor="middle" class="corner-count">${L.corner.length}</text></g>`.value);
+    out.push(html`<g class="corner-group" data-corner="bubble"><title>${title}</title><circle cx="${L.gutterCenterX}" cy="${L.gutterCenterY}" r="11" class="corner"/><text x="${L.gutterCenterX}" y="${L.gutterCenterY + 4}" text-anchor="middle" class="corner-count">${L.corner.length}</text></g>`.value);
   }
   for (const dot of L.dots) {
     const st = m.ruleStage(dot.rule);
@@ -389,10 +792,14 @@ function renderMap(list) {
     const label = `${dot.rule.id}: static ${pct(dot.judged.staticMatcher.value)}, post-verifier ${pct(dot.judged.postVerifier.value)}, n ${dot.judged.n}`;
     out.push(html`<circle class="dot" data-id="${dot.rule.id}" cx="${dot.x.toFixed(1)}" cy="${dot.y.toFixed(1)}" r="${dot.radius.toFixed(1)}" fill="${hollow ? 'transparent' : raw(color)}" fill-opacity="${opacity}" stroke="${raw(color)}" stroke-width="1.5" tabindex="0" role="button" aria-label="${label}"/>`.value);
   }
-  const svg = byId('xp-map');
+
   svg.setAttribute('viewBox', `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`);
   setHtml(svg, raw(out.join('')));
   mapDotsById = new Map(L.dots.map((d) => [d.rule.id, d]));
+
+  if (prevPositions) {
+    animateMapZoom(svg, prevPositions, L);
+  }
 }
 
 function renderList() {

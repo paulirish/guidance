@@ -29,9 +29,10 @@
     background-size: auto, 26px 26px;
     color: var(--ink); font: 16px/1.55 var(--sans); padding: 56px 0 96px;
   }
-  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 28px; }
+  .wrap { max-width: 1640px; margin: 0 auto; padding: 0 20px; }
   html.embedded { overflow: hidden; }
   html.embedded body { padding: 28px 0 40px; }
+  html.embedded .wrap { max-width: none; padding: 0; }
   code { font: 500 .86em var(--mono); color: var(--ink); background: #0a0e15; border: 1px solid var(--line); border-radius: 5px; padding: .05em .4em; }
   b { color: var(--ink); }
   svg text { font-family: var(--sans); }
@@ -212,7 +213,7 @@
 
   footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); font: 500 12.5px/1.7 var(--mono); color: var(--ink-3); }
 
-  @media (max-width: 1000px) {
+  @media (max-width: 760px) {
     h1 { font-size: 40px; }
     .tgrid { grid-template-columns: 1fr; } .tg-corner, .tg-colh { display: none; } .tg-cell.r-nl { grid-column: auto; }
     .tg-cell[data-col]::before { content: "Update Scope: " attr(data-col); font: 600 11px var(--mono); color: var(--ink-3); letter-spacing: .04em; }
