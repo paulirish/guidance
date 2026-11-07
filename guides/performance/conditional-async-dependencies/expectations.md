@@ -1,4 +1,7 @@
-- The script checks if `popover` is in `HTMLElement.prototype` to determine if a polyfill is needed.
-- If the feature is missing, a dynamic import is executed using top-level `await`.
+- A button with a popovertarget or commandfor attribute is present in the document.
+- A popover element whose ID matches the button popovertarget or commandfor is present.
+- The popover element is functional and can be toggled.
+- The script checks if popover is in HTMLElement.prototype to determine if a polyfill is needed.
+- If the feature is missing, a dynamic import is executed.
+- The dynamic import is executed using top-level await.
 - The conditionally loaded logic is implemented within a single module entry point, preventing simultaneous imports from multiple sibling modules.
-- A functional popover element and a button with a `popovertarget` attribute are present in the document.

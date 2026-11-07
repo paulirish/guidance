@@ -1,4 +1,6 @@
-* The agent has defined CSS variables (custom properties) for the scrollbar colors.
-* The agent has provided a `@media (prefers-contrast: more)` block that updates the CSS variables to highly distinct colors (e.g., solid black or white) to ensure maximum legibility.
-* The explicit scrollbar colors use the standard `scrollbar-color: var(--thumb) var(--track)` property.
-* If a legacy fallback block is provided, it correctly inherits the high-contrast CSS variables and is safely isolated within an `@supports not (scrollbar-color: auto)` feature query.
+- CSS variables are defined for scrollbar thumb and track colors.
+- An @media (prefers-contrast: more) block updates scrollbar CSS variables.
+- The scrollbar-color property uses CSS variables.
+- Legacy scrollbar pseudo-elements are isolated within @supports not (scrollbar-color: auto).
+- CSS variables for scrollbar update to high-contrast colors when prefers-contrast: more is emulated.
+- High contrast scrollbar colors are highly distinct.

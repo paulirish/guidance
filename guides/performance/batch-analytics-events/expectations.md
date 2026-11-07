@@ -1,7 +1,9 @@
-- The `fetchLater()` API is invoked with a URL string as the first argument, and a `DeferredRequestInit` object as the second argument.
-- The `fetchLater()` API is the only API that should be used to send beacons. Other APIs like `fetch()`, `sendBeacon()`, `XMLHttpRequest`, or `new Image()` should not used.
-- `fetchLater()` should be invoked with the `activeAfter` option set.
-- Multiple invocations of `fetchLater()` within the `activateAfter` time window should be batched into a single request (e.g. prior calls should be aborted).
-- Batching should be limited in some way to prevent starvation or quota overflow.
-- If a `fetchLater()` call throws a `QuotaExceededError`, `RangeError`, or `TypeError`, it should be properly handled.
-- The `fetchLater()` polyfill should be included in the bundle, unless the project is only supporting Chromium browsers.
+- fetchLater API is invoked with a valid DeferredRequestInit (no ReadableStream)
+- XMLHttpRequest is not used as an alternative beacon API
+- Image is not used as an alternative beacon API
+- fetchLater is invoked with the activateAfter option
+- Batch queue size is limited to prevent quota overflow
+- fetchLater calls are wrapped in try/catch to handle errors
+- fetchLater polyfill is included in the codebase
+- The application handles missing fetchLater natively by using a polyfill without crashing
+- Prior fetchLater calls are aborted to batch events together

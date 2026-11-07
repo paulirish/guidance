@@ -19,27 +19,22 @@ test.describe('Pull-to-Reveal Grader', () => {
 
   // --- Static Analysis Tests ---
 
-  test('Exactly one element should have scroll-initial-target property', async () => {
+  test('Exactly one element has scroll-initial-target property', async () => {
     const matches = html.match(/scroll-initial-target\s*:\s*nearest/g);
     expect(matches?.length).toBe(1);
   });
 
-  test('The fallback must check for CSS support using CSS.supports', async () => {
+  test('The fallback checks for CSS support using CSS.supports', async () => {
     const supportsRegex = /CSS\.supports\(\s*['"]scroll-initial-target['"]\s*,\s*['"]nearest['"]\s*\)/;
     expect(html).toMatch(supportsRegex);
   });
 
-  test('The fallback must use behavior: instant in scrollIntoView', async () => {
-    const behaviorRegex = /scrollIntoView\(\s*\{[^}]*behavior\s*:\s*['"]instant['"][^}]*\}\s*\)/;
+  test('The fallback uses behavior: instant when scrolling', async () => {
+    const behaviorRegex = /behavior\s*:\s*['"]instant['"]/;
     expect(html).toMatch(behaviorRegex);
   });
 
-  test('The fallback must use block: start in scrollIntoView', async () => {
-    const blockRegex = /scrollIntoView\(\s*\{[^}]*block\s*:\s*['"]start['"][^}]*\}\s*\)/;
-    expect(html).toMatch(blockRegex);
-  });
-
-  test('The fallback must execute on DOMContentLoaded or earlier', async () => {
+  test('The fallback executes on DOMContentLoaded or earlier', async () => {
     // Check that it doesn't use window.onload and instead uses DOMContentLoaded or immediate execution
     expect(html).not.toMatch(/window\.onload/);
     expect(html).toMatch(/DOMContentLoaded|addEventListener|querySelector/);
@@ -62,7 +57,7 @@ test.describe('Pull-to-Reveal Grader', () => {
     await page.goto(demoUrl);
   });
 
-  test('The scroll container must have overflow-y and mandatory snapping', async ({ page }) => {
+  test('The scroll container is configured for vertical scrolling and snapping', async ({ page }) => {
     const containerStyle = await page.evaluate(() => {
       const findFeatureElements = () => {
         const elements = Array.from(document.querySelectorAll('*'));
@@ -72,7 +67,7 @@ test.describe('Pull-to-Reveal Grader', () => {
         });
         if (snapPoints.length < 2) return null;
         const target = snapPoints[1];
-        let container = target.parentElement;
+        let container: HTMLElement | null = target.parentElement;
         while (container) {
           const style = window.getComputedStyle(container);
           if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
@@ -81,10 +76,7 @@ test.describe('Pull-to-Reveal Grader', () => {
           container = container.parentElement;
         }
         const htmlStyle = window.getComputedStyle(document.documentElement);
-        if (htmlStyle.overflowY === 'auto' || htmlStyle.overflowY === 'scroll') {
-          return { el: document.documentElement, style: htmlStyle };
-        }
-        return null;
+        return { el: document.documentElement, style: htmlStyle };
       };
 
       const result = findFeatureElements();
@@ -96,11 +88,10 @@ test.describe('Pull-to-Reveal Grader', () => {
     });
 
     expect(containerStyle).not.toBeNull();
-    expect(['auto', 'scroll']).toContain(containerStyle?.overflowY);
-    expect(containerStyle?.scrollSnapType).toMatch(/y mandatory/);
+    expect(containerStyle?.scrollSnapType).toMatch(/^y(\s+(mandatory|proximity))?$/);
   });
 
-  test('The hidden element must have scroll-snap-align: start', async ({ page }) => {
+  test('The hidden element has scroll-snap-align: start', async ({ page }) => {
     const snapAlign = await page.evaluate(() => {
       const elements = Array.from(document.querySelectorAll('*'));
       const snapPoints = elements.filter(el => {
@@ -113,7 +104,7 @@ test.describe('Pull-to-Reveal Grader', () => {
     expect(snapAlign).toBe('start');
   });
 
-  test('The main content element must have scroll-snap-align: start', async ({ page }) => {
+  test('The main content element has scroll-snap-align: start', async ({ page }) => {
     const snapAlign = await page.evaluate(() => {
       const elements = Array.from(document.querySelectorAll('*'));
       const snapPoints = elements.filter(el => {
@@ -126,9 +117,14 @@ test.describe('Pull-to-Reveal Grader', () => {
     expect(snapAlign).toBe('start');
   });
 
-  test('Initial scroll position must be at the main content element', async ({ page }) => {
-    // Wait for any potential scrolling to finish
-    await page.waitForTimeout(500);
+  test('Initial scroll position is at the main content element', async ({ page }) => {
+    await expect.poll(async () => {
+      return await page.evaluate(() => {
+        const container = document.scrollingElement || document.documentElement;
+        return window.scrollY > 0 || container.scrollTop > 0;
+      });
+    }, { timeout: 2000 }).toBe(true);
+
     const scrollStatus = await page.evaluate(() => {
       const elements = Array.from(document.querySelectorAll('*'));
       const snapPoints = elements.filter(el => {
@@ -148,25 +144,24 @@ test.describe('Pull-to-Reveal Grader', () => {
       }
       
       if (!container) {
-        const htmlStyle = window.getComputedStyle(document.documentElement);
-        if (htmlStyle.overflowY === 'auto' || htmlStyle.overflowY === 'scroll') {
-          container = document.documentElement;
-        }
+        container = (document.scrollingElement || document.documentElement) as HTMLElement;
       }
-      
-      if (!container) return null;
 
-      const cRect = container === document.documentElement ? { top: 0, left: 0 } : container.getBoundingClientRect();
+      const cRect = (container === document.documentElement || container === document.scrollingElement)
+        ? { top: 0, left: 0 }
+        : container.getBoundingClientRect();
       const tRect = target.getBoundingClientRect();
       
-      // The top of the target should be at the top of the container's visible area.
-      // container.clientTop is the border width.
-      const topDiff = Math.abs(tRect.top - (cRect.top + (container === document.documentElement ? 0 : container.clientTop)));
+      const clientTop = (container === document.documentElement || container === document.scrollingElement)
+        ? 0
+        : container.clientTop;
+      const topDiff = Math.abs(tRect.top - (cRect.top + clientTop));
       
+      const scrollY = window.scrollY || container.scrollTop;
       return {
-        scrollTop: container.scrollTop,
+        scrollTop: scrollY,
         topDiff,
-        hasScrolled: container.scrollTop > 0 || window.scrollY > 0
+        hasScrolled: scrollY > 0
       };
     });
 

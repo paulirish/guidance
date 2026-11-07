@@ -1,11 +1,12 @@
-- The implementation MUST apply `appearance: base-select` to the `<select>` element and the `::picker(select)` pseudo-element to opt into customizable select.
-- The implementation MUST use `transition-behavior: allow-discrete` (either standalone or within a shorthand `transition` property) on `::picker(select)` to ensure the dropdown animates correctly between `display: none` and visible states.
-- The implementation MUST use `@starting-style` to declare the visual state (e.g., `opacity: 0`, `height: 0`) computed immediately before the picker opens.
-- The implementation MUST animate the dropdown icon using the `:open::picker-icon` pseudo-element selector (e.g., applying `transform: rotate(180deg)`).
-- The implementation MUST NOT use JavaScript as the primary mechanism for toggling top-layer visibility or running the dropdown animation.
-- The `<button>` tag MUST contain a `<selectedcontent>` element to mirror selections and MUST NOT contain legacy `<selectedoption>` element.
-- A progressive enhancement fallback MUST be included that checks for `!CSS.supports("appearance", "base-select")` before logging support or applying standard legacy fallbacks.
-- The `<select>` MUST have a `name` attribute and an associated `<label>`. This ensures that even with a custom UI, the component remains accessible to screen readers and works correctly with standard form submissions.
-- Decorative inline SVG icons inside `<option>` elements MUST explicitly define `aria-hidden="true"`.
-- The checked state of an `<option>` MUST be denoted using multiple visual indicators (e.g., modifying both font-weight and background-color) to avoid color-only state communication.
-- Dropdown entry/exit and icon animations MUST be disabled or dampened if `prefers-reduced-motion: reduce` is set.
+- Applies `appearance: base-select` to opt into customizable select.
+- Applies styles to `::picker(select)` pseudo-element.
+- Uses `allow-discrete` transition behavior for visibility animations.
+- Uses `@starting-style` to declare initial visual state before opening.
+- Animates dropdown icon using `:open::picker-icon` pseudo-element.
+- Does not use JavaScript as the primary mechanism for toggling top-layer visibility.
+- The checked state of an option incorporates multiple visual indicators.
+- Dropdown entry/exit and icon animations are disabled or dampened if `prefers-reduced-motion: reduce` is set.
+- Contains a `<selectedcontent>` element to mirror selections.
+- Does not contain legacy `<selectedoption>` element.
+- `<select>` element has a `name` attribute.
+- `<select>` element has an associated `<label>`.

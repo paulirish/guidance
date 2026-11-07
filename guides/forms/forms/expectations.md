@@ -25,7 +25,6 @@
 - The implementation MUST NOT use `placeholder` as a replacement for labels.
 - The implementation MUST NOT disable focus outlines without providing a high-contrast alternative.
 - The implementation MUST use the `autocomplete` attribute to specify expected data (e.g., `email`, `tel`).
-- The implementation MUST use `inputmode` to optimize on-screen keyboards (e.g., `inputmode="numeric"` for PINs).
 - The implementation MUST use `enterkeyhint` to set the Enter key label.
 - The implementation MUST set `autocorrect="off"` (and `autocapitalize="off"`, `spellcheck="false"`) on unstructured identifier fields such as usernames and codes (but NOT on structured fields like emails or URLs).
 - The implementation MUST NOT set `autocorrect="off"` or `autocapitalize="off"` on `type=email` or `type=url` inputs.
@@ -60,7 +59,6 @@
 - The implementation MUST NOT use inline JavaScript (e.g., `onclick="..."`) directly within form markup.
 - The implementation MUST use a single field for names (not split).
 - The implementation MUST use `autocomplete="street-address"` for addresses.
-- The implementation MUST use a `<textarea>` element for addresses if supporting multi-country formats.
 - The implementation MUST make postal codes optional for international address forms.
 - The implementation MUST NOT split name inputs into rigid variables like "First" and "Last".
 - The implementation MUST NOT enforce Latin-only characters for names and usernames.

@@ -1,7 +1,11 @@
-- The `<dialog>` element must use the `@starting-style` at-rule to define starting property values for its entry animation.
-- The `[popover]` element must use the `@starting-style` at-rule to define starting property values for its entry animation.
-- Both the `<dialog>` and `[popover]` elements must include `overlay` and `display` in their `transition` property with the `allow-discrete` keyword.
-- When the dialog or popover is opened, it must smoothly transition from its starting styles to its visible styles.
-- When the dialog or popover is closed, it must smoothly transition to its base (closed) styles before being removed from the top layer and layout.
-- The `::backdrop` pseudo-element for the dialog should also be animated (e.g., transition `background-color`).
-- The implementation must respect user preferences for reduced motion using the `prefers-reduced-motion` media query by disabling or simplifying transitions (e.g., removing transforms and shortening durations).
+# Expectations for Animate To/From Top Layer
+
+- The <dialog> element includes "overlay" and "display" in its transition properties with "allow-discrete".
+- The [popover] element includes "overlay" and "display" in its transition properties with "allow-discrete".
+- The <dialog> element uses the @starting-style at-rule.
+- The [popover] element uses the @starting-style at-rule.
+- The <dialog> element smoothly transitions when opened.
+- The <dialog> element smoothly transitions when closed.
+- The [popover] element smoothly transitions when opened.
+- The <dialog> ::backdrop is animated.
+- The implementation respects prefers-reduced-motion.

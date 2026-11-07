@@ -1,6 +1,6 @@
-- The implementation MUST use the `scrollend` event to defer expensive tasks (e.g., dynamic content fetching, analytics tracking, dynamic DOM updates).
-- The implementation MUST feature-detect the `scrollend` event by checking `'onscrollend' in window` before initialization.
-- The implementation MUST fall back to using a debounced `scroll` event with `window.scrollendtimer` to dispatch a custom `scrollend` event if native support is missing.
-- The implementation MUST NOT execute heavy layout recalculations or data analytics updates inside the visual `scroll` event listener.
-- The implementation MUST NOT use legacy debounced `scroll` events with `setTimeout` as the primary strategy to guess and trigger scroll completion.
-- The implementation MUST use a scrollable container with `overflow: auto` or `overflow: scroll`.
+- A scrollable container with id "scroller" has overflow set to auto or scroll.
+- The scrollend event listener is registered to handle scroll completion.
+- The implementation does not execute heavy layout calculations or style changes inside scroll event listeners.
+- The implementation falls back to a debounced scroll event using window.scrollendtimer when native scrollend is missing.
+- The implementation dispatches a custom scrollend event in fallback mode after scroll ceases.
+- The implementation does not use scroll debouncing fallback when native scrollend is supported.

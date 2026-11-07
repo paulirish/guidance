@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, expectNever } from '../../test-fixture.ts';
 import * as path from 'path';
 
 const targetFile = process.env.TARGET_FILE;
@@ -214,7 +214,7 @@ test('The implementation includes a fallback for browsers that do not support th
   });
 
   await page.goto(url);
-  await page.waitForTimeout(500);
+  await expectNever(page, () => (window as any).__spied.intersectionObserversCreated > 0, { forMs: 300 });
 
   const spied = await page.evaluate(() => (window as any).__spied);
   
@@ -229,7 +229,10 @@ test('The implementation includes a fallback for browsers that do not support th
 
 test('The fallback uses the IntersectionObserver API on sentinel elements, NOT continuous scroll event listeners or polling with getBoundingClientRect()', async ({ page }) => {
   await page.goto(url);
-  await page.waitForTimeout(500);
+  await expect.poll(async () => {
+    const spied = await page.evaluate(() => (window as any).__spied);
+    return spied?.intersectionObserversCreated ?? 0;
+  }).toBeGreaterThanOrEqual(1);
 
   const elements = await getPageElements(page);
   const spied = await page.evaluate(() => (window as any).__spied);
@@ -258,7 +261,7 @@ test('The fallback uses the IntersectionObserver API on sentinel elements, NOT c
 
 test('The top indicator is styled to be hidden by default and only becomes visible when the container can be scrolled up', async ({ page }) => {
   await page.goto(url);
-  await page.waitForTimeout(300);
+  await expect.poll(async () => getPageElements(page)).toBeTruthy();
   
   const elements = await getPageElements(page);
   if (!elements || !elements.hasScroller || !elements.hasTopIndicator) {
@@ -282,36 +285,26 @@ test('The top indicator is styled to be hidden by default and only becomes visib
   };
 
   // 1. Hidden by default at scrollTop = 0
-  const isInitiallyHidden = !(await checkTopVisibility());
+  await expect.poll(checkTopVisibility).toBe(false);
 
   // 2. Scroll down to middle (making container scrollable up)
   await scroller.evaluate((el) => {
     el.scrollTop = 100;
   });
-  // Wait for transition/observer
-  await page.waitForTimeout(300);
-  const isVisibleAfterScroll = await checkTopVisibility();
+  await expect.poll(checkTopVisibility).toBe(true);
 
   // 3. Scroll back to top (making container non-scrollable up)
   await scroller.evaluate((el) => {
     el.scrollTop = 0;
   });
-  // Wait for transition/observer
-  await page.waitForTimeout(300);
-  const isHiddenAfterScrollBack = !(await checkTopVisibility());
+  await expect.poll(checkTopVisibility).toBe(false);
 
-  const topIndicatorPassed = 
-    isNonInteractive && 
-    isInitiallyHidden && 
-    isVisibleAfterScroll && 
-    isHiddenAfterScrollBack;
-
-  expect(topIndicatorPassed).toBe(true);
+  expect(isNonInteractive).toBe(true);
 });
 
 test('The bottom indicator is styled to be hidden by default and only becomes visible when the container can be scrolled down', async ({ page }) => {
   await page.goto(url);
-  await page.waitForTimeout(300);
+  await expect.poll(async () => getPageElements(page)).toBeTruthy();
   
   const elements = await getPageElements(page);
   if (!elements || !elements.hasScroller || !elements.hasBottomIndicator) {
@@ -335,36 +328,19 @@ test('The bottom indicator is styled to be hidden by default and only becomes vi
   };
 
   // 1. Visible by default at scrollTop = 0 (since it can be scrolled down)
-  const isInitiallyVisible = await checkBottomVisibility();
+  await expect.poll(checkBottomVisibility).toBe(true);
 
   // 2. Scroll to the very bottom (making container non-scrollable down)
   await scroller.evaluate((el) => {
     el.scrollTop = el.scrollHeight;
   });
-  // Wait for transition/observer
-  await page.waitForTimeout(300);
-  const isHiddenAfterScrollToBottom = !(await checkBottomVisibility());
+  await expect.poll(checkBottomVisibility).toBe(false);
 
   // 3. Scroll back up a bit (making container scrollable down again)
   await scroller.evaluate((el) => {
     el.scrollTop = el.scrollHeight - el.clientHeight - 50;
   });
-  // Wait for transition/observer
-  await page.waitForTimeout(300);
-  const isVisibleAfterScrollUp = await checkBottomVisibility();
+  await expect.poll(checkBottomVisibility).toBe(true);
 
-  const bottomIndicatorPassed = 
-    isNonInteractive && 
-    isInitiallyVisible && 
-    isHiddenAfterScrollToBottom && 
-    isVisibleAfterScrollUp;
-
-  console.log('DEBUG TEST 5:', {
-    isNonInteractive,
-    isInitiallyVisible,
-    isHiddenAfterScrollToBottom,
-    isVisibleAfterScrollUp,
-  });
-
-  expect(bottomIndicatorPassed).toBe(true);
+  expect(isNonInteractive).toBe(true);
 });

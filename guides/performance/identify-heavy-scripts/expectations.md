@@ -1,2 +1,5 @@
-- A performance observer should be used with type `long-animation-frame` and `buffered: true` options passed.
-- No polyfill is included for long animation frames.
+- No polyfill for Long Animation Frames is included.
+- PerformanceObserver.observe uses the type property instead of entryTypes.
+- PerformanceObserver specifies long-animation-frame as the observation type.
+- PerformanceObserver enables the buffered option to capture past performance entries.
+- PerformanceObserver does not use the legacy entryTypes property for this API.

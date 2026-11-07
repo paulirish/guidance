@@ -1,8 +1,10 @@
-- The Popover API is used for the dropdown menu (e.g., `popover` attribute) to ensure proper top-layer behavior.
-- The trigger has a `popovertarget` attribute with the id of the dropdown menu to open the menu and set the implicit anchor.
-- `anchor()` is used on inset properties to position the target relative to the anchor.
-- `position-try-fallbacks` is used to provide fallback positions for overflow handling.
-- `flip-block` and `flip-inline` keywords (or equivalent custom `@position-try` rules) are used to handle edge collisions.
-- A popover polyfill is conditionally loaded only if popover is not supported in the browser.
-- An anchor positioning polyfill is conditionally loaded only if anchor positioning is not supported in the browser.
-- The overlay container MUST NOT be framed or exposed as an ARIA menu (`role="menu"`) unless full menu keyboard navigation contracts are implemented; otherwise, it MUST be exposed as a generic action panel.
+- The dropdown menu uses the Popover API
+- The trigger has popovertarget matching the dropdown menu ID
+- The stylesheet uses anchor() on inset properties to position the target relative to the anchor
+- The stylesheet defines position-try-fallbacks for overflow handling
+- The stylesheet uses flip-block, flip-inline, or equivalent custom @position-try rules for edge collisions
+- The popover polyfill is conditionally loaded based on popover support
+- The anchor positioning polyfill is conditionally loaded based on support
+- The overlay container does not have role="menu"
+- The trigger does not have aria-haspopup
+- The items in the overlay do not have role="menuitem"

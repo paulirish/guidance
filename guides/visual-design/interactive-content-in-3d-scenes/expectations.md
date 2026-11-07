@@ -1,11 +1,10 @@
-- Feature detection for HTML-in-Canvas MUST be conducted before using the HTML-in-Canvas API.
-- The `<canvas>` element MUST include the `content="drawable"` attribute to allow descendant HTML elements to be exposed to browser features.
-- Every HTML element that needs to be individually drawn into the canvas MUST include the `drawable` attribute. Direct canvas children of the `<canvas>` element MUST include the `drawable` attribute.
-- Canvas rendering MUST be executed inside a `paint` event handler attached to the canvas element to trigger re-rendering when descendant HTML elements change.
-- The HTML texture rendering logic MUST use `texElementSubImage2D` for WebGL or `drawElementImageToTexture` for WebGPU to upload HTML elements into a texture.
-- When using WebGL, before `texElementSubImage2D` uploads into it, the texture MUST be allocated with `texImage2D()` at the element's size in canvas grid pixels (from `canvas.captureElementImage()`, rounded up).
-- When using WebGL or WebGPU, the texture MUST only be reallocated or recreated when the element's size changes, not on every paint, because a new texture is empty until the next upload.
-- Each drawn HTML element MUST be registered with `canvas.updateElementGeometry()`, passing a `canvasTransform` that maps the element's border box to its rendered location on the canvas, in CSS pixels, so its DOM position, hit testing, and accessibility bounds match the rendered content.
-- When using Three.js, the mesh that displays the `THREE.HTMLTexture` MUST be registered with an `InteractionManager` that's updated in the animation loop, so the HTML element receives clicks and input.
-- Screen size changes MUST be observed to update the canvas size to match device pixels to prevent blurriness.
-- A fallback UI strategy MUST be implemented for browsers that do not support HTML-in-Canvas.
+* Feature detection for HTML-in-Canvas is conducted before using the API
+* The canvas element includes the content="drawable" attribute
+* Descendant HTML elements drawn into the canvas include the drawable attribute
+* Canvas rendering executes inside a paint event handler
+* The texture rendering logic uses texElementSubImage2D or drawElementImageToTexture
+* Texture storage is allocated at the element size from captureElementImage, rounded up
+* Texture storage is reallocated only when the element size changes
+* Each drawn HTML element is registered with updateElementGeometry and a canvasTransform
+* Screen size changes are observed using ResizeObserver
+* A fallback UI strategy is implemented when HTML-in-Canvas is not supported

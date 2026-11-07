@@ -49,9 +49,10 @@
           display: block;
         }
 
-        /* Disable native axis-locked touch scrolling when the fallback is active */
+        /* Disable native axis-locked single-finger touch panning while preserving
+           pinch-to-zoom when the fallback is active */
         .scroller[data-axis-lock='none'] {
-          touch-action: none;
+          touch-action: pinch-zoom;
         }
       }
 
