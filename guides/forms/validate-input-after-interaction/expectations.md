@@ -1,6 +1,6 @@
-- Validation styling uses the `:user-invalid` pseudo-class rather than raw `:invalid` so required fields appear neutral on initial page load.
-- Focusing a required field without editing (or while actively typing before blur) does not trigger the error state prematurely; entering an invalid value and blurring triggers the `:user-invalid` error state.
-- Typing a valid value into a field that is in the `:user-invalid` error state clears the error state immediately.
-- Attempting to submit the form with an invalid or empty required field triggers the `:user-invalid` error state.
-- Format hints or password complexity rules are positioned above their corresponding input element in the DOM and linked via `aria-describedby`.
-- Visual error feedback displays an associated visible error message alongside input border styling rather than relying on color alone.
+- On page load, the required input field MUST have a neutral border (not red), even if it is empty.
+- Focusing a required empty input field without editing (or while actively typing before blur) MUST NOT trigger the error state prematurely; entering an invalid value (or clearing a typed value) and clicking away (blur) MUST trigger the `:user-invalid` state (e.g. red border, visible error message) without writing custom JS event listeners.
+- Typing a valid value MUST remove the error state immediately.
+- Submitting the form with an invalid or empty required field MUST trigger the error state.
+- Input format hints and password complexity rules MUST be positioned above the input element in the markup to prevent obstruction by mobile keyboards and linked via `aria-describedby`.
+- Visual error feedback MUST incorporate multiple state indicators (e.g. an icon alongside border color changes) to avoid color-only communication.

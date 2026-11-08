@@ -1,6 +1,7 @@
-- On page load, all required fields appear neutral and do not match `:user-invalid`.
-- Focusing and blurring an empty required field without typing keeps the field in a neutral state, while interacting with the field (such as typing and clearing it) and blurring triggers the `:user-invalid` error state.
-- Typing a valid value into an invalid required field removes the error state immediately.
-- Attempting to submit the form with empty required fields triggers the error state on all of them.
-- The `aria-invalid="true"` attribute is dynamically synchronized via JavaScript when a required field enters an error state and removed or set to `"false"` when the field becomes valid.
-- Visual error feedback incorporates multiple state indicators (such as an error message or icon alongside border styling) rather than relying on color alone.
+- On page load, all required fields must appear neutral.
+- Interacting with a required field (such as typing and deleting a character) and clicking out (blur) MUST trigger the error state (red border).
+- Typing a valid value into the field MUST remove the error state immediately.
+- Clicking "Submit" with empty fields MUST trigger the error state on all of them.
+- The implementation MUST dynamically synchronize the `aria-invalid="true"` attribute via JavaScript when an element enters an error state, and remove it or set it to `"false"` when the field becomes valid.
+- Tabbing through a required field (focus, then blur) without changing its value MUST NOT set `aria-invalid`; the ARIA state must mirror `:user-invalid` / `:user-valid`, not raw validity.
+- Visual error feedback MUST incorporate multiple state indicators (e.g. an icon alongside the error text) to avoid communicating state through color alone.

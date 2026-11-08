@@ -1,18 +1,13 @@
-- Button exists with commandfor attribute targeting a popover ID.
-- Button to toggle popover has command="toggle-popover".
-- Button to explicitly show popover has command="show-popover".
-- Button to explicitly hide popover has command="hide-popover".
-- Popover target element has the popover attribute.
-- Button exists with commandfor attribute targeting a <dialog> element.
-- Button targeting a dialog has command="show-modal".
-- Target element for modal control is a <dialog> element.
-- Close button for dialog exists with command="close".
-- Invokers polyfill is loaded conditionally.
-- Popover polyfill is loaded conditionally.
-- CSS rules for :popover-open and .\:popover-open are separate (not combined in an unforgiving selector list).
-- CSS includes rule for the polyfill class .\:popover-open.
-- Button with toggle-popover command opens and closes the popover.
-- Button with show-popover command opens the popover.
-- Button with hide-popover command closes the popover.
-- Button with show-modal command opens the dialog as a modal.
-- Button with close command closes the dialog.
+- The document uses buttons with `commandfor` and `command` attributes to declaratively control UI elements.
+- A button used to toggle a popover has `command="toggle-popover"`.
+- Buttons for explicit popover control use `command="show-popover"` and `command="hide-popover"`.
+- The target element for popover commands has the `popover` attribute.
+- A button used to open a modal dialog has `command="show-modal"` and targets a `<dialog>` element.
+- A button used to close a dialog has `command="close"`.
+- The fallback strategy MUST feature detect support by checking for `commandForElement` in `HTMLButtonElement.prototype` and `popover` in `HTMLElement.prototype`.
+- Polyfills MUST be loaded via dynamic `import()` only when native support is missing (or forced for testing).
+- The `invokers-polyfill` is dynamically imported (e.g., `import('invokers-polyfill')` with a bundler, or from a CDN such as `https://esm.run/invokers-polyfill`).
+- The `@oddbird/popover-polyfill` is dynamically imported.
+- CSS styling for the open state of a popover uses `:is()` or `:where()` to combine `:popover-open` with the polyfill class `.\:popover-open`.
+- The target element for explicit popover control (show/hide) has the `popover="manual"` attribute.
+- A `command` event listener is attached directly to each target element (not delegated via bubbling) when using the polyfill.

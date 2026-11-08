@@ -3,4 +3,4 @@
 - Critical stylesheets are placed in the `<head>`, and any pre-transition scripts or expect links in the `<head>` are marked with `blocking="render"` while third-party scripts are not render-blocked.
 - Render blocking is limited to resources and elements visible in the initial viewport. Non-critical or below-the-fold content is NOT render-blocked.
 - No two elements on the same page share the same `view-transition-name` value.
-- Cross-document view transitions are disabled when `prefers-reduced-motion: reduce` is active.
+- Cross-document view transitions MUST be disabled when `prefers-reduced-motion: reduce` is active.

@@ -1,7 +1,7 @@
-- Uses the `linear()` timing function for animation or transition.
-- Includes at least 5 stops in the `linear()` timing function to approximate a complex physics-based curve.
-- Contains a progress value greater than 1 or less than 0 on the spring element to demonstrate overshooting or anticipation.
-- Defines a non-zero transition or animation duration alongside the `linear()` timing function.
-- Provides a fallback easing function for browsers that do not support `linear()`.
-- Disables or reduces the animation when `prefers-reduced-motion` is detected.
-- Avoids steps above 1 or below 0 if opacity is transitioned with a `linear()` function.
+- The implementation uses the `linear()` timing function for an animation or transition.
+- The `linear()` function includes at least 5 stops to approximate a complex physics-based curve (like a spring or bounce).
+- The `linear()` function on the `spring` box contains at least one progress value greater than 1 or less than 0 to demonstrate overshooting or anticipation.
+- A `transition-duration` or `animation-duration` is explicitly defined alongside the `linear()` function.
+- A fallback easing function (like `ease-out`) is provided before the `linear()` declaration or within an `@supports` block for browsers that do not support the `linear()` function.
+- The implementation respects user motion preferences by disabling or reducing the animation when `prefers-reduced-motion: reduce` is detected.
+- If `opacity` is transitioned with a `linear()` timing function, the function must not have steps above 1 or below 0.

@@ -1,5 +1,7 @@
-- Feature-detects conditionalCreate support
-- Triggers browser biometrics creation method passing mediation="conditional"
-- Gating capability support denies background credentials creation
-- Swallows common WebAuthn errors like NotAllowedError without displaying error messages to the user
-- Invokes signalUnknownCredential passing the Base64URL credential ID if server verification fails
+# Expectations for Passkey Conditional Create
+
+*   The implementation MUST load a webauthn-polyfills library. 
+*   The application feature-detects capability support checking PublicKeyCredential.getClientCapabilities before starting enrollment.
+*   The client triggers background passkey creation method passing mediation="conditional".
+*   Common WebAuthn exceptions like NotAllowedError are caught and swallowed silently without displaying error messages to the user.
+*   If server verification of the credential fails, PublicKeyCredential.signalUnknownCredential is invoked.

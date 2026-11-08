@@ -6,7 +6,7 @@
 - Each trigger is a `<button type="button">` with `aria-haspopup="menu"`, `commandfor`, and `command="toggle-popover"`, and has no `popovertarget` or `popovertargetaction` attribute.
 - Each popover is the immediate next sibling of its trigger (and each submenu is a `popover="auto"` placed after its trigger inside the parent menu's focusgroup), so no `aria-details` relation is exposed on the trigger and closed submenus are not rendered inline.
 - Focusing a submenu trigger (or a top-level trigger in a menubar) previews its menu and sets `aria-expanded="true"` without moving focus into the menu, and blurring a trigger that is only previewing closes that menu and sets `aria-expanded="false"`.
-- When the window regains focus and focus returns to a trigger, its menu remains closed and does not preview or reopen.
+- Focus returning to a trigger because the window regained focus does not preview or reopen its menu.
 - Pressing `Enter` or `Space` on a previewed top-level or submenu trigger closes that preview and sets `aria-expanded="false"` without moving focus from the trigger.
 - Pressing `Enter` or `Space` on a closed trigger opens its menu, sets `aria-expanded="true"`, and moves focus to the first enabled item.
 - Pressing `ArrowDown` on a previewed top-level trigger converts it to open and moves focus to the first enabled item in the same turn.
@@ -14,13 +14,13 @@
 - Pressing `ArrowRight` on a submenu trigger opens the submenu and moves focus to its first enabled item, while pressing `ArrowLeft` in a submenu closes only that submenu and restores focus to its parent trigger.
 - Pressing `ArrowRight` on a submenu item without a child submenu closes the open hierarchy and previews the next top-level menu with focus on its trigger in a menubar, or keeps focus inside the submenu without switching top-level menus for separate menu buttons.
 - From a focused top-level trigger, `ArrowRight` and `ArrowLeft` move focus to the next and previous top-level trigger (wrapping at either end) and preview its menu with focus staying on the trigger in a menubar, or leave focus on the current trigger for separate menu buttons.
-- From inside an open top-level menu, `ArrowRight` and `ArrowLeft` close the current menu and preview the next or previous top-level menu (wrapping at either end) with focus on its trigger and no item focused in a menubar, or do not switch top-level menus for separate menu buttons.
+- From inside an open top-level menu, `ArrowRight` and `ArrowLeft` close the current menu and preview the next or previous top-level menu (wrapping at either end) with focus on its trigger and no item focused in a menubar (`ArrowDown` then enters it), or do not switch top-level menus for separate menu buttons.
 - Pressing `Escape` closes only the current menu level, sets its trigger's `aria-expanded` to `"false"`, and restores focus to the trigger that opened it, including for nested submenus.
 - Pressing `Tab` from a trigger or inside an open menu closes all open menus and leaves the menu system instead of stepping through every command.
 - Clicking a closed trigger opens its menu with focus left on the trigger (no item focused), clicking an open or previewed trigger closes its menu and leaves focus on the trigger, and clicking outside closes every open menu level.
 - Opening a menu by pointer keeps focus on its trigger with no item focused or matching `:focus-visible`; opening by keyboard focuses the first enabled item.
 - Moving the pointer over a menu item focuses that item without a visible focus ring, so at most one item is styled as active at a time.
-- With no menu open, hovering a top-level trigger does nothing; while a top-level menu is open, moving the pointer over a different top-level trigger closes the open menu and previews the hovered one with focus on that trigger in a menubar, or leaves the open menu unchanged for separate menu buttons.
+- While a top-level menu is open, moving the pointer over a different top-level trigger closes the open menu and previews the hovered one with focus on that trigger in a menubar, or leaves the open menu unchanged for separate menu buttons; with no menu open, hovering a trigger does nothing.
 - Moving the pointer over a submenu trigger previews its submenu after a short delay, and moving to a sibling item closes that submenu.
 - A diagonal move from the middle of a submenu trigger to any item in its submenu keeps the submenu open (a pointer-following safe triangle), while moving to a sibling item outside that path closes it.
 - Activating a command item closes all open menu levels, restores focus to the root menu trigger, and never leaves focus inside hidden content.
