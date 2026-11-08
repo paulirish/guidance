@@ -1,11 +1,12 @@
-- The implementation MUST apply `appearance: base-select` to the `<select>` element to opt into the customizable select behavior.
-- The implementation MUST apply `appearance: base-select` to the `::picker(select)` pseudo-element to enable custom styling for the options dropdown.
-- The implementation MUST use the `::picker(select)` pseudo-element to define the visual container for the options list (e.g., borders, shadows, background).
-- The implementation MUST use `select::picker-icon` to customize the drop-down arrow icon.
-- The implementation MUST use `option::checkmark` to customize the checkmark indicator for the selected option.
-- The markup MUST include a `<button>` element inside the `<select>` to replace the default trigger button.
-- The trigger button MUST include a `<selectedcontent>` element to display the active option and MUST NOT contain legacy `<selectedoption>` element to mirror selections.
-- The colors MUST have a contrast of at least `3:1` with the background color.
-- The implementation MUST NOT use JavaScript as the primary mechanism for toggling the dropdown or styling the picker.
-- A progressive enhancement fallback MUST be included that uses `!CSS.supports("appearance", "base-select")` to detect unsupported browsers before attempting any fallback adjustments.
-- The `<select>` MUST have a `name` attribute and an associated `<label>`. This ensures that even with a custom UI, the component remains accessible to screen readers and works correctly with standard form submissions.
+* The `<select>` element has `appearance: base-select` applied.
+* The `::picker(select)` pseudo-element has `appearance: base-select` applied.
+* The `::picker(select)` pseudo-element defines custom styles for the options dropdown container.
+* The implementation uses `select::picker-icon` to customize the drop-down arrow icon.
+* The implementation uses `option::checkmark` to customize the checkmark indicator for the selected option.
+* The markup includes a `<button>` element inside the `<select>` to replace the default trigger.
+* The trigger button includes a `<selectedcontent>` element to display the active option.
+* The trigger button does not contain the legacy `<selectedoption>` element.
+* The colors have a contrast of at least `3:1` with the background color.
+* The implementation does not use JavaScript as the primary mechanism for toggling the dropdown.
+* The `<select>` element has a `name` attribute.
+* The `<select>` element has an associated `<label>`.

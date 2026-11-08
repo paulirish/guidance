@@ -1,8 +1,9 @@
-- The header container uses `position: sticky` to remain at the top of the scroller.
-- If any of the stuck styles change layout, `overflow-anchor: none` is applied to the parent of the header container.
-- If none of the stuck styles change layout, `overflow-anchor: none` should NOT be applied to the parent of the header container.
-- The header container defines `container-type: scroll-state` to enable scroll state queries.
-- The header container defines `container-name: section-header` to avoid collisions.
-- The header visual style changes (e.g., background color or box-shadow) when it is stuck at the top.
-- The visual style changes are implemented using the `@container scroll-state(stuck: top)` query.
+- Header container uses position: sticky
+- Header container defines container-type: scroll-state
+- Header container defines a container-name
+- Header visual style changes when stuck at the top
+- Layout-affecting stuck styles require overflow-anchor: none on the sticky parent
+- Visual style changes are implemented using @container scroll-state(...)
+- Stuck styles come from the container query, not JS
+- Existing navigation bar remains intact
 - `scroll-padding-top` is used to ensure that elements that receive focus aren't obscured by the sticky header.

@@ -1,16 +1,19 @@
-- Moving the mouse over the card sets `--mouse-x` and `--mouse-y` custom properties for the x and y values of the mouse.
-- When the card is not hovered, there is a custom property `--inner-size` set to 0px.
-- When the card is not hovered, there is a custom property `--outer-size` set to 0px.
-- The `--inner-size` and `--outer-size` properties must be registered with `@property`.
-- When the card is hovered, `--inner-size` and `--outer-size` are a non-zero length.
-- The revealed content is not interactive, with `pointer-events: none`.
-- The revealed content has a `mask-image` property, which is a radial gradient from black to transparent.
-- The position of the radial gradient is determined by the `--mouse-x` and `--mouse-y` custom properties from the mouse position.
-- The gradient stops are set by the `--inner-size` and `--outer-size` custom properties.
-- For users who prefer reduced motion, the `--inner-size` and `--outer-size` transition must happen immediately, by setting `transition-duration: 0`.
-- The `--inner-size` and `--outer-size` custom properties must have a non-zero transition duration on the revealed content element.
-- The `--mouse-x` and `--mouse-y` must not have a transition on the revealed content element.
-- The implementation MUST guarantee that underlying content remains fully persistent and independently keyboard-reachable by default, using the spotlight purely as an enhancement.
+- Sets `--mouse-x` custom property when moving mouse over the card.
+- Sets `--mouse-y` custom property when moving mouse over the card.
+- Sets custom property `--inner-size` to 0px when card is not hovered.
+- Sets custom property `--outer-size` to 0px when card is not hovered.
+- Registers `--inner-size` property with `@property`.
+- Registers `--outer-size` property with `@property`.
+- Sets `--inner-size` to non-zero length when card is hovered.
+- Sets `--outer-size` to non-zero length when card is hovered.
+- Ensures revealed content is non-interactive with `pointer-events: none`.
+- Ensures revealed content has a `mask-image` radial gradient from black to transparent.
+- Determines gradient position using `--mouse-x` and `--mouse-y` properties.
+- Sets gradient stops via `--inner-size` and `--outer-size` properties.
+- Uses immediate transition (duration 0) for reduced motion users.
+- Ensures size properties have a non-zero transition duration by default.
+- Ensures `--mouse-x` and `--mouse-y` have no transition on the revealed content.
+- Guarantees underlying content remains fully persistent and visible by default.
 - Transitions MUST NOT flash more than three times in any one second period.
-- Content MUST still be visible and operable when scaled up to 200% using a browser's built-in zoom functionality
+- Content MUST still be visible and operable when scaled up to 200% using a browser's built-in zoom functionality.
 - Content MUST still be visible and operable without requiring scrolling in two dimensions when scaled up to 400% in a starting viewport size of 1280 CSS pixels by 1024 CSS pixels.
