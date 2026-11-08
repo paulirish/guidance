@@ -551,7 +551,8 @@ window.__featuresMapping = {
     "scroll-driven-animations"
   ],
   "scrollability-affordance-hints": [
-    "container-scroll-state-queries"
+    "container-scroll-state-queries",
+    "scroll-driven-animations"
   ],
   "shrinking-header-on-scroll": [
     "scroll-driven-animations"
@@ -626,6 +627,7 @@ window.__featuresMapping = {
   ],
   "dynamic-sort": [
     "view-transitions",
+    "view-transitions-element-scoped",
     "move-before"
   ],
   "group-element-transitions": [
@@ -915,11 +917,10 @@ window.__featuresMapping = {
   ],
   "tabs": [
     "focusgroup",
-    "anchor-positioning",
     "hidden-until-found",
     "scroll-snap",
-    "popover",
-    "scroll-buttons"
+    "scroll-driven-animations",
+    "interpolate-size"
   ],
   "toolbar": [
     "popover",

@@ -1881,9 +1881,10 @@
       "id": "scrollability-affordance-hints",
       "category": "ui-atoms",
       "title": "Scrollability Affordance Hints",
-      "description": "Build scroll-shadow overlays, gradient fades, or directional arrow indicators that appear only when there's actually more content to scroll to in that direction.",
+      "description": "Build scroll shadows or fading edges that appear only when there's actually more content to scroll to in that direction.",
       "features": [
-        "container-scroll-state-queries"
+        "container-scroll-state-queries",
+        "scroll-driven-animations"
       ],
       "demos": [
         {
@@ -2176,6 +2177,23 @@
         {
           "id": "negative-demo",
           "path": "guides/ui-behaviors/dynamic-sibling-animations/negative-demo.html"
+        }
+      ]
+    },
+    {
+      "id": "dynamic-sort",
+      "category": "ui-behaviors",
+      "title": "Handling dynamic user-triggered changes to sort order",
+      "description": "Best practices for handling dynamic user-triggered reordering of a container's children (e.g. list items, table rows, or a card grid), with optional animated reordering that respects user preferences, good screen reader UX, and optimal performance for large lists.",
+      "features": [
+        "view-transitions",
+        "view-transitions-element-scoped",
+        "move-before"
+      ],
+      "demos": [
+        {
+          "id": "demo",
+          "path": "guides/ui-behaviors/dynamic-sort/demo.html"
         }
       ]
     },
@@ -2999,11 +3017,10 @@
       "description": "Build a responsive tabbed interface with good UX when not all tabs fit on screen.",
       "features": [
         "focusgroup",
-        "anchor-positioning",
         "hidden-until-found",
         "scroll-snap",
-        "popover",
-        "scroll-buttons"
+        "scroll-driven-animations",
+        "interpolate-size"
       ],
       "demos": [
         {
@@ -3576,7 +3593,6 @@
     "sanitizer",
     "scheduler",
     "scroll-axis-lock",
-    "scroll-buttons",
     "scroll-driven-animations",
     "scroll-initial-target",
     "scroll-into-view",
